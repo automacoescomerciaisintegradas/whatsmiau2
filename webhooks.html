@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔗 Webhooks - WhatsMiau2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #94a3b8;
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+        }
+
+        select.form-control {
+            cursor: pointer;
+        }
+
+        .event-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .event-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .event-item:hover {
+            background: rgba(139, 92, 246, 0.2);
+        }
+
+        .event-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #8b5cf6;
+        }
+
+        .event-item label {
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .event-item .event-icon {
+            font-size: 1.2rem;
+        }
+
+        /* Webhook logs */
+        .log-container {
+            max-height: 500px;
+            overflow-y: auto;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.8rem;
+        }
+
+        .log-entry {
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid #8b5cf6;
+        }
+
+        .log-entry.success {
+            border-left-color: #22c55e;
+        }
+
+        .log-entry.error {
+            border-left-color: #ef4444;
+        }
+
+        .log-entry .log-time {
+            color: #64748b;
+            font-size: 0.75rem;
+            margin-bottom: 4px;
+        }
+
+        .log-entry .log-event {
+            color: #a78bfa;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .log-entry .log-data {
+            color: #94a3b8;
+            word-break: break-all;
+        }
+
+        /* Status indicator */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ef4444;
+        }
+
+        .status-dot.active {
+            background: #22c55e;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        /* Info box */
+        .info-box {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h4 {
+            color: #a78bfa;
+            margin-bottom: 10px;
+        }
+
+        .info-box p {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .code-block {
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 10px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.8rem;
+            color: #22c55e;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🔗 Configuração de Webhooks</h1>
+            <a href="/" class="btn btn-outline">⬅️ Voltar</a>
+        </header>
+
+        <div class="main-grid">
+            <!-- Configuration -->
+            <div>
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-header">
+                        <span class="card-title">📱 Selecionar Instância</span>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <select id="instance-select" class="form-control">
+                            <option value="">Carregando instâncias...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-header">
+                        <span class="card-title">🌐 Configurar Webhook</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>URL do Webhook</label>
+                        <input type="url" id="webhook-url" class="form-control"
+                            placeholder="https://seu-servidor.com/webhook">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Token de Autenticação (opcional)</label>
+                        <input type="text" id="webhook-token" class="form-control"
+                            placeholder="Bearer token ou API key">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Eventos a Receber</label>
+                        <div class="event-list">
+                            <div class="event-item">
+                                <input type="checkbox" id="evt-instance-open" checked>
+                                <span class="event-icon">🟢</span>
+                                <label for="evt-instance-open">instance.open</label>
+                            </div>
+                            <div class="event-item">
+                                <input type="checkbox" id="evt-instance-close" checked>
+                                <span class="event-icon">🔴</span>
+                                <label for="evt-instance-close">instance.close</label>
+                            </div>
+                            <div class="event-item">
+                                <input type="checkbox" id="evt-instance-qrcode" checked>
+                                <span class="event-icon">📱</span>
+                                <label for="evt-instance-qrcode">instance.qrcode</label>
+                            </div>
+                            <div class="event-item">
+                                <input type="checkbox" id="evt-pairing-code" checked>
+                                <span class="event-icon">🔑</span>
+                                <label for="evt-pairing-code">instance.pairing_code</label>
+                            </div>
+                            <div class="event-item">
+                                <input type="checkbox" id="evt-message-received" checked>
+                                <span class="event-icon">💬</span>
+                                <label for="evt-message-received">message.received</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="saveWebhook()" style="flex: 1;">
+                            💾 Salvar Configuração
+                        </button>
+                        <button class="btn btn-outline" onclick="testWebhook()">
+                            🧪 Testar
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="info-box">
+                        <h4>ℹ️ Formato do Payload</h4>
+                        <p>O webhook receberá eventos no seguinte formato:</p>
+                        <div class="code-block">
+                            {
+                            "event": "message.received",
+                            "instance": "minha-instancia",
+                            "data": {
+                            "key": {
+                            "remoteJid": "5511999999999@s.whatsapp.net",
+                            "fromMe": false,
+                            "id": "ABC123..."
+                            },
+                            "pushName": "João",
+                            "message": {
+                            "conversation": "Olá!"
+                            }
+                            }
+                            }
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <h4>🎯 Eventos Disponíveis</h4>
+                        <p>
+                            <strong>instance.open</strong> - WhatsApp conectado<br>
+                            <strong>instance.close</strong> - Sessão encerrada<br>
+                            <strong>instance.qrcode</strong> - QR Code gerado<br>
+                            <strong>instance.pairing_code</strong> - Código de pareamento<br>
+                            <strong>message.received</strong> - Nova mensagem recebida
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Logs -->
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📜 Log de Eventos em Tempo Real</span>
+                        <button class="btn btn-outline" onclick="clearLogs()"
+                            style="padding: 6px 12px; font-size: 0.8rem;">🗑️ Limpar</button>
+                    </div>
+
+                    <div class="status-indicator">
+                        <div id="status-dot" class="status-dot"></div>
+                        <span id="status-text">Desconectado</span>
+                    </div>
+
+                    <div id="log-container" class="log-container">
+                        <div class="log-entry">
+                            <div class="log-time">[Aguardando eventos...]</div>
+                            <div class="log-data">Selecione uma instância e configure o webhook para começar a receber
+                                eventos.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        const instanceSelect = document.getElementById('instance-select');
+        const logContainer = document.getElementById('log-container');
+        let currentInstance = null;
+        let eventSource = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadInstances();
+            instanceSelect.addEventListener('change', onInstanceChange);
+        });
+
+        async function loadInstances() {
+            try {
+                const response = await fetch('/api/instance/fetchInstances');
+                const data = await response.json();
+
+                instanceSelect.innerHTML = '<option value="">Selecione uma instância</option>';
+
+                if (Array.isArray(data)) {
+                    data.forEach(inst => {
+                        const info = inst.instance || inst;
+                        const name = info.instanceName || info.name;
+                        const status = info.status || 'disconnected';
+                        const icon = status === 'connected' || status === 'open' ? '🟢' : '🔴';
+
+                        const option = document.createElement('option');
+                        option.value = name;
+                        option.textContent = `${icon} ${name}`;
+                        instanceSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao carregar instâncias:', error);
+                instanceSelect.innerHTML = '<option value="">Erro ao carregar</option>';
+            }
+        }
+
+        async function onInstanceChange() {
+            const instance = instanceSelect.value;
+            if (!instance) {
+                currentInstance = null;
+                return;
+            }
+
+            currentInstance = instance;
+
+            // Load saved webhook config for this instance
+            try {
+                const response = await fetch(`/api/instance/webhook/${instance}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('webhook-url').value = data.webhookUrl || '';
+                    document.getElementById('webhook-token').value = data.webhookToken || '';
+                }
+            } catch (error) {
+                console.log('No webhook config found');
+            }
+
+            updateStatus(true);
+            addLogEntry('info', 'Instância selecionada: ' + instance);
+        }
+
+        function updateStatus(connected) {
+            const dot = document.getElementById('status-dot');
+            const text = document.getElementById('status-text');
+
+            if (connected) {
+                dot.classList.add('active');
+                text.textContent = 'Monitorando eventos...';
+            } else {
+                dot.classList.remove('active');
+                text.textContent = 'Desconectado';
+            }
+        }
+
+        async function saveWebhook() {
+            const instance = instanceSelect.value;
+            if (!instance) {
+                showToast('Selecione uma instância!', 'error');
+                return;
+            }
+
+            const webhookUrl = document.getElementById('webhook-url').value;
+            const webhookToken = document.getElementById('webhook-token').value;
+
+            if (!webhookUrl) {
+                showToast('Digite a URL do webhook!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/instance/webhook/${instance}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        webhookUrl: webhookUrl,
+                        webhookToken: webhookToken
+                    })
+                });
+
+                if (response.ok) {
+                    showToast('Webhook salvo com sucesso!', 'success');
+                    addLogEntry('success', 'Webhook configurado: ' + webhookUrl);
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Erro ao salvar');
+                }
+            } catch (error) {
+                showToast(error.message, 'error');
+                addLogEntry('error', 'Erro ao salvar webhook: ' + error.message);
+            }
+        }
+
+        async function testWebhook() {
+            const instance = instanceSelect.value;
+            if (!instance) {
+                showToast('Selecione uma instância!', 'error');
+                return;
+            }
+
+            const webhookUrl = document.getElementById('webhook-url').value;
+            if (!webhookUrl) {
+                showToast('Configure a URL primeiro!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/instance/webhook/${instance}/test`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    showToast('Webhook testado! Verifique seu servidor.', 'success');
+                    addLogEntry('success', 'Teste enviado para: ' + webhookUrl);
+                } else {
+                    throw new Error('Erro no teste');
+                }
+            } catch (error) {
+                showToast('Erro ao testar: ' + error.message, 'error');
+                addLogEntry('error', 'Erro no teste: ' + error.message);
+            }
+        }
+
+        function addLogEntry(type, message, data = null) {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + type;
+
+            const time = new Date().toLocaleTimeString();
+            entry.innerHTML = `
+                <div class="log-time">[${time}]</div>
+                <div class="log-event">${message}</div>
+                ${data ? `<div class="log-data">${JSON.stringify(data, null, 2)}</div>` : ''}
+            `;
+
+            logContainer.insertBefore(entry, logContainer.firstChild);
+        }
+
+        function clearLogs() {
+            logContainer.innerHTML = '<div class="log-entry"><div class="log-time">[Log limpo]</div></div>';
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show ' + type;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Simulate receiving events (in a real app, you'd use WebSocket or SSE)
+        function simulateEvent(eventType, data) {
+            addLogEntry('success', eventType, data);
+        }
+    </script>
+</body>
+
+</html>

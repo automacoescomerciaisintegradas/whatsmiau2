@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 WhatsMiau2 - Automação WhatsApp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #22c55e, #10b981);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-subtitle {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 12px 24px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            border-color: transparent;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+        }
+
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-hint {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(100, 116, 139, 0.3);
+            color: #94a3b8;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(100, 116, 139, 0.5);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #94a3b8;
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .sub-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .sub-tab {
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .sub-tab:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sub-tab.active {
+            color: #22c55e;
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .sub-content {
+            display: none;
+        }
+
+        .sub-content.active {
+            display: block;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .file-input-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 30px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #94a3b8;
+            transition: all 0.2s;
+        }
+
+        .file-input-wrapper:hover .file-input-btn {
+            border-color: #22c55e;
+            color: #22c55e;
+        }
+
+        .status-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .status-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .status-icon.connected {
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        .status-icon.disconnected {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        .status-info h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .status-info p {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .response-area {
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.8rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .response-area.success {
+            border-left: 3px solid #22c55e;
+        }
+
+        .response-area.error {
+            border-left: 3px solid #ef4444;
+        }
+
+        .group-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .group-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+
+        .group-item:hover {
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .group-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .group-avatar {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .group-name {
+            font-weight: 500;
+        }
+
+        .group-meta {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .stat-card {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #22c55e;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        select.form-control {
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <div>
+                <h1>🤖 WhatsMiau2 Automação</h1>
+                <p class="header-subtitle">Integração completa para automação do WhatsApp</p>
+            </div>
+            <a href="/" class="btn btn-outline">⬅️ Dashboard</a>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <div class="nav-tab active" data-section="send">📤 Enviar Mensagem</div>
+            <div class="nav-tab" data-section="groups">👥 Grupos</div>
+            <div class="nav-tab" data-section="newsletters">📰 Canais</div>
+            <div class="nav-tab" data-section="create-group">➕ Criar Grupo</div>
+            <div class="nav-tab" data-section="summary">📊 Resumo</div>
+            <div class="nav-tab" data-section="instances">⚙️ Instâncias</div>
+        </div>
+
+        <!-- Section: Send Message -->
+        <section id="section-send" class="section active">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📤 Enviar Mensagem</span>
+                </div>
+
+                <div class="sub-tabs">
+                    <button class="sub-tab active" data-subtab="text">💬 Texto</button>
+                    <button class="sub-tab" data-subtab="audio">🎤 Áudio</button>
+                    <button class="sub-tab" data-subtab="media">📷 Mídia</button>
+                </div>
+
+                <div class="form-group">
+                    <label>📱 Número do destinatário</label>
+                    <input type="text" id="send-number" class="form-control"
+                        placeholder="Ex: 5588994227586 ou 88994227586">
+                    <p class="form-hint">Cole o número com ou sem código do país. Será normalizado automaticamente.</p>
+                </div>
+
+                <!-- Text Sub-tab -->
+                <div id="subtab-text" class="sub-content active">
+                    <div class="form-group">
+                        <label>💬 Mensagem de Texto</label>
+                        <textarea id="send-text" class="form-control"
+                            placeholder="Digite sua mensagem aqui..."></textarea>
+                    </div>
+                    <button class="btn btn-primary" onclick="sendText()">📤 Enviar Texto</button>
+                </div>
+
+                <!-- Audio Sub-tab -->
+                <div id="subtab-audio" class="sub-content">
+                    <div class="form-group">
+                        <label>🎤 Enviar Áudio (PTT)</label>
+                        <div class="file-input-wrapper">
+                            <div class="file-input-btn">📁 Escolher Arquivo de Áudio</div>
+                            <input type="file" id="audio-file" accept="audio/*">
+                        </div>
+                        <p class="form-hint" id="audio-filename"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>URL do Áudio (alternativa)</label>
+                        <input type="url" id="audio-url" class="form-control"
+                            placeholder="https://exemplo.com/audio.mp3">
+                    </div>
+                    <button class="btn btn-primary" onclick="sendAudio()">📤 Enviar Áudio</button>
+                </div>
+
+                <!-- Media Sub-tab -->
+                <div id="subtab-media" class="sub-content">
+                    <div class="form-group">
+                        <label>📷 Tipo de Mídia</label>
+                        <select id="media-type" class="form-control">
+                            <option value="image">📷 Imagem</option>
+                            <option value="video">🎬 Vídeo</option>
+                            <option value="document">📄 Documento</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Selecionar Arquivo</label>
+                        <div class="file-input-wrapper">
+                            <div class="file-input-btn">📁 Escolher Arquivo</div>
+                            <input type="file" id="media-file" accept="image/*,video/*,application/*">
+                        </div>
+                        <p class="form-hint" id="media-filename"></p>
+                    </div>
+                    <div class="form-group">
+                        <label>URL da Mídia (alternativa)</label>
+                        <input type="url" id="media-url" class="form-control"
+                            placeholder="https://exemplo.com/imagem.jpg">
+                        <p class="form-hint">Cole uma URL direta para o arquivo de mídia</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Legenda (opcional)</label>
+                        <textarea id="media-caption" class="form-control" style="min-height: 60px;"
+                            placeholder="Digite uma legenda para a mídia..."></textarea>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Nome do Arquivo (para documentos)</label>
+                            <input type="text" id="media-filename-input" class="form-control"
+                                placeholder="documento.pdf">
+                        </div>
+                        <div class="form-group">
+                            <label>MIME Type</label>
+                            <input type="text" id="media-mimetype" class="form-control" placeholder="image/jpeg"
+                                readonly>
+                            <p class="form-hint">Detectado automaticamente</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="sendMedia()">📤 Enviar Mídia</button>
+                </div>
+
+                <!-- Response Area -->
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>📋 Resposta da API</label>
+                    <div id="response-area" class="response-area">Aguardando envio...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Groups -->
+        <section id="section-groups" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">👥 Meus Grupos</span>
+                    <button class="btn btn-secondary" onclick="loadGroups()">🔄 Atualizar</button>
+                </div>
+                <div id="groups-list" class="group-list">
+                    <p style="text-align: center; color: #64748b; padding: 40px;">
+                        Clique em "Atualizar" para carregar os grupos
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Newsletters -->
+        <section id="section-newsletters" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📰 Canais do WhatsApp (Newsletters)</span>
+                    <button class="btn btn-secondary" onclick="loadNewsletters()">🔄 Carregar Canais</button>
+                </div>
+
+                <!-- Newsletter List -->
+                <div id="newsletter-list" class="group-list" style="margin-bottom: 20px;">
+                    <p style="text-align: center; color: #64748b; padding: 20px;">
+                        Clique em "Carregar Canais" para ver os canais que você segue
+                    </p>
+                </div>
+
+                <div class="grid-2">
+                    <!-- Follow Newsletter -->
+                    <div class="card" style="margin-bottom: 0;">
+                        <h3 style="margin-bottom: 15px; color: #22c55e;">➕ Seguir Canal</h3>
+                        <div class="form-group">
+                            <label>📰 ID do Canal (Newsletter JID)</label>
+                            <input type="text" id="newsletter-follow-id" class="form-control"
+                                placeholder="120363024512399999@newsletter">
+                            <p class="form-hint">Ex: 120363024512399999@newsletter</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="followNewsletter()">➕ Seguir Canal</button>
+                    </div>
+
+                    <!-- Unfollow Newsletter -->
+                    <div class="card" style="margin-bottom: 0;">
+                        <h3 style="margin-bottom: 15px; color: #ef4444;">➖ Deixar de Seguir</h3>
+                        <div class="form-group">
+                            <label>📰 ID do Canal (Newsletter JID)</label>
+                            <input type="text" id="newsletter-unfollow-id" class="form-control"
+                                placeholder="120363024512399999@newsletter">
+                            <p class="form-hint">Ex: 120363024512399999@newsletter</p>
+                        </div>
+                        <button class="btn btn-danger" onclick="unfollowNewsletter()">➖ Deixar de Seguir</button>
+                    </div>
+                </div>
+
+                <!-- Help Section -->
+                <div class="card"
+                    style="margin-top: 20px; background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3);">
+                    <h4 style="color: #3b82f6; margin-bottom: 10px;">ℹ️ Como encontrar o JID de um Canal?</h4>
+                    <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.6;">
+                        1. Abra o WhatsApp no celular<br>
+                        2. Vá até o canal que deseja<br>
+                        3. Toque no nome do canal (topo)<br>
+                        4. O JID é o ID que termina com <code
+                            style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">@newsletter</code><br>
+                        5. Você também pode encontrar o ID no link de convite do canal
+                    </p>
+                </div>
+
+                <!-- Response Area -->
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>📋 Resposta da API</label>
+                    <div id="newsletter-response" class="response-area">Aguardando ação...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Create Group -->
+        <section id="section-create-group" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">➕ Criar Novo Grupo</span>
+                </div>
+                <div class="form-group">
+                    <label>📝 Nome do Grupo</label>
+                    <input type="text" id="group-name" class="form-control" placeholder="Digite o nome do grupo">
+                </div>
+                <div class="form-group">
+                    <label>👥 Participantes (um número por linha)</label>
+                    <textarea id="group-participants" class="form-control"
+                        placeholder="5588994227586&#10;5511999998888&#10;5521888887777"></textarea>
+                    <p class="form-hint">Adicione os números dos participantes, um por linha</p>
+                </div>
+                <button class="btn btn-primary" onclick="createGroup()">➕ Criar Grupo</button>
+            </div>
+        </section>
+
+        <!-- Section: Summary -->
+        <section id="section-summary" class="section">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-instance">-</div>
+                    <div class="stat-label">Instância Ativa</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-status">-</div>
+                    <div class="stat-label">Status</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-groups">0</div>
+                    <div class="stat-label">Grupos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-api">✅</div>
+                    <div class="stat-label">API Status</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📊 Status do Sistema</span>
+                    <button class="btn btn-secondary" onclick="loadSummary()">🔄 Atualizar</button>
+                </div>
+                <div id="summary-content">
+                    <p style="text-align: center; color: #64748b; padding: 20px;">
+                        Clique em "Atualizar" para carregar o resumo
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Instances -->
+        <section id="section-instances" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">⚙️ Instâncias</span>
+                    <button class="btn btn-secondary" onclick="loadInstances()">🔄 Atualizar</button>
+                </div>
+                <div id="instances-list">
+                    <p style="text-align: center; color: #64748b; padding: 40px;">
+                        Clique em "Atualizar" para carregar as instâncias
+                    </p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // State
+        let mediaBase64 = null;
+        let audioBase64 = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setupNavTabs();
+            setupSubTabs();
+            setupFileInputs();
+            loadSummary();
+        });
+
+        // Navigation tabs
+        function setupNavTabs() {
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+
+                    tab.classList.add('active');
+                    document.getElementById('section-' + tab.dataset.section).classList.add('active');
+                });
+            });
+        }
+
+        // Sub-tabs
+        function setupSubTabs() {
+            document.querySelectorAll('.sub-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.sub-content').forEach(c => c.classList.remove('active'));
+
+                    tab.classList.add('active');
+                    document.getElementById('subtab-' + tab.dataset.subtab).classList.add('active');
+                });
+            });
+        }
+
+        // File inputs
+        function setupFileInputs() {
+            document.getElementById('media-file').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    document.getElementById('media-filename').textContent = '✅ ' + file.name;
+                    document.getElementById('media-mimetype').value = file.type;
+                    document.getElementById('media-filename-input').value = file.name;
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        mediaBase64 = e.target.result.split(',')[1];
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            document.getElementById('audio-file').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    document.getElementById('audio-filename').textContent = '✅ ' + file.name;
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        audioBase64 = e.target.result.split(',')[1];
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // API Calls
+        async function sendText() {
+            const number = document.getElementById('send-number').value.trim();
+            const text = document.getElementById('send-text').value.trim();
+
+            if (!number || !text) {
+                showToast('Preencha o número e a mensagem!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/whatsmiau2/send-text', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ number, text })
+                });
+
+                const data = await response.json();
+                showResponse(data, response.ok);
+
+                if (response.ok) {
+                    showToast('Mensagem enviada!', 'success');
+                }
+            } catch (err) {
+                showResponse({ error: err.message }, false);
+                showToast('Erro ao enviar!', 'error');
+            }
+        }
+
+        async function sendAudio() {
+            const number = document.getElementById('send-number').value.trim();
+            const audioUrl = document.getElementById('audio-url').value.trim();
+            const audio = audioUrl || audioBase64;
+
+            if (!number) {
+                showToast('Preencha o número!', 'error');
+                return;
+            }
+
+            if (!audio) {
+                showToast('Selecione um áudio ou informe URL!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/whatsmiau2/send-audio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ number, audio, ptt: true })
+                });
+
+                const data = await response.json();
+                showResponse(data, response.ok);
+
+                if (response.ok) {
+                    showToast('Áudio enviado!', 'success');
+                }
+            } catch (err) {
+                showResponse({ error: err.message }, false);
+                showToast('Erro ao enviar!', 'error');
+            }
+        }
+
+        async function sendMedia() {
+            const number = document.getElementById('send-number').value.trim();
+            const mediatype = document.getElementById('media-type').value;
+            const mediaUrl = document.getElementById('media-url').value.trim();
+            const media = mediaUrl || mediaBase64;
+            const caption = document.getElementById('media-caption').value.trim();
+            const fileName = document.getElementById('media-filename-input').value.trim();
+            const mimetype = document.getElementById('media-mimetype').value.trim();
+
+            if (!number) {
+                showToast('Preencha o número!', 'error');
+                return;
+            }
+
+            if (!media) {
+                showToast('Selecione um arquivo ou informe URL!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/whatsmiau2/send-media', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ number, mediatype, media, caption, fileName, mimetype })
+                });
+
+                const data = await response.json();
+                showResponse(data, response.ok);
+
+                if (response.ok) {
+                    showToast('Mídia enviada!', 'success');
+                }
+            } catch (err) {
+                showResponse({ error: err.message }, false);
+                showToast('Erro ao enviar!', 'error');
+            }
+        }
+
+        async function loadGroups() {
+            const container = document.getElementById('groups-list');
+            container.innerHTML = '<p style="text-align: center; padding: 20px;"><span class="loading"></span> Carregando...</p>';
+
+            try {
+                const response = await fetch('/api/whatsmiau2/groups');
+                const data = await response.json();
+
+                if (data.success && data.groups && data.groups.length > 0) {
+                    container.innerHTML = data.groups.map(g => `
+                        <div class="group-item">
+                            <div class="group-info">
+                                <div class="group-avatar">👥</div>
+                                <div>
+                                    <div class="group-name">${g.name || g.subject || 'Sem nome'}</div>
+                                    <div class="group-meta">${g.participantCount || 0} participantes</div>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary" onclick="getInviteLink('${g.jid}')">🔗 Link</button>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 40px;">Nenhum grupo encontrado</p>';
+                }
+            } catch (err) {
+                container.innerHTML = '<p style="text-align: center; color: #ef4444; padding: 40px;">Erro ao carregar grupos: ' + err.message + '</p>';
+            }
+        }
+
+        async function getInviteLink(groupId) {
+            try {
+                const response = await fetch(`/api/group/invite-link?group_id=${encodeURIComponent(groupId)}`);
+                const data = await response.json();
+
+                if (data.code === 200 && data.results?.link) {
+                    prompt('Link de convite:', data.results.link);
+                } else {
+                    showToast('Erro ao obter link', 'error');
+                }
+            } catch (err) {
+                showToast('Erro: ' + err.message, 'error');
+            }
+        }
+
+        async function createGroup() {
+            const name = document.getElementById('group-name').value.trim();
+            const participantsText = document.getElementById('group-participants').value.trim();
+
+            if (!name) {
+                showToast('Digite o nome do grupo!', 'error');
+                return;
+            }
+
+            const participants = participantsText.split('\n')
+                .map(p => p.trim().replace(/\D/g, ''))
+                .filter(p => p.length >= 10);
+
+            if (participants.length === 0) {
+                showToast('Adicione pelo menos um participante!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/group/create/teste-dev', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: name, participants })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast('Grupo criado com sucesso!', 'success');
+                    document.getElementById('group-name').value = '';
+                    document.getElementById('group-participants').value = '';
+                } else {
+                    showToast('Erro: ' + (data.error || data.message), 'error');
+                }
+            } catch (err) {
+                showToast('Erro: ' + err.message, 'error');
+            }
+        }
+
+        async function loadSummary() {
+            try {
+                const statusRes = await fetch('/api/whatsmiau2/status');
+                const statusData = await statusRes.json();
+
+                document.getElementById('stat-instance').textContent = statusData.instance || 'N/A';
+                document.getElementById('stat-status').textContent = statusData.state === 'open' ? '🟢' : '🔴';
+                document.getElementById('stat-api').textContent = statusRes.ok ? '✅' : '❌';
+
+                document.getElementById('summary-content').innerHTML = `
+                    <div class="status-card">
+                        <div class="status-icon ${statusData.state === 'open' ? 'connected' : 'disconnected'}">
+                            ${statusData.state === 'open' ? '🟢' : '🔴'}
+                        </div>
+                        <div class="status-info">
+                            <h3>${statusData.instance || 'Instância'}</h3>
+                            <p>Status: ${statusData.state || 'desconectado'}</p>
+                        </div>
+                    </div>
+                    <pre class="response-area">${JSON.stringify(statusData, null, 2)}</pre>
+                `;
+            } catch (err) {
+                document.getElementById('summary-content').innerHTML = `
+                    <p style="color: #ef4444;">Erro ao carregar: ${err.message}</p>
+                `;
+            }
+        }
+
+        async function loadInstances() {
+            const container = document.getElementById('instances-list');
+            container.innerHTML = '<p style="text-align: center; padding: 20px;"><span class="loading"></span> Carregando...</p>';
+
+            try {
+                const response = await fetch('/api/instance/fetchInstances');
+                const data = await response.json();
+
+                if (Array.isArray(data) && data.length > 0) {
+                    container.innerHTML = data.map(inst => {
+                        const info = inst.instance || inst;
+                        const name = info.instanceName || info.name;
+                        const status = info.status || 'disconnected';
+                        const isConnected = status === 'open' || status === 'connected';
+
+                        return `
+                            <div class="status-card">
+                                <div class="status-icon ${isConnected ? 'connected' : 'disconnected'}">
+                                    ${isConnected ? '🟢' : '🔴'}
+                                </div>
+                                <div class="status-info">
+                                    <h3>${name}</h3>
+                                    <p>Status: ${status}</p>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 40px;">Nenhuma instância encontrada</p>';
+                }
+            } catch (err) {
+                container.innerHTML = '<p style="text-align: center; color: #ef4444; padding: 40px;">Erro: ' + err.message + '</p>';
+            }
+        }
+
+        function showResponse(data, success) {
+            const area = document.getElementById('response-area');
+            area.textContent = JSON.stringify(data, null, 2);
+            area.className = 'response-area ' + (success ? 'success' : 'error');
+        }
+
+        function showNewsletterResponse(data, success) {
+            const area = document.getElementById('newsletter-response');
+            area.textContent = JSON.stringify(data, null, 2);
+            area.className = 'response-area ' + (success ? 'success' : 'error');
+        }
+
+        async function loadNewsletters() {
+            const container = document.getElementById('newsletter-list');
+            container.innerHTML = '<p style="text-align: center; padding: 20px;"><span class="loading"></span> Carregando...</p>';
+
+            try {
+                const response = await fetch('/newsletter/list');
+                const data = await response.json();
+
+                if (data.success && data.newsletters && data.newsletters.length > 0) {
+                    container.innerHTML = data.newsletters.map(n => `
+                        <div class="group-item">
+                            <div class="group-info">
+                                <div class="group-avatar" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">📰</div>
+                                <div>
+                                    <div class="group-name">${n.name || 'Sem nome'}</div>
+                                    <div class="group-meta">${n.jid}</div>
+                                </div>
+                            </div>
+                            <button class="btn btn-secondary" onclick="copyToClipboard('${n.jid}')">📋 Copiar JID</button>
+                        </div>
+                    `).join('');
+                } else if (data.error) {
+                    container.innerHTML = `<p style="text-align: center; color: #ef4444; padding: 20px;">Erro: ${data.error}</p>`;
+                } else {
+                    container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">Nenhum canal encontrado</p>';
+                }
+            } catch (err) {
+                container.innerHTML = `<p style="text-align: center; color: #ef4444; padding: 20px;">Erro: ${err.message}</p>`;
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('📋 JID copiado!', 'success');
+            }).catch(() => {
+                showToast('Erro ao copiar', 'error');
+            });
+        }
+
+        async function followNewsletter() {
+            const newsletterId = document.getElementById('newsletter-follow-id').value.trim();
+
+            if (!newsletterId) {
+                showToast('Informe o ID do canal!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/newsletter/follow', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ newsletter_id: newsletterId })
+                });
+
+                const data = await response.json();
+                showNewsletterResponse(data, response.ok);
+
+                if (response.ok) {
+                    showToast('✅ Canal seguido com sucesso!', 'success');
+                } else {
+                    showToast('❌ Erro ao seguir canal', 'error');
+                }
+            } catch (err) {
+                showNewsletterResponse({ error: err.message }, false);
+                showToast('Erro: ' + err.message, 'error');
+            }
+        }
+
+        async function unfollowNewsletter() {
+            const newsletterId = document.getElementById('newsletter-unfollow-id').value.trim();
+
+            if (!newsletterId) {
+                showToast('Informe o ID do canal!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/newsletter/unfollow', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ newsletter_id: newsletterId })
+                });
+
+                const data = await response.json();
+                showNewsletterResponse(data, response.ok);
+
+                if (response.ok) {
+                    showToast('✅ Deixou de seguir o canal!', 'success');
+                } else {
+                    showToast('❌ Erro ao deixar de seguir', 'error');
+                }
+            } catch (err) {
+                showNewsletterResponse({ error: err.message }, false);
+                showToast('Erro: ' + err.message, 'error');
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show ' + type;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+
+</html>

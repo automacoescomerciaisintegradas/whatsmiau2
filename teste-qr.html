@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>QR Code Teste</title>
+    <style>
+        body {
+            background: #1a1a2e;
+            color: white;
+            font-family: Arial;
+            text-align: center;
+            padding: 40px;
+        }
+
+        img {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 300px;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 20px;
+        }
+
+        #status {
+            margin: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>📱 Escaneie o QR Code</h1>
+    <div id="qr"></div>
+    <p id="status">Carregando...</p>
+    <button onclick="carregar()">🔄 Atualizar QR Code</button>
+
+    <script>
+        async function carregar() {
+            document.getElementById('status').textContent = 'Carregando QR...';
+            try {
+                const r = await fetch('http://localhost:8081/v1/instance/connect/minha-instancia', {
+                    headers: { 'apikey': '2wtLvtb20wXePp8D9uRhm55aCjINiciO' }
+                });
+                const j = await r.json();
+                console.log(j);
+
+                if (j.state === 'open') {
+                    document.getElementById('qr').innerHTML = '<h2 style="color: #4CAF50;">✓ CONECTADO!</h2>';
+                    document.getElementById('status').textContent = 'WhatsApp conectado!';
+                } else if (j.qrcode && j.qrcode.base64) {
+                    document.getElementById('qr').innerHTML = '<img src="' + j.qrcode.base64 + '" />';
+                    document.getElementById('status').textContent = 'Escaneie agora! (válido por 20 segundos)';
+                } else {
+                    document.getElementById('status').textContent = 'Erro: ' + JSON.stringify(j);
+                }
+            } catch (e) {
+                document.getElementById('status').textContent = 'Erro: ' + e.message;
+            }
+        }
+
+        carregar();
+        setInterval(carregar, 15000); // Atualiza a cada 15 segundos
+    </script>
+</body>
+
+</html>

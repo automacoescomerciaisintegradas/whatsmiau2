@@ -1,0 +1,104 @@
+# Stack Name sugerido: whatsmiau2-api (para evitar conflito)
+# Criar volumes antes do deploy:
+#   docker volume create whatsmiau2_data
+#   docker volume create qrserver_data
+#   docker volume create whatsmiau2_redis_data
+
+version: "3.7"
+
+services:
+
+  whatsmiau2:
+    image: whatsmiau2:latest
+    volumes:
+      - whatsmiau2_data:/app/data
+    ports:
+      - "8085:8081"
+    networks:
+      - network_swarm_public
+    environment:
+      - PORT=8081
+      - DEBUG_MODE=false
+      - DEBUG_WHATSMEOW=false
+      - REDIS_URL=whatsmiau2_redis:6379
+      - REDIS_PASSWORD=
+      - DIALECT_DB=sqlite3
+      - DB_URL=file:/app/data/data.db?_foreign_keys=on
+      - API_KEY=2wtLvtb20wXePp8D9uRhm55aCjINiciO
+      - CONFIG_SESSION_PHONE_VERSION=2.3000.2.2413.51
+      - CONFIG_SESSION_PHONE_CLIENT=Chrome
+      - CONFIG_SESSION_PHONE_NAME=Chrome (Windows)
+      - QRCODE_LIMIT=30
+      - CACHE_REDIS_ENABLED=true
+
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.whatsmiau2.rule=Host(`api.iau2.com.br`)
+        - traefik.http.services.whatsmiau2.loadbalancer.server.port=8081
+        - traefik.http.routers.whatsmiau2.service=whatsmiau2
+        - traefik.http.routers.whatsmiau2.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.whatsmiau2.entrypoints=websecure
+        - traefik.http.routers.whatsmiau2.tls=true
+
+  qrserver:
+    image: qrserver:latest
+    volumes:
+      - qrserver_data:/app/data
+    ports:
+      - "3001:3000"
+    networks:
+      - network_swarm_public
+    environment:
+      - PORT=3000
+      - API_URL=http://whatsmiau2:8081
+
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.qrserver.rule=Host(`qr.iau2.com.br`)
+        - traefik.http.services.qrserver.loadbalancer.server.port=3000
+        - traefik.http.routers.qrserver.service=qrserver
+        - traefik.http.routers.qrserver.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.qrserver.entrypoints=websecure
+        - traefik.http.routers.qrserver.tls=true
+
+  whatsmiau2_redis:
+    image: redis:alpine
+    volumes:
+      - whatsmiau2_redis_data:/data
+    networks:
+      - network_swarm_public
+
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+networks:
+  network_swarm_public:
+    external: true
+    name: network_swarm_public
+
+volumes:
+  whatsmiau2_data:
+    external: true
+    name: whatsmiau2_data
+  qrserver_data:
+    external: true
+    name: qrserver_data
+  whatsmiau2_redis_data:
+    external: true
+    name: whatsmiau2_redis_data

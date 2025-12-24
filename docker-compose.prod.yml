@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # --- Backend API (Go) ---
+  whatsmiau2:
+    build: .
+    container_name: whatsmiau2-prod
+    environment:
+      - PORT=8081
+      - DEBUG_MODE=false
+      - REDIS_URL=redis:6379
+      - DB_URL=file:/app/data/data.db?_foreign_keys=on
+      - API_KEY=2wtLvtb20wXePp8D9uRhm55aCjINiciO
+      - BASIC_AUTH_USERNAME=admin
+      - BASIC_AUTH_PASSWORD=admin123
+      - CACHE_REDIS_ENABLED=true
+    volumes:
+      - whatsmeow-data-prod:/app/data
+    depends_on:
+      - redis
+    restart: always
+    ports:
+      - "8081:8081"
+    # Na rede interna, acessível como 'whatsmiau2:8081'
+
+    # --- Frontend / Proxy (Node.js) ---
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: whatsmiau2-frontend
+    environment:
+      - PORT=3002
+      # Aponta para o container da API internamente
+      - API_URL=http://whatsmiau2:8081/v1
+      - API_KEY=2wtLvtb20wXePp8D9uRhm55aCjINiciO
+    depends_on:
+      - whatsmiau2
+    restart: always
+
+  # --- Reverse Proxy (Nginx) ---
+  nginx:
+    image: nginx:alpine
+    container_name: whatsmiau2-nginx
+    ports:
+      - "80:80"
+      # - "443:443" # Descomente se tiver certificados SSL
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+    restart: always
+
+  # --- Redis ---
+  redis:
+    image: redis:alpine
+    container_name: whatsmiau2-redis-prod
+    volumes:
+      - redis-data-prod:/data
+    restart: always
+
+volumes:
+  redis-data-prod:
+  whatsmeow-data-prod:

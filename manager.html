@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WhatsMiau2 Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <style>
+        /* Design System – copiado do admin_example.html */
+        :root {
+            --primary-main: #0056D2;
+            --primary-light: #4285F4;
+            --primary-dark: #003CA1;
+            --primary-contrast: #FFFFFF;
+            --secondary-main: #6C757D;
+            --secondary-light: #ADB5BD;
+            --secondary-dark: #495057;
+            --bg-default: #F4F6F8;
+            --bg-paper: #FFFFFF;
+            --bg-sidebar: #1C2536;
+            --bg-input: #F9FAFB;
+            --bg-hover: #F9FAFB;
+            --text-primary: #212B36;
+            --text-secondary: #637381;
+            --text-disabled: #919EAB;
+            --status-success: #22C55E;
+            --status-warning: #FFAB00;
+            --status-error: #FF5630;
+            --status-info: #00B8D9;
+            --border-color: rgba(145, 158, 171, 0.24);
+            --border-input: rgba(145, 158, 171, 0.32);
+            --shadow-card: 0px 0px 2px 0px rgba(145, 158, 171, 0.2), 0px 12px 24px -4px rgba(145, 158, 171, 0.12);
+            --shadow-button: 0px 8px 16px rgba(0, 86, 210, 0.24);
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 16px;
+            --radius-full: 9999px;
+            --header-height: 64px;
+            --container-padding: 24px;
+        }
+
+        [data-theme="dark"] {
+            --bg-default: #0A0E27;
+            --bg-paper: #1C2536;
+            --bg-sidebar: #111827;
+            --bg-input: #2D3748;
+            --bg-hover: #374151;
+            --text-primary: #FFFFFF;
+            --text-secondary: #9CA3AF;
+            --text-disabled: #6B7280;
+            --border-color: rgba(255, 255, 255, 0.12);
+            --border-input: rgba(255, 255, 255, 0.24);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-default);
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.57;
+        }
+
+        .header {
+            background: var(--bg-paper);
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--container-padding);
+            box-shadow: var(--shadow-card);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: var(--spacing-md);
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: var(--container-padding);
+        }
+
+        .card {
+            background: var(--bg-paper);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .btn {
+            height: 48px;
+            padding: 0 24px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            transition: all 0.2s;
+        }
+
+        .btn-contained {
+            background: var(--primary-main);
+            color: var(--primary-contrast);
+            box-shadow: var(--shadow-button);
+        }
+
+        .btn-contained:hover {
+            background: var(--primary-dark);
+            box-shadow: 0px 12px 24px rgba(0, 86, 210, 0.32);
+        }
+
+        .btn-outlined {
+            background: transparent;
+            border: 1px solid var(--border-input);
+            color: var(--text-primary);
+        }
+
+        .btn-outlined:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary-main);
+        }
+
+        .btn-danger {
+            background: var(--status-error);
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #E53E3E;
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: var(--spacing-sm);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            height: 56px;
+            padding: 0 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-input);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-main);
+            box-shadow: 0 0 0 2px rgba(0, 86, 210, 0.1);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-lg);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .stat-card {
+            background: var(--bg-paper);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            padding: var(--spacing-lg);
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0px 16px 32px -8px rgba(145, 158, 171, 0.24);
+        }
+
+        .stat-value {
+            font-size: 40px;
+            font-weight: 700;
+            color: var(--primary-main);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-warning {
+            background: rgba(255, 171, 0, 0.12);
+            color: var(--status-warning);
+        }
+
+        .badge-success {
+            background: rgba(34, 197, 94, 0.12);
+            color: var(--status-success);
+        }
+
+        .instance-hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-lg);
+            color: white;
+            box-shadow: 0px 8px 32px rgba(102, 126, 234, 0.35);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .instance-hero::before,
+        .instance-hero::after {
+            content: '';
+            position: absolute;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .instance-hero::before {
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+        }
+
+        .instance-hero::after {
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+        }
+
+        .instance-name-large {
+            font-size: 32px;
+            font-weight: 700;
+            margin: var(--spacing-md) 0;
+            letter-spacing: -0.02em;
+        }
+
+        .instance-details {
+            display: grid;
+            gap: var(--spacing-sm);
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        .instance-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: var(--radius-full);
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.7;
+                transform: scale(1.1);
+            }
+        }
+
+        @media (max-width:1023px) {
+            .container {
+                padding: var(--spacing-md);
+            }
+
+            .header {
+                padding: 0 var(--spacing-md);
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-md);
+            }
+
+            .instance-hero-grid {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-lg);
+            }
+        }
+
+        @media (max-width:767px) {
+            h1 {
+                font-size: 24px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            h3 {
+                font-size: 18px;
+            }
+
+            .container {
+                padding: var(--spacing-sm);
+            }
+
+            .header {
+                height: auto;
+                min-height: var(--header-height);
+                padding: var(--spacing-md);
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--spacing-md);
+            }
+
+            .header-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-md);
+            }
+
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-md);
+            }
+
+            .card {
+                padding: var(--spacing-md);
+            }
+
+            .instance-hero {
+                padding: var(--spacing-lg);
+            }
+
+            .instance-name-large {
+                font-size: 24px;
+            }
+
+            .stat-value {
+                font-size: 32px;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="header-title">
+            <h2 style="margin:0;">🔧 WhatsMiau2 Manager</h2>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-contained" onclick="refreshAll()">🔄 Atualizar Tudo</button>
+            <button class="btn btn-outlined" onclick="toggleTheme()" id="themeBtn">🌙 Tema</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Instance Hero -->
+        <div class="instance-hero">
+            <div class="instance-hero-grid">
+                <div>
+                    <h3 style="color:white;opacity:0.9;margin-bottom:12px;">📱 Instância Atual</h3>
+                    <span class="instance-status-badge" id="statusBadge"><span class="status-dot"></span>
+                        Verificando...</span>
+                    <div class="instance-name-large" id="currentInstanceName">-</div>
+                    <div class="instance-details">
+                        <div><strong>API:</strong> http://localhost:8085/v1</div>
+                        <div><strong>Número:</strong> <span id="currentPhone">-</span></div>
+                    </div>
+                </div>
+                <button class="btn btn-danger" onclick="logoutCurrent()" style="align-self:flex-start;">🔌
+                    Desconectar</button>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="statInstances">-</div>
+                <div class="stat-label">Instâncias</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statGroups">-</div>
+                <div class="stat-label">Grupos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statMessages">-</div>
+                <div class="stat-label">Mensagens</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statStatus">-</div>
+                <div class="stat-label">Status</div>
+            </div>
+        </div>
+
+        <!-- Emparelhamento e Links -->
+        <div class="grid-2">
+            <!-- Pairing Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">🔗 Emparelhar via Código</h3>
+                    <button class="btn btn-contained" onclick="solicitarCodigoPairing()">Obter Código</button>
+                </div>
+                <div id="pairingContainer"
+                    style="display:none; padding:16px; background: rgba(0,0,0,0.05); border-radius: 8px;">
+                    <div style="font-size: 24px; font-weight: 800; color: var(--primary-main); text-align: center; letter-spacing: 4px;"
+                        id="pairingCodeDisplay">-</div>
+                    <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px; text-align: center;">
+                        Digite este código no seu WhatsApp: Conectar Dispositivo > Vincular com número de telefone.</p>
+                </div>
+            </div>
+
+            <!-- Group Invite Link Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📨 Link de Convite</h3>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="inviteGroupId" class="form-input"
+                        placeholder="ID do Grupo (ex.: 120363... @g.us)" />
+                </div>
+                <button class="btn btn-outlined" onclick="obterInviteLink()" style="width:100%">Gerar Link
+                    Admin</button>
+                <div id="inviteResult" style="margin-top:12px; font-size: 13px; font-weight: 500;"></div>
+            </div>
+        </div>
+
+        <!-- Ferramentas -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">🛠️ Ferramentas</h3>
+            </div>
+            <div class="grid-2">
+                <a href="/disparador.html" class="btn btn-contained" style="text-decoration:none;">🚀 Disparador de
+                    Mensagens</a>
+                <a href="/resumo-grupos" class="btn btn-outlined" style="text-decoration:none;">📋 Resumo de Grupos</a>
+                <button class="btn btn-outlined" onclick="openAssistantModal()">🤖 Gerenciar Assistentes</button>
+            </div>
+        </div>
+
+        <!-- Criar Instância -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">➕ Criar Nova Instância</h3>
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Nome da Instância *</label>
+                    <input type="text" id="newInstName" class="form-input" placeholder="minha-loja-01" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Número (Opcional)</label>
+                    <input type="text" id="newInstNumber" class="form-input" placeholder="5588999999999" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Webhook URL (Opcional)</label>
+                    <input type="text" id="newInstWebhook" class="form-input"
+                        placeholder="https://seu-servidor.com/webhook" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Integração</label>
+                    <select id="newInstIntegration" class="form-select">
+                        <option value="WHATSAPP-BAILEYS">Baileys (Padrão)</option>
+                        <option value="WHATSAPP-BUSINESS">WhatsApp Cloud API</option>
+                        <option value="whatsmiau2">whatsmiau2</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Token (Opcional)</label>
+                    <input type="text" id="newInstToken" class="form-input" />
+                </div>
+                <div class="form-group" style="align-self:end;">
+                    <button class="btn btn-contained" onclick="createInstance()">Criar Instância</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api'; // proxy já configurado no server.js
+
+        // -------------------------------------------------
+        // Tema
+        // -------------------------------------------------
+        function toggleTheme() {
+            const html = document.documentElement;
+            if (html.dataset.theme === 'dark') {
+                html.dataset.theme = '';
+                document.getElementById('themeBtn').textContent = '🌙 Tema';
+            } else {
+                html.dataset.theme = 'dark';
+                document.getElementById('themeBtn').textContent = '☀️ Tema';
+            }
+        }
+
+        // -------------------------------------------------
+        // Verifica o status da instância selecionada
+        // -------------------------------------------------
+        async function checkStatus() {
+            const sel = document.getElementById('instance-selector');
+            if (!sel || !sel.value) return;
+            try {
+                const r = await fetch(`${API_BASE}/instance/connectionState/${sel.value}`);
+                if (!r.ok) return;
+                const data = await r.json();
+                const badge = document.getElementById('statusBadge');
+                const isConnected = data.state === 'open' || data.state === 'connected';
+                badge.innerHTML = `<span class="status-dot"></span> ${isConnected ? 'Conectada' : 'Desconectada'}`;
+                badge.className = 'instance-status-badge ' + (isConnected ? 'badge-success' : 'badge-warning');
+                document.getElementById('currentInstanceName').textContent = data.instance || '-';
+            } catch (e) { console.error(e); }
+        }
+
+        // -------------------------------------------------
+        // Atualiza tudo (instâncias, status)
+        // -------------------------------------------------
+        async function refreshAll() {
+            await Promise.all([loadInstances(), checkStatus()]);
+        }
+
+        // -------------------------------------------------
+        // Carrega lista de instâncias e preenche stats
+        // -------------------------------------------------
+        async function loadInstances() {
+            try {
+                const r = await fetch(`${API_BASE}/instance/fetchInstances`);
+                if (!r.ok) throw new Error('Erro ao buscar instâncias');
+                const data = await r.json();
+                const instancesCount = (data && data.length) || 0;
+                document.getElementById('statInstances').textContent = instancesCount;
+                // Preenche selector de instâncias
+                const selector = document.createElement('select');
+                selector.id = 'instance-selector';
+                selector.className = 'form-select';
+                selector.style.width = '250px';
+                selector.style.height = '48px';
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.disabled = true;
+                placeholder.selected = true;
+                placeholder.textContent = 'Selecione...';
+                selector.appendChild(placeholder);
+                if (data && Array.isArray(data)) {
+                    data.forEach(i => {
+                        const opt = document.createElement('option');
+                        opt.value = i.id;
+                        opt.textContent = i.name;
+                        selector.appendChild(opt);
+                    });
+                }
+                const old = document.getElementById('instance-selector');
+                if (old) old.replaceWith(selector);
+                else document.querySelector('.header-actions').appendChild(selector);
+                // Carrega detalhes da primeira instância (se houver)
+                if (data.length) { await loadInstanceDetails(data[0].id); }
+            } catch (e) { alert(e.message); }
+        }
+
+        // -------------------------------------------------
+        // Carrega detalhes da instância selecionada
+        // -------------------------------------------------
+        async function loadInstanceDetails(instId) {
+            try {
+                // Grupos
+                const gRes = await fetch(`${API_BASE}/group/list/${instId}`);
+                const groups = gRes.ok ? await gRes.json() : [];
+                document.getElementById('statGroups').textContent = groups.length;
+                // Mensagens – endpoint fictício /message/count
+                const mRes = await fetch(`${API_BASE}/message/count/${instId}`);
+                const msgs = mRes.ok ? await mRes.json() : { count: 0 };
+                document.getElementById('statMessages').textContent = msgs.count || 0;
+                // Status da instância
+                const sRes = await fetch(`${API_BASE}/instance/connectionState/${instId}`);
+                const status = sRes.ok ? await sRes.json() : { connected: false };
+                document.getElementById('statStatus').textContent = status.connected ? 'Conectada' : 'Desconectada';
+                document.getElementById('currentInstanceName').textContent = status.name || '-';
+                document.getElementById('currentPhone').textContent = status.phone || '-';
+                const badge = document.getElementById('statusBadge');
+                badge.innerHTML = `<span class="status-dot"></span> ${status.connected ? 'Conectada' : 'Desconectada'}`;
+                badge.className = 'instance-status-badge ' + (status.connected ? 'badge-success' : 'badge-warning');
+            } catch (e) { console.error(e); }
+        }
+
+        // -------------------------------------------------
+        // Logout da instância selecionada
+        // -------------------------------------------------
+        async function logoutCurrent() {
+            const sel = document.getElementById('instance-selector');
+            if (!sel || !sel.value) return alert('Selecione uma instância');
+            await fetch(`${API_BASE}/instance/logout/${sel.value}`, { method: 'DELETE' });
+            alert('Instância desconectada');
+            await refreshAll();
+        }
+
+        // -------------------------------------------------
+        // Emparelhamento por Código
+        // -------------------------------------------------
+        async function solicitarCodigoPairing() {
+            const sel = document.getElementById('instance-selector');
+            if (!sel || !sel.value) return alert('Selecione uma instância');
+
+            const phone = prompt("Digite o número de telefone (com DDI e DDD, ex.: 5511999999999):");
+            if (!phone) return;
+
+            const container = document.getElementById('pairingContainer');
+            const display = document.getElementById('pairingCodeDisplay');
+
+            try {
+                const res = await fetch(`${API_BASE}/instance/pairPhone/${sel.value}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phoneNumber: phone.replace(/\D/g, '') })
+                });
+                const data = await res.json();
+                if (data.code) {
+                    display.textContent = data.code.toUpperCase();
+                    container.style.display = 'block';
+                } else {
+                    alert('Erro ao gerar código: ' + (data.message || 'Verifique se a instância está pronta'));
+                }
+            } catch (e) {
+                alert('Erro: ' + e.message);
+            }
+        }
+
+        // -------------------------------------------------
+        // Obter Link de Convite
+        // -------------------------------------------------
+        async function obterInviteLink() {
+            const sel = document.getElementById('instance-selector');
+            if (!sel || !sel.value) return alert('Selecione uma instância');
+
+            const groupId = document.getElementById('inviteGroupId').value.trim();
+            if (!groupId) return alert('Informe o ID do grupo');
+
+            const resDiv = document.getElementById('inviteResult');
+            resDiv.textContent = 'Carregando...';
+            resDiv.style.color = 'var(--text-secondary)';
+
+            try {
+                const r = await fetch(`${API_BASE}/group/invite-link/${sel.value}?group_id=${encodeURIComponent(groupId)}`);
+                const data = await r.json();
+                if (r.ok && data.results && data.results.link) {
+                    resDiv.innerHTML = `Link: <a href="${data.results.link}" target="_blank" style="color:var(--primary-main)">${data.results.link}</a>`;
+                    resDiv.style.color = 'var(--status-success)';
+                } else {
+                    resDiv.textContent = 'Erro: ' + (data.message || 'Verifique se você é admin do grupo');
+                    resDiv.style.color = 'var(--status-error)';
+                }
+            } catch (e) {
+                resDiv.textContent = 'Erro de conexão: ' + e.message;
+                resDiv.style.color = 'var(--status-error)';
+            }
+        }
+
+        // -------------------------------------------------
+        // Gerar QR Code (removido, mantido apenas stub se necessário)
+        // -------------------------------------------------
+        async function generateQR(show = true) {
+            console.warn('generateQR is deprecated. Use Pairing.');
+        }
+
+        // -------------------------------------------------
+        // Criar nova instância
+        // -------------------------------------------------
+        async function createInstance() {
+            const payload = {
+                name: document.getElementById('newInstName').value.trim(),
+                number: document.getElementById('newInstNumber').value.trim(),
+                webhook: document.getElementById('newInstWebhook').value.trim(),
+                integration: document.getElementById('newInstIntegration').value,
+                token: document.getElementById('newInstToken').value.trim()
+            };
+            if (!payload.name) { return alert('Nome da instância é obrigatório'); }
+            const r = await fetch(`${API_BASE}/instance/create`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (r.ok) { alert('Instância criada'); await loadInstances(); }
+            else { alert('Erro ao criar instância'); }
+        }
+
+        // -------------------------------------------------
+        // **Auxiliary Functions** – listGroups, createGroup, sendText
+        // -------------------------------------------------
+        async function listGroups() {
+            const sel = document.getElementById('instance-selector');
+            if (!sel || !sel.value) return alert('Selecione uma instância');
+            const r = await fetch(`${API_BASE}/group/list/${sel.value}`);
+            if (!r.ok) return alert('Erro ao listar grupos');
+            const groups = await r.json();
+            // Exibe em console – pode ser adaptado para modal ou tabela
+            console.table(groups);
+            alert(`Encontrados ${groups.length} grupos. Veja o console para detalhes.`);
+        }
+
+        async function createGroup() {
+            const sel = document.getElementById('instance-selector');
+            if (!sel || !sel.value) return alert('Selecione uma instância');
+            const title = prompt('Título do novo grupo:');
+            if (!title) return alert('Título é obrigatório');
+            const participants = prompt('Participantes (lista separada por vírgula, E.164):');
+            const participantsArr = participants ? participants.split(',').map(p => p.trim()).filter(p => p) : [];
+            const payload = { title, participants: participantsArr };
+            const r = await fetch(`${API_BASE}/group/create/${sel.value}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!r.ok) return alert('Erro ao criar grupo');
+            const data = await r.json();
+            alert(`Grupo criado! JID: ${data.groupJID}`);
+            await listGroups(); // atualiza lista
+        }
+
+        async function sendText() {
+            const sel = document.getElementById('instance-selector');
+            if (!sel || !sel.value) return alert('Selecione uma instância');
+            const to = prompt('Número do destinatário (E.164):');
+            if (!to) return alert('Destinatário é obrigatório');
+            const text = prompt('Texto da mensagem:');
+            if (!text) return alert('Texto é obrigatório');
+            const payload = { to, text };
+            const r = await fetch(`${API_BASE}/send/${sel.value}/text`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!r.ok) return alert('Erro ao enviar mensagem');
+            const data = await r.json();
+            alert('Mensagem enviada com sucesso!');
+        }
+
+        // -------------------------------------------------
+        // Inicializa ao carregar página
+        // -------------------------------------------------
+        window.addEventListener('load', () => { loadInstances(); });
+    </script>
+</body>
+
+</html>

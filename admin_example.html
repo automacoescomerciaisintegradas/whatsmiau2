@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>whatsmiau2 Manager - Painel Administrativo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="assistant-modal.css">
+    <style>
+        /* ============================================
+           whatsmiau2 MANAGER DESIGN SYSTEM
+           Based on Professional SaaS Standards
+           ============================================ */
+
+        :root {
+            /* Primary Colors */
+            --primary-main: #0056D2;
+            --primary-light: #4285F4;
+            --primary-dark: #003CA1;
+            --primary-contrast: #FFFFFF;
+
+            /* Secondary Colors */
+            --secondary-main: #6C757D;
+            --secondary-light: #ADB5BD;
+            --secondary-dark: #495057;
+
+            /* Background */
+            --bg-default: #F4F6F8;
+            --bg-paper: #FFFFFF;
+            --bg-sidebar: #1C2536;
+            --bg-input: #F9FAFB;
+            --bg-hover: #F9FAFB;
+
+            /* Text */
+            --text-primary: #212B36;
+            --text-secondary: #637381;
+            --text-disabled: #919EAB;
+
+            /* Status Colors */
+            --status-success: #22C55E;
+            --status-warning: #FFAB00;
+            --status-error: #FF5630;
+            --status-info: #00B8D9;
+
+            /* Borders */
+            --border-color: rgba(145, 158, 171, 0.24);
+            --border-input: rgba(145, 158, 171, 0.32);
+
+            /* Shadows */
+            --shadow-card: 0px 0px 2px 0px rgba(145, 158, 171, 0.2), 0px 12px 24px -4px rgba(145, 158, 171, 0.12);
+            --shadow-button: 0px 8px 16px rgba(0, 86, 210, 0.24);
+            --shadow-dropdown: 0px 5px 5px -3px rgba(0, 0, 0, 0.2), 0px 8px 10px 1px rgba(0, 0, 0, 0.14), 0px 3px 14px 2px rgba(0, 0, 0, 0.12);
+
+            /* Spacing */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --spacing-xxl: 48px;
+
+            /* Border Radius */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 16px;
+            --radius-full: 9999px;
+
+            /* Layout */
+            --header-height: 64px;
+            --container-padding: 24px;
+        }
+
+        /* Light Theme (Default) */
+        [data-theme="dark"] {
+            --bg-default: #0A0E27;
+            --bg-paper: #1C2536;
+            --bg-sidebar: #111827;
+            --bg-input: #2D3748;
+            --bg-hover: #374151;
+            --text-primary: #FFFFFF;
+            --text-secondary: #9CA3AF;
+            --text-disabled: #6B7280;
+            --border-color: rgba(255, 255, 255, 0.12);
+            --border-input: rgba(255, 255, 255, 0.24);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-default);
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.57;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ============================================
+           TYPOGRAPHY
+           ============================================ */
+
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 600;
+            line-height: 1.33;
+            color: var(--text-primary);
+        }
+
+        h3 {
+            font-size: 20px;
+            font-weight: 600;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+
+        .body1 {
+            font-size: 16px;
+            font-weight: 400;
+            line-height: 1.5;
+        }
+
+        .body2 {
+            font-size: 14px;
+            font-weight: 400;
+            line-height: 1.57;
+        }
+
+        .caption {
+            font-size: 12px;
+            font-weight: 400;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+
+        /* ============================================
+           LAYOUT
+           ============================================ */
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: var(--container-padding);
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-paper);
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--container-padding);
+            box-shadow: var(--shadow-card);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        /* ============================================
+           CARDS
+           ============================================ */
+
+        .card {
+            background: var(--bg-paper);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Instance Hero Card */
+        .instance-hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-lg);
+            color: white;
+            box-shadow: 0px 8px 32px rgba(102, 126, 234, 0.35);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .instance-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .instance-hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .instance-hero-grid {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: var(--spacing-xl);
+            align-items: start;
+        }
+
+        .instance-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: var(--radius-full);
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.7;
+                transform: scale(1.1);
+            }
+        }
+
+        .instance-name-large {
+            font-size: 32px;
+            font-weight: 700;
+            margin: var(--spacing-md) 0;
+            letter-spacing: -0.02em;
+        }
+
+        .instance-details {
+            display: grid;
+            gap: var(--spacing-sm);
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        /* ============================================
+           STATS GRID
+           ============================================ */
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .stat-card {
+            background: var(--bg-paper);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            padding: var(--spacing-lg);
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0px 16px 32px -8px rgba(145, 158, 171, 0.24);
+        }
+
+        .stat-value {
+            font-size: 40px;
+            font-weight: 700;
+            color: var(--primary-main);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* ============================================
+           BUTTONS
+           ============================================ */
+
+        .btn {
+            height: 48px;
+            padding: 0 24px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            white-space: nowrap;
+        }
+
+        .btn-contained {
+            background: var(--primary-main);
+            color: var(--primary-contrast);
+            box-shadow: var(--shadow-button);
+        }
+
+        .btn-contained:hover {
+            background: var(--primary-dark);
+            box-shadow: 0px 12px 24px rgba(0, 86, 210, 0.32);
+        }
+
+        .btn-outlined {
+            background: transparent;
+            border: 1px solid var(--border-input);
+            color: var(--text-primary);
+        }
+
+        .btn-outlined:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary-main);
+        }
+
+        .btn-text {
+            background: transparent;
+            color: var(--primary-main);
+        }
+
+        .btn-text:hover {
+            background: rgba(0, 86, 210, 0.08);
+        }
+
+        .btn-danger {
+            background: var(--status-error);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #E53E3E;
+        }
+
+        .btn-success {
+            background: var(--status-success);
+            color: white;
+        }
+
+        /* ============================================
+           FORM INPUTS
+           ============================================ */
+
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: var(--spacing-sm);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            height: 56px;
+            padding: 0 16px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-input);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            color: var(--text-primary);
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .form-textarea {
+            height: auto;
+            padding: 16px;
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-main);
+            box-shadow: 0 0 0 2px rgba(0, 86, 210, 0.1);
+        }
+
+        /* ============================================
+           BADGES
+           ============================================ */
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(34, 197, 94, 0.12);
+            color: var(--status-success);
+        }
+
+        .badge-warning {
+            background: rgba(255, 171, 0, 0.12);
+            color: var(--status-warning);
+        }
+
+        .badge-error {
+            background: rgba(255, 86, 48, 0.12);
+            color: var(--status-error);
+        }
+
+        .badge-info {
+            background: rgba(0, 184, 217, 0.12);
+            color: var(--status-info);
+        }
+
+        /* ============================================
+           GRID LAYOUTS
+           ============================================ */
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-lg);
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-lg);
+        }
+
+        /* ============================================
+           RESPONSIVE DESIGN
+           ============================================ */
+
+        /* Tablet (768px - 1023px) */
+        @media (max-width: 1023px) {
+            .container {
+                padding: var(--spacing-md);
+            }
+
+            .header {
+                padding: 0 var(--spacing-md);
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .grid-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .instance-hero-grid {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-lg);
+            }
+        }
+
+        /* Mobile (320px - 767px) */
+        @media (max-width: 767px) {
+            h1 {
+                font-size: 24px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            h3 {
+                font-size: 18px;
+            }
+
+            .container {
+                padding: var(--spacing-sm);
+            }
+
+            .header {
+                height: auto;
+                min-height: var(--header-height);
+                padding: var(--spacing-md);
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--spacing-md);
+            }
+
+            .header-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-md);
+            }
+
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-md);
+            }
+
+            .card {
+                padding: var(--spacing-md);
+            }
+
+            .instance-hero {
+                padding: var(--spacing-lg);
+            }
+
+            .instance-name-large {
+                font-size: 24px;
+            }
+
+            .stat-value {
+                font-size: 32px;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* ============================================
+           UTILITIES
+           ============================================ */
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mb-0 {
+            margin-bottom: 0;
+        }
+
+        .mb-sm {
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .mb-md {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .mb-lg {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .mt-0 {
+            margin-top: 0;
+        }
+
+        .mt-sm {
+            margin-top: var(--spacing-sm);
+        }
+
+        .mt-md {
+            margin-top: var(--spacing-md);
+        }
+
+        .mt-lg {
+            margin-top: var(--spacing-lg);
+        }
+
+        /* Assistant Card Styles */
+        .assistant-group-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .assistant-group-icon {
+            font-size: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-title">
+            <h2 style="margin: 0;">🔧 whatsmiau2 Manager</h2>
+        </div>
+        <div class="header-actions">
+            <button onclick="openInstanceSearchModal()" class="btn btn-contained" title="Buscar Instâncias">
+                🔍 Buscar Instâncias
+            </button>
+            <button onclick="openAssistantModal()" class="btn btn-outlined" title="Assistentes de IA">
+                🤖 Assistentes
+            </button>
+            <button onclick="toggleTheme()" class="btn btn-outlined" title="Alternar Tema">
+                <span id="theme-icon">🌙</span>
+            </button>
+            <select id="instance-selector" class="form-select" style="width: 250px; height: 48px;">
+                <option value="" disabled selected>Carregando instâncias...</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Instance Hero Card -->
+        <div class="instance-hero">
+            <div class="instance-hero-grid">
+                <div>
+                    <h3 style="color: white; opacity: 0.9; margin-bottom: 12px;">📱 Instância Atual</h3>
+                    <span id="current-status-badge" class="instance-status-badge">
+                        <span class="status-dot"></span>
+                        Verificando...
+                    </span>
+                    <div class="instance-name instance-name-large">-</div>
+                    <div class="instance-details">
+                        <div><strong>API:</strong> http://localhost:8085/v1</div>
+                        <div><strong>Número:</strong> <span id="current-phone">-</span></div>
+                    </div>
+                </div>
+                <button onclick="logoutAdminInstance()" class="btn btn-danger" style="align-self: flex-start;">
+                    🔌 Desconectar
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-instances">-</div>
+                <div class="stat-label">Instâncias Ativas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-status">-</div>
+                <div class="stat-label">Status</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-groups">-</div>
+                <div class="stat-label">Grupos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-messages">-</div>
+                <div class="stat-label">Mensagens</div>
+            </div>
+        </div>
+
+        <!-- Status Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📊 Status da Conexão</h3>
+                <button class="btn btn-outlined" onclick="checkStatus()">
+                    🔄 Atualizar
+                </button>
+            </div>
+            <div class="grid-2">
+                <div>
+                    <div class="caption mb-sm">Estado da Conexão</div>
+                    <div id="connection-status" class="badge badge-warning">Verificando...</div>
+                </div>
+                <div>
+                    <div class="caption mb-sm">Instância</div>
+                    <div class="body1 instance-name">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Code Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📷 QR Code</h3>
+                <button class="btn btn-contained" onclick="getQRCode()">
+                    Gerar QR Code
+                </button>
+            </div>
+            <div id="qr-display" style="display: none; text-align: center; padding: 24px;">
+                <img id="qr-image" src="" alt="QR Code" style="max-width: 300px; border-radius: 12px;">
+            </div>
+        </div>
+
+        <!-- Ferramentas Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">🛠️ Ferramentas</h3>
+            </div>
+            <div class="grid-2">
+                <a href="/disparador.html" class="btn btn-contained" style="text-decoration: none;">
+                    🚀 Disparador de Mensagens (Grupos/Canais)
+                </a>
+                <a href="/resumo-grupos" class="btn btn-outlined" style="text-decoration: none;">
+                    📋 Resumo de Grupos
+                </a>
+                <button class="btn btn-outlined" onclick="openAssistantModal()">
+                    🤖 Gerenciar Assistentes
+                </button>
+                <button class="btn btn-outlined" onclick="testAssistantResponse()">
+                    🧪 Testar Assistente
+                </button>
+                <button class="btn btn-outlined" onclick="testAtendimentoAssistant()">
+                    🧪 Testar Assistente de Atendimento
+                </button>
+            </div>
+        </div>
+
+        <!-- Create Instance Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">➕ Criar Nova Instância</h3>
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Nome da Instância *</label>
+                    <input type="text" id="new-instance-name" class="form-input" placeholder="minha-loja-01">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Número (Opcional)</label>
+                    <input type="text" id="new-instance-number" class="form-input" placeholder="5588999999999">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Webhook URL (Opcional)</label>
+                    <input type="text" id="new-instance-webhook" class="form-input"
+                        placeholder="https://seu-servidor.com/webhook">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Integração</label>
+                    <select id="new-instance-integration" class="form-select">
+                        <option value="WHATSAPP-BAILEYS">Baileys (Padrão)</option>
+                        <option value="WHATSAPP-BUSINESS">WhatsApp Cloud API</option>
+                        <option value="whatsmiau2">whatsmiau2</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Token (Opcional)</label>
+                    <input type="text" id="new-instance-token" class="form-input"
+                        placeholder="Token personalizado ou deixe vazio para gerar automaticamente">
+                    <small style="color: var(--text-secondary); margin-top: 4px; display: block;">
+                        Se não informado, a whatsmiau2 API gerará automaticamente.
+                    </small>
+                </div>
+            </div>
+            <button class="btn btn-contained" onclick="createInstance()">
+                ✨ Criar Instância
+            </button>
+        </div>
+
+        <!-- Settings Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">⚙️ Configurações da Instância</h3>
+                <button class="btn btn-outlined" onclick="loadSettings()">
+                    🔄 Carregar
+                </button>
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="set-always-online">
+                        <span class="body2">Sempre Online</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="set-read-messages">
+                        <span class="body2">Marcar Mensagens como Lidas</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="set-reject-calls">
+                        <span class="body2">Rejeitar Chamadas</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="set-groups-ignore">
+                        <span class="body2">Ignorar Grupos</span>
+                    </label>
+                </div>
+            </div>
+            <button class="btn btn-contained" onclick="saveSettings()">
+                💾 Salvar Configurações
+            </button>
+        </div>
+
+        <!-- Assistants Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">🤖 Assistentes de IA</h3>
+                <button class="btn btn-outlined" onclick="refreshAssistants()">
+                    🔄 Atualizar
+                </button>
+            </div>
+            <div class="assistant-group-header">
+                <span class="assistant-group-icon">ⓘ</span>
+                <h4>Associação de Assistente por Grupo/Função</h4>
+            </div>
+            <div class="grid-2">
+                <div>
+                    <div class="form-group">
+                        <label class="form-label">Assistente Selecionado</label>
+                        <select id="selected-assistant" class="form-select"
+                            onchange="selectAssistantFromDropdown(this.value)">
+                            <option value="">Selecione um assistente</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <div class="form-group">
+                        <label class="form-label">Grupo/Função</label>
+                        <select id="assistant-group" class="form-select" onchange="changeGroup()">
+                            <option value="suporte">Suporte</option>
+                            <option value="vendas">Vendas</option>
+                            <option value="sdr">Prospecção (SDR)</option>
+                            <option value="automacoes">Automações Comerciais Integradas</option>
+                            <option value="comunidade-automações">Comunidade Automações Comerciais</option>
+                            <option value="produto-automações">Produto Automações Comerciais</option>
+                            <option value="geral">Geral</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Mensagem Padrão para este Grupo/Função</label>
+                <textarea id="assistant-default-message" class="form-textarea"
+                    placeholder="Digite a mensagem padrão que este assistente usará para este grupo/função...">Olá! 👋 Seja bem-vindo(a)! Estou aqui para ajudar com qualquer dúvida sobre nossos serviços de automação comercial. Como posso ajudar você hoje?</textarea>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 16px;">
+                <button class="btn btn-contained" onclick="saveAssistantGroupMapping()">
+                    💾 Salvar Configuração
+                </button>
+                <button class="btn btn-outlined" onclick="testAssistantGroupMessage()">
+                    🧪 Testar Mensagem
+                </button>
+            </div>
+        </div>
+
+        <!-- Logs Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📋 Logs do Sistema</h3>
+                <button class="btn btn-text" onclick="clearLogs()">
+                    🗑️ Limpar
+                </button>
+            </div>
+            <div id="logs-container"
+                style="background: #F4F6F8; border-radius: 8px; padding: 16px; max-height: 300px; overflow-y: auto; font-family: 'Fira Code', monospace; font-size: 12px;">
+                <div style="color: var(--text-secondary);">[--:--:--] Aguardando atividade...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/admin.js"></script>
+    <script src="/assistant-manager.js"></script>
+    <script>
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            document.getElementById('theme-icon').textContent = newTheme === 'light' ? '☀️' : '🌙';
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        if (document.getElementById('theme-icon')) {
+            document.getElementById('theme-icon').textContent = savedTheme === 'light' ? '☀️' : '🌙';
+        }
+
+        // Update current instance card
+        function updateCurrentInstanceCard() {
+            const statusBadge = document.getElementById('current-status-badge');
+            const phoneEl = document.getElementById('current-phone');
+            const nameEls = document.querySelectorAll('.instance-name');
+
+            if (nameEls && window.API_CONFIG) {
+                nameEls.forEach(el => el.textContent = window.API_CONFIG.instance || '-');
+            }
+        }
+
+        // Override checkStatus to also update card
+        const originalCheckStatus = window.checkStatus;
+        if (originalCheckStatus) {
+            window.checkStatus = async function () {
+                await originalCheckStatus();
+                updateCurrentInstanceCard();
+
+                // Update status badge
+                const statusEl = document.getElementById('connection-status');
+                const statusBadge = document.getElementById('current-status-badge');
+                if (statusEl && statusBadge) {
+                    const statusText = statusEl.textContent;
+                    if (statusText.includes('Conectado')) {
+                        statusBadge.innerHTML = '<span class="status-dot"></span> ✅ Conectado';
+                        statusEl.className = 'badge badge-success';
+                    } else if (statusText.includes('Conectando')) {
+                        statusBadge.innerHTML = '<span class="status-dot"></span> 🔄 Conectando...';
+                        statusEl.className = 'badge badge-warning';
+                    } else {
+                        statusBadge.innerHTML = '<span class="status-dot"></span> ❌ Desconectado';
+                        statusEl.className = 'badge badge-error';
+                    }
+                }
+            };
+        }
+
+        // Logout function
+        window.logoutAdminInstance = async function () {
+            if (!window.API_CONFIG || !window.API_CONFIG.instance) {
+                alert('Nenhuma instância selecionada');
+                return;
+            }
+
+            if (!confirm(`Deseja desconectar a instância "${window.API_CONFIG.instance}"?\n\nIsso fará logout do WhatsApp mas manterá a instância ativa.`)) {
+                return;
+            }
+
+            try {
+                await whatsmiau2API(`/instance/logout/${window.API_CONFIG.instance}`, 'DELETE');
+                alert(`✅ Instância "${window.API_CONFIG.instance}" desconectada!`);
+                setTimeout(checkStatus, 2000);
+            } catch (error) {
+                alert('❌ Erro: ' + error.message);
+            }
+        };
+
+        // Assistant Modal Functions
+        window.openAssistantModal = function () {
+            // Clear form fields
+            document.getElementById('assistant-name').value = '';
+            document.getElementById('assistant-description').value = '';
+            document.getElementById('assistant-prompt').value = '';
+
+            // Load assistants into the list
+            const assistantList = document.querySelector('.assistant-list');
+            assistantList.innerHTML = '';
+
+            const assistants = assistantManager.getAssistants();
+            if (assistants.length === 0) {
+                assistantList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🤖</div>
+                        <div class="empty-state-text">Nenhum assistente criado ainda</div>
+                        <div style="font-size: 14px; color: var(--text-secondary);">Crie seu primeiro assistente abaixo</div>
+                    </div>
+                `;
+            } else {
+                assistants.forEach(assistant => {
+                    const assistantElement = document.createElement('div');
+                    assistantElement.className = 'assistant-item';
+                    assistantElement.onclick = function () { selectAssistant(this, assistant.id); };
+                    assistantElement.innerHTML = `
+                        <div class="assistant-item-header">
+                            <div class="assistant-item-icon">${assistant.icon || assistant.name.charAt(0)}</div>
+                            <div class="assistant-item-info">
+                                <div class="assistant-item-name">${assistant.name}</div>
+                                <div class="assistant-item-description">${assistant.description}</div>
+                            </div>
+                        </div>
+                        <div class="assistant-item-actions">
+                            <button class="assistant-item-btn" onclick="editAssistant('${assistant.id}'); event.stopPropagation();" title="Editar">
+                                ✏️
+                            </button>
+                            <button class="assistant-item-btn" onclick="deleteAssistant('${assistant.id}'); event.stopPropagation();" title="Excluir">
+                                🗑️
+                            </button>
+                        </div>
+                    `;
+                    assistantList.appendChild(assistantElement);
+                });
+            }
+
+            document.getElementById('assistant-modal-overlay').style.display = 'flex';
+        };
+
+        window.closeAssistantModal = function () {
+            document.getElementById('assistant-modal-overlay').style.display = 'none';
+        };
+
+        window.selectAssistant = function (element, id) {
+            // Remove selected class from all assistants
+            document.querySelectorAll('.assistant-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+
+            // Add selected class to clicked assistant
+            element.classList.add('selected');
+
+            // Select assistant in manager
+            assistantManager.selectAssistant(id);
+        };
+
+        window.editAssistant = function (id) {
+            const assistant = assistantManager.getAssistantById(id);
+            if (assistant) {
+                document.getElementById('assistant-name').value = assistant.name;
+                document.getElementById('assistant-description').value = assistant.description;
+                document.getElementById('assistant-prompt').value = assistant.prompt;
+            }
+        };
+
+        window.deleteAssistant = function (id) {
+            if (confirm('Tem certeza que deseja excluir este assistente?')) {
+                assistantManager.deleteAssistant(id);
+                // Refresh the modal
+                openAssistantModal();
+            }
+        };
+
+        window.saveAssistant = function () {
+            const name = document.getElementById('assistant-name').value;
+            const description = document.getElementById('assistant-description').value;
+            const prompt = document.getElementById('assistant-prompt').value;
+
+            if (!name) {
+                alert('Por favor, informe o nome do assistente.');
+                return;
+            }
+
+            if (!prompt) {
+                alert('Por favor, informe o prompt do assistente.');
+                return;
+            }
+
+            const assistant = {
+                name: name,
+                description: description,
+                prompt: prompt,
+                icon: name.charAt(0).toUpperCase()
+            };
+
+            assistantManager.addAssistant(assistant);
+
+            // Refresh the modal
+            openAssistantModal();
+
+            // Clear form
+            document.getElementById('assistant-name').value = '';
+            document.getElementById('assistant-description').value = '';
+            document.getElementById('assistant-prompt').value = '';
+
+            alert(`Assistente "${name}" salvo com sucesso!`);
+        };
+
+        // Assistant Group Mapping Functions
+        window.refreshAssistants = function () {
+            const assistantSelect = document.getElementById('selected-assistant');
+            assistantSelect.innerHTML = '<option value="">Selecione um assistente</option>';
+
+            const assistants = assistantManager.getAssistants();
+            assistants.forEach(assistant => {
+                const option = document.createElement('option');
+                option.value = assistant.id;
+                option.textContent = assistant.name;
+                assistantSelect.appendChild(option);
+            });
+        };
+
+        window.selectAssistantFromDropdown = function (assistantId) {
+            if (assistantId) {
+                assistantManager.selectAssistant(assistantId);
+                // Load saved group mapping if exists
+                const groupId = document.getElementById('assistant-group').value;
+                loadAssistantGroupMapping(assistantId, groupId);
+            }
+        };
+
+        window.changeGroup = function () {
+            const assistantId = document.getElementById('selected-assistant').value;
+            const groupId = document.getElementById('assistant-group').value;
+
+            if (assistantId) {
+                loadAssistantGroupMapping(assistantId, groupId);
+            }
+        };
+
+        window.loadAssistantGroupMapping = function (assistantId, groupId) {
+            const mapping = assistantManager.getGroupMapping(groupId);
+            if (mapping && mapping.assistantId === assistantId) {
+                document.getElementById('assistant-default-message').value = mapping.defaultMessage || '';
+            } else {
+                // Load default message for this group if it exists
+                const defaultMessage = assistantManager.getDefaultMessageForGroup(groupId);
+                if (defaultMessage) {
+                    document.getElementById('assistant-default-message').value = defaultMessage;
+                } else {
+                    // Set a generic default message
+                    document.getElementById('assistant-default-message').value = 'Olá! 👋 Seja bem-vindo(a)! Estou aqui para ajudar com qualquer dúvida sobre nossos serviços de automação comercial. Como posso ajudar você hoje?';
+                }
+            }
+        };
+
+        window.saveAssistantGroupMapping = function () {
+            const assistantId = document.getElementById('selected-assistant').value;
+            const groupId = document.getElementById('assistant-group').value;
+            const defaultMessage = document.getElementById('assistant-default-message').value;
+
+            if (!assistantId) {
+                alert('Por favor, selecione um assistente.');
+                return;
+            }
+
+            assistantManager.setGroupMapping(groupId, assistantId, defaultMessage);
+            alert(`Configuração salva!\nAssistente: ${assistantId}\nGrupo: ${groupId}\nMensagem padrão atualizada.`);
+        };
+
+        window.testAssistantGroupMessage = function () {
+            const defaultMessage = document.getElementById('assistant-default-message').value;
+            alert(`Mensagem de teste:\n\n${defaultMessage}`);
+        };
+
+        // Initialize assistants dropdown when page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            refreshAssistants();
+
+            // Add event listener to group dropdown
+            document.getElementById('assistant-group').addEventListener('change', changeGroup);
+        });
+    </script>
+
+    <!-- Assistant Modal -->
+    <div id="assistant-modal-overlay" class="assistant-modal-overlay">
+        <div class="assistant-modal">
+            <div class="assistant-modal-header">
+                <h3 class="assistant-modal-title">Assistentes de IA</h3>
+                <button class="assistant-modal-close" onclick="closeAssistantModal()">&times;</button>
+            </div>
+
+            <div class="assistant-modal-content">
+                <div class="assistant-list">
+                    <div class="assistant-item selected" onclick="selectAssistant(this)">
+                        <div class="assistant-item-header">
+                            <div class="assistant-item-icon">A</div>
+                            <div class="assistant-item-info">
+                                <div class="assistant-item-name">Agente de Atendimento</div>
+                                <div class="assistant-item-description">Assistente para atendimento ao cliente e suporte
+                                </div>
+                            </div>
+                        </div>
+                        <div class="assistant-item-actions">
+                            <button class="assistant-item-btn" onclick="editAssistant('atendimento')" title="Editar">
+                                ✏️
+                            </button>
+                            <button class="assistant-item-btn" onclick="deleteAssistant('atendimento')" title="Excluir">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="assistant-item" onclick="selectAssistant(this)">
+                        <div class="assistant-item-header">
+                            <div class="assistant-item-icon">S</div>
+                            <div class="assistant-item-info">
+                                <div class="assistant-item-name">Agente SDR</div>
+                                <div class="assistant-item-description">Assistente para prospecção e geração de leads
+                                </div>
+                            </div>
+                        </div>
+                        <div class="assistant-item-actions">
+                            <button class="assistant-item-btn" onclick="editAssistant('sdr')" title="Editar">
+                                ✏️
+                            </button>
+                            <button class="assistant-item-btn" onclick="deleteAssistant('sdr')" title="Excluir">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="assistant-item" onclick="selectAssistant(this)">
+                        <div class="assistant-item-header">
+                            <div class="assistant-item-icon">V</div>
+                            <div class="assistant-item-info">
+                                <div class="assistant-item-name">Agente de Vendas</div>
+                                <div class="assistant-item-description">Assistente especializado em vendas e conversões
+                                </div>
+                            </div>
+                        </div>
+                        <div class="assistant-item-actions">
+                            <button class="assistant-item-btn" onclick="editAssistant('vendas')" title="Editar">
+                                ✏️
+                            </button>
+                            <button class="assistant-item-btn" onclick="deleteAssistant('vendas')" title="Excluir">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="create-assistant-section">
+                    <h4>Criar Novo Assistente</h4>
+                    <div class="create-assistant-form">
+                        <div class="form-group">
+                            <label class="form-label">Nome do Assistente</label>
+                            <input type="text" id="assistant-name" class="form-input"
+                                placeholder="Ex: Assistente de Suporte">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Descrição</label>
+                            <textarea id="assistant-description" class="form-textarea"
+                                placeholder="Descreva a função deste assistente..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Prompt do Assistente</label>
+                            <textarea id="assistant-prompt" class="form-textarea"
+                                placeholder="Você é um agente de atendimento para a agência de IA e automações Automações Comerciais Integradas..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="assistant-modal-footer">
+                <button class="btn btn-secondary" onclick="closeAssistantModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveAssistant()">Salvar Assistente</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Busca de Instâncias -->
+    <div id="instance-search-modal" class="assistant-modal-overlay" style="display: none;">
+        <div class="assistant-modal" style="max-width: 700px;">
+            <div class="assistant-modal-header"
+                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px 16px 0 0;">
+                <h3 class="assistant-modal-title" style="color: white;">
+                    🔍 Buscar Instâncias
+                </h3>
+                <button class="assistant-modal-close" onclick="closeInstanceSearchModal()"
+                    style="color: white; background: rgba(255,255,255,0.2);">&times;</button>
+            </div>
+
+            <div class="assistant-modal-content" style="padding: 24px;">
+                <!-- Configuração da API -->
+                <div style="background: var(--bg-input); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                        <span>🔑</span> Configuração da whatsmiau2 API
+                    </h4>
+
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label">URL Base da API *</label>
+                        <input type="text" id="search-api-url" class="form-input"
+                            value="https://whatsmiau2.automacoescomerciais.com.br"
+                            placeholder="https://sua-whatsmiau2-api.com.br">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label">API Key (Global) *</label>
+                        <div style="position: relative;">
+                            <input type="password" id="search-api-key" class="form-input"
+                                placeholder="Sua API Key global..." style="padding-right: 50px;">
+                            <button type="button" onclick="toggleApiKeyVisibility()"
+                                style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px;">
+                                👁️
+                            </button>
+                        </div>
+                        <small style="color: var(--text-secondary); margin-top: 4px; display: block;">
+                            Use a API Key Global configurada no painel da whatsmiau2 API
+                        </small>
+                    </div>
+
+                    <button class="btn btn-contained" onclick="searchInstances()" style="width: 100%;">
+                        🔍 Buscar Instâncias
+                    </button>
+                </div>
+
+                <!-- Status da Busca -->
+                <div id="search-status" style="display: none; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                </div>
+
+                <!-- Lista de Instâncias Encontradas -->
+                <div id="instances-results" style="display: none;">
+                    <h4 style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                        <span>📱</span> Instâncias Encontradas
+                        <span id="instances-count" class="badge badge-info" style="margin-left: auto;">0</span>
+                    </h4>
+
+                    <div id="instances-list"
+                        style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 12px;">
+                        <!-- Instâncias serão inseridas aqui -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="assistant-modal-footer" style="border-top: 1px solid var(--border-color); padding: 16px 24px;">
+                <button class="btn btn-outlined" onclick="closeInstanceSearchModal()">Fechar</button>
+                <button class="btn btn-contained" id="btn-use-instance" onclick="useSelectedInstance()" disabled>
+                    ✅ Usar Instância Selecionada
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Estilos para os itens de instância no modal */
+        .instance-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .instance-item:last-child {
+            border-bottom: none;
+        }
+
+        .instance-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .instance-item.selected {
+            background: rgba(0, 86, 210, 0.08);
+            border-left: 3px solid var(--primary-main);
+        }
+
+        .instance-item-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-right: 16px;
+        }
+
+        .instance-item-icon.connected {
+            background: rgba(34, 197, 94, 0.15);
+        }
+
+        .instance-item-icon.disconnected {
+            background: rgba(255, 86, 48, 0.15);
+        }
+
+        .instance-item-icon.connecting {
+            background: rgba(255, 171, 0, 0.15);
+        }
+
+        .instance-item-info {
+            flex: 1;
+        }
+
+        .instance-item-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .instance-item-details {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .instance-item-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-indicator.connected {
+            background: var(--status-success);
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+        }
+
+        .status-indicator.disconnected {
+            background: var(--status-error);
+        }
+
+        .status-indicator.connecting {
+            background: var(--status-warning);
+            animation: pulse 1.5s infinite;
+        }
+
+        .instance-item-radio {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-input);
+            border-radius: 50%;
+            margin-left: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .instance-item.selected .instance-item-radio {
+            border-color: var(--primary-main);
+            background: var(--primary-main);
+        }
+
+        .instance-item.selected .instance-item-radio::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .empty-instances {
+            padding: 40px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .empty-instances-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+    </style>
+
+    <script>
+        // Variável para armazenar a instância selecionada no modal
+        let selectedSearchInstance = null;
+        let searchApiConfig = {
+            baseUrl: 'https://whatsmiau2.automacoescomerciais.com.br',
+            apiKey: ''
+        };
+
+        // Abrir modal de busca de instâncias
+        window.openInstanceSearchModal = function () {
+            document.getElementById('instance-search-modal').style.display = 'flex';
+
+            // Carregar valores salvos se existirem
+            const savedUrl = localStorage.getItem('whatsmiau2_api_url');
+            const savedKey = localStorage.getItem('whatsmiau2_api_key');
+
+            if (savedUrl) {
+                document.getElementById('search-api-url').value = savedUrl;
+            }
+            if (savedKey) {
+                document.getElementById('search-api-key').value = savedKey;
+            }
+        };
+
+        // Fechar modal de busca de instâncias
+        window.closeInstanceSearchModal = function () {
+            document.getElementById('instance-search-modal').style.display = 'none';
+            selectedSearchInstance = null;
+            document.getElementById('btn-use-instance').disabled = true;
+        };
+
+        // Alternar visibilidade da API Key
+        window.toggleApiKeyVisibility = function () {
+            const input = document.getElementById('search-api-key');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        };
+
+        // Buscar instâncias
+        window.searchInstances = async function () {
+            const baseUrl = document.getElementById('search-api-url').value.trim();
+            const apiKey = document.getElementById('search-api-key').value.trim();
+            const statusEl = document.getElementById('search-status');
+            const resultsEl = document.getElementById('instances-results');
+            const listEl = document.getElementById('instances-list');
+
+            if (!baseUrl || !apiKey) {
+                showSearchStatus('error', '⚠️ Preencha a URL e a API Key');
+                return;
+            }
+
+            // Salvar configurações no localStorage
+            localStorage.setItem('whatsmiau2_api_url', baseUrl);
+            localStorage.setItem('whatsmiau2_api_key', apiKey);
+
+            searchApiConfig = { baseUrl, apiKey };
+
+            showSearchStatus('info', '🔄 Buscando instâncias...');
+            resultsEl.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/admin/search-instances', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ baseUrl, apiKey })
+                });
+
+                const json = await response.json();
+
+                if (!json.success) {
+                    throw new Error(json.error || 'Erro desconhecido');
+                }
+
+                const instances = json.data;
+
+                // Processar lista de instâncias
+                let instanceList = instances;
+                if (!Array.isArray(instances)) {
+                    if (instances.instances && Array.isArray(instances.instances)) {
+                        instanceList = instances.instances;
+                    } else if (instances.data && Array.isArray(instances.data)) {
+                        instanceList = instances.data;
+                    } else {
+                        instanceList = [];
+                    }
+                }
+
+                if (instanceList.length === 0) {
+                    showSearchStatus('warning', '⚠️ Nenhuma instância encontrada nesta API');
+                    resultsEl.style.display = 'none';
+                    return;
+                }
+
+                // Renderizar instâncias
+                listEl.innerHTML = '';
+                instanceList.forEach((item, index) => {
+                    const inst = item.instance || item;
+                    const name = inst.instanceName || inst.name || inst.instanceId || 'Sem nome';
+                    const status = inst.status || inst.state || inst.connectionStatus || 'unknown';
+                    const owner = inst.owner || inst.number || '-';
+                    const integration = inst.integration || 'WHATSAPP-BAILEYS';
+
+                    const statusClass = status === 'open' ? 'connected' :
+                        status === 'connecting' ? 'connecting' : 'disconnected';
+                    const statusText = status === 'open' ? 'Conectado' :
+                        status === 'connecting' ? 'Conectando...' : 'Desconectado';
+                    const statusIcon = status === 'open' ? '✅' :
+                        status === 'connecting' ? '🔄' : '❌';
+
+                    const instanceEl = document.createElement('div');
+                    instanceEl.className = 'instance-item';
+                    instanceEl.dataset.name = name;
+                    instanceEl.dataset.status = status;
+                    instanceEl.onclick = () => selectSearchInstance(instanceEl, name);
+
+                    instanceEl.innerHTML = `
+                        <div class="instance-item-icon ${statusClass}">
+                            📱
+                        </div>
+                        <div class="instance-item-info">
+                            <div class="instance-item-name">${name}</div>
+                            <div class="instance-item-details">
+                                <div class="instance-item-status">
+                                    <span class="status-indicator ${statusClass}"></span>
+                                    ${statusText}
+                                </div>
+                                <span>📞 ${owner}</span>
+                                <span>🔧 ${integration}</span>
+                            </div>
+                        </div>
+                        <div class="instance-item-radio"></div>
+                    `;
+
+                    listEl.appendChild(instanceEl);
+                });
+
+                document.getElementById('instances-count').textContent = instanceList.length;
+                resultsEl.style.display = 'block';
+                showSearchStatus('success', `✅ ${instanceList.length} instância(s) encontrada(s)!`);
+
+            } catch (error) {
+                console.error('[Search Instances Error]', error);
+                showSearchStatus('error', `❌ Erro: ${error.message}`);
+                resultsEl.style.display = 'none';
+            }
+        };
+
+        // Mostrar status da busca
+        function showSearchStatus(type, message) {
+            const statusEl = document.getElementById('search-status');
+            const colors = {
+                success: { bg: 'rgba(34, 197, 94, 0.15)', border: 'rgba(34, 197, 94, 0.3)', text: '#22c55e' },
+                error: { bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.3)', text: '#ef4444' },
+                warning: { bg: 'rgba(255, 171, 0, 0.15)', border: 'rgba(255, 171, 0, 0.3)', text: '#f59e0b' },
+                info: { bg: 'rgba(99, 102, 241, 0.15)', border: 'rgba(99, 102, 241, 0.3)', text: '#6366f1' }
+            };
+
+            const c = colors[type] || colors.info;
+            statusEl.style.cssText = `display: block; background: ${c.bg}; border: 1px solid ${c.border}; color: ${c.text}; padding: 16px; border-radius: 8px;`;
+            statusEl.textContent = message;
+        }
+
+        // Selecionar instância na busca
+        function selectSearchInstance(element, name) {
+            // Remove seleção anterior
+            document.querySelectorAll('.instance-item').forEach(el => el.classList.remove('selected'));
+
+            // Adiciona seleção ao item clicado
+            element.classList.add('selected');
+            selectedSearchInstance = name;
+
+            // Habilita botão de usar
+            document.getElementById('btn-use-instance').disabled = false;
+        }
+
+        // Usar instância selecionada
+        window.useSelectedInstance = async function () {
+            if (!selectedSearchInstance) {
+                alert('Selecione uma instância primeiro');
+                return;
+            }
+
+            try {
+                // Atualizar configuração no backend
+                const response = await fetch('/api/admin/update-config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        baseUrl: searchApiConfig.baseUrl,
+                        apiKey: searchApiConfig.apiKey,
+                        instance: selectedSearchInstance
+                    })
+                });
+
+                const json = await response.json();
+
+                if (!json.success) {
+                    throw new Error(json.error || 'Erro ao atualizar configuração');
+                }
+
+                // Atualizar configuração local
+                if (window.API_CONFIG) {
+                    window.API_CONFIG.instance = selectedSearchInstance;
+                }
+
+                // Fechar modal
+                closeInstanceSearchModal();
+
+                // Recarregar instâncias e status
+                alert(`✅ Configuração atualizada!\n\nInstância: ${selectedSearchInstance}\nAPI: ${searchApiConfig.baseUrl}`);
+
+                // Recarregar a página para aplicar as novas configurações
+                location.reload();
+
+            } catch (error) {
+                alert('❌ Erro: ' + error.message);
+            }
+        };
+    </script>
+</body>
+
+</html>

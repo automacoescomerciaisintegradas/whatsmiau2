@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # --- Backend API (Go) ---
+  api:
+    image: whatsmiau2-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: whatsmiau2-api
+    environment:
+      - PORT=8081
+      - DEBUG_MODE=false
+      - REDIS_URL=redis:6379
+      - DB_URL=file:/app/data/data.db?_foreign_keys=on
+      - API_KEY=2wtLvtb20wXePp8D9uRhm55aCjINiciO
+      - CACHE_REDIS_ENABLED=true
+    volumes:
+      - whatsmeow-data:/app/data
+    depends_on:
+      - redis
+    restart: always
+    networks:
+      - whatsmiau2-net
+
+  # --- Frontend / Proxy (Node.js) ---
+  frontend:
+    image: whatsmiau2-frontend
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: whatsmiau2-frontend
+    environment:
+      - PORT=3002
+      # Aponta para o serviço 'api' na porta 8081
+      - API_URL=http://api:8081/v1
+      - API_KEY=2wtLvtb20wXePp8D9uRhm55aCjINiciO
+      - INSTANCE_NAME=minha-instancia
+    depends_on:
+      - api
+    restart: always
+    networks:
+      - whatsmiau2-net
+    # --- Traefik Labels (Exemplo Genérico / Portainer) ---
+    # No EasyPanel, geralmente você configura o domínio na UI, 
+    # mas se for Portainer puro com Traefik, use isto:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whatsmiau2.rule=Host(`iau2.com.br`)"
+      - "traefik.http.routers.whatsmiau2.entrypoints=websecure"
+      - "traefik.http.routers.whatsmiau2.tls.certresolver=myresolver"
+      - "traefik.http.services.whatsmiau2.loadbalancer.server.port=3002"
+
+  # --- Redis ---
+  redis:
+    image: redis:alpine
+    container_name: whatsmiau2-redis
+    volumes:
+      - redis-data:/data
+    restart: always
+    networks:
+      - whatsmiau2-net
+
+volumes:
+  redis-data:
+  whatsmeow-data:
+
+
+networks:
+  whatsmiau2-net:
+    driver: bridge

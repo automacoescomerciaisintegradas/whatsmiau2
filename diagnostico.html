@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Diagnóstico de Conexão - WhatsMiau2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 24px;
+      color: #22c55e;
+    }
+
+    .card {
+      background: rgba(2, 6, 23, 0.9);
+      padding: 24px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    h2 {
+      color: #22c55e;
+      margin-bottom: 16px;
+      font-size: 1.2rem;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .label {
+      color: #94a3b8;
+    }
+
+    .value {
+      font-weight: bold;
+    }
+
+    .value.connected {
+      color: #22c55e;
+    }
+
+    .value.disconnected {
+      color: #ef4444;
+    }
+
+    .value.warning {
+      color: #f59e0b;
+    }
+
+    .btn {
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.3s;
+      font-weight: 500;
+      margin: 5px;
+    }
+
+    .btn-primary {
+      background: #22c55e;
+      color: white;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-warning {
+      background: #f59e0b;
+      color: white;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      opacity: 0.9;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .log-area {
+      background: #0a0e1a;
+      border-radius: 8px;
+      padding: 16px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: 'Consolas', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    .log-entry {
+      padding: 4px 0;
+    }
+
+    .log-entry.success {
+      color: #22c55e;
+    }
+
+    .log-entry.error {
+      color: #ef4444;
+    }
+
+    .log-entry.info {
+      color: #3b82f6;
+    }
+
+    .log-entry.warning {
+      color: #f59e0b;
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+    }
+
+    .input-group label {
+      display: block;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🔧 Diagnóstico de Conexão</h1>
+
+    <div class="card">
+      <h2>📊 Status Atual</h2>
+      <div class="info-row">
+        <span class="label">Estado da API:</span>
+        <span class="value" id="api-status">Verificando...</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Estado da Conexão:</span>
+        <span class="value" id="connection-status">Verificando...</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Instância:</span>
+        <span class="value" id="instance-name">-</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Tem QR Code:</span>
+        <span class="value" id="has-qrcode">-</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🔧 Configuração</h2>
+      <div class="input-group">
+        <label>URL Base da API</label>
+        <input type="text" id="api-url" value="http://localhost:8085" />
+      </div>
+      <div class="input-group">
+        <label>API Key</label>
+        <input type="text" id="api-key" value="2wtLvtb20wXePp8D9uRhm55aCjINiciO" />
+      </div>
+      <div class="input-group">
+        <label>Nome da Instância</label>
+        <input type="text" id="instance-name-input" value="minha-instancia" />
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>⚡ Ações de Diagnóstico</h2>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="verificarStatus()">🔍 Verificar Status</button>
+        <button class="btn btn-primary" onclick="testarConexao()">🔗 Testar Conexão</button>
+        <button class="btn btn-warning" onclick="forcarReconexao()">⚠️ Forçar Reconexão</button>
+        <button class="btn btn-danger" onclick="limparSessao()">🗑️ Limpar Sessão (Logout)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📜 Log de Eventos</h2>
+      <div class="log-area" id="log-area">
+        <div class="log-entry info">Sistema iniciado. Clique em "Verificar Status" para começar.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function getConfig() {
+      return {
+        apiUrl: document.getElementById('api-url').value,
+        apiKey: document.getElementById('api-key').value,
+        instanceName: document.getElementById('instance-name-input').value
+      };
+    }
+
+    function addLog(message, type = 'info') {
+      const logArea = document.getElementById('log-area');
+      const timestamp = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${timestamp}] ${message}`;
+      logArea.appendChild(entry);
+      logArea.scrollTop = logArea.scrollHeight;
+    }
+
+    async function verificarStatus() {
+      const config = getConfig();
+      addLog('Verificando status da API...', 'info');
+
+      try {
+        // Test health endpoint
+        const healthRes = await fetch(`${config.apiUrl}/health`);
+        const healthOk = healthRes.ok;
+
+        document.getElementById('api-status').textContent = healthOk ? 'Online ✓' : 'Offline ✗';
+        document.getElementById('api-status').className = `value ${healthOk ? 'connected' : 'disconnected'}`;
+
+        addLog(healthOk ? 'API está online!' : 'API está offline!', healthOk ? 'success' : 'error');
+
+        // Test connection state
+        const stateRes = await fetch(`${config.apiUrl}/v1/instance/connectionState/${config.instanceName}`, {
+          headers: { 'apikey': config.apiKey }
+        });
+        const stateData = await stateRes.json();
+
+        addLog(`Estado da instância: ${JSON.stringify(stateData)}`, 'info');
+
+        const isConnected = stateData.state === 'open' || stateData.state === 'connected';
+        document.getElementById('connection-status').textContent = stateData.state || 'Desconhecido';
+        document.getElementById('connection-status').className = `value ${isConnected ? 'connected' : 'disconnected'}`;
+        document.getElementById('instance-name').textContent = stateData.instance || config.instanceName;
+
+      } catch (err) {
+        addLog(`Erro ao verificar status: ${err.message}`, 'error');
+        document.getElementById('api-status').textContent = 'Erro ✗';
+        document.getElementById('api-status').className = 'value disconnected';
+      }
+    }
+
+    async function testarConexao() {
+      const config = getConfig();
+      addLog('Tentando conectar...', 'info');
+
+      try {
+        const res = await fetch(`${config.apiUrl}/v1/instance/connect/${config.instanceName}`, {
+          headers: { 'apikey': config.apiKey }
+        });
+        const data = await res.json();
+
+        addLog(`Resposta da conexão: ${JSON.stringify(data)}`, 'info');
+
+        if (data.qrcode) {
+          document.getElementById('has-qrcode').textContent = 'Sim ✓';
+          document.getElementById('has-qrcode').className = 'value connected';
+          addLog('QR Code gerado! Escaneie com seu WhatsApp.', 'success');
+
+          // Open QR code page
+          window.open('qrcode.html', '_blank');
+        } else if (data.state === 'open') {
+          addLog('Já está conectado!', 'success');
+          document.getElementById('connection-status').textContent = 'Conectado';
+          document.getElementById('connection-status').className = 'value connected';
+        } else {
+          addLog(`Estado: ${data.state}`, 'warning');
+        }
+
+      } catch (err) {
+        addLog(`Erro ao conectar: ${err.message}`, 'error');
+      }
+    }
+
+    async function forcarReconexao() {
+      const config = getConfig();
+      addLog('Forçando reconexão...', 'warning');
+
+      // First logout
+      await limparSessao();
+
+      // Wait a bit
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Then reconnect
+      addLog('Aguardando 3 segundos antes de reconectar...', 'info');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      await testarConexao();
+    }
+
+    async function limparSessao() {
+      const config = getConfig();
+      addLog('Limpando sessão (logout)...', 'warning');
+
+      try {
+        const res = await fetch(`${config.apiUrl}/v1/instance/logout/${config.instanceName}`, {
+          method: 'DELETE',
+          headers: { 'apikey': config.apiKey }
+        });
+        const data = await res.json();
+
+        addLog(`Resposta do logout: ${JSON.stringify(data)}`, 'info');
+
+        if (data.state === 'close' || data.message?.includes('success')) {
+          addLog('Sessão limpa com sucesso! A conexão foi removida.', 'success');
+          document.getElementById('connection-status').textContent = 'Desconectado';
+          document.getElementById('connection-status').className = 'value disconnected';
+        }
+
+      } catch (err) {
+        addLog(`Erro ao limpar sessão: ${err.message}`, 'error');
+      }
+    }
+
+    // Auto-check on load
+    setTimeout(verificarStatus, 500);
+  </script>
+</body>
+
+</html>

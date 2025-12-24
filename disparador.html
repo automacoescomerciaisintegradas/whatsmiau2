@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📤 Disparador de Mensagens v2.1 - WhatsMiau2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #22c55e, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #94a3b8;
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .btn-danger.recording {
+            animation: recording-pulse 1s infinite;
+        }
+
+        @keyframes recording-pulse {
+
+            0%,
+            100% {
+                background: linear-gradient(135deg, #ef4444, #dc2626);
+            }
+
+            50% {
+                background: linear-gradient(135deg, #dc2626, #b91c1c);
+            }
+        }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+        }
+
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        select.form-control {
+            cursor: pointer;
+        }
+
+        /* Numbers List */
+        .numbers-area {
+            min-height: 200px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.85rem;
+        }
+
+        .numbers-count {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .numbers-count span {
+            color: #94a3b8;
+        }
+
+        .numbers-count strong {
+            color: #22c55e;
+            font-size: 1.2rem;
+        }
+
+        /* Progress */
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #22c55e, #10b981);
+            border-radius: 4px;
+            transition: width 0.3s;
+            width: 0%;
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .progress-stats .success {
+            color: #22c55e;
+        }
+
+        .progress-stats .error {
+            color: #ef4444;
+        }
+
+        /* Log */
+        .log-container {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.8rem;
+        }
+
+        .log-entry {
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .log-entry.success {
+            color: #22c55e;
+        }
+
+        .log-entry.error {
+            color: #ef4444;
+        }
+
+        .log-entry.info {
+            color: #3b82f6;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-idle {
+            background: rgba(100, 116, 139, 0.2);
+            color: #94a3b8;
+        }
+
+        .status-running {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-paused {
+            background: rgba(234, 179, 8, 0.2);
+            color: #eab308;
+        }
+
+        .status-done {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        /* Settings */
+        .settings-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .settings-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        /* Media Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tab.active {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: #22c55e;
+            color: #22c55e;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* File Input */
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .file-input-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 40px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #94a3b8;
+            transition: all 0.2s;
+        }
+
+        .file-input-wrapper:hover .file-input-btn {
+            border-color: #22c55e;
+            color: #22c55e;
+        }
+
+        .file-preview {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+            display: none;
+        }
+
+        .file-preview.show {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-preview img {
+            max-width: 60px;
+            max-height: 60px;
+            border-radius: 4px;
+        }
+
+        .source-content {
+            display: none;
+        }
+
+        .source-content.active {
+            display: block;
+        }
+
+        .channel-item {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .channel-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .channel-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #22c55e;
+            cursor: pointer;
+        }
+
+        .channel-info {
+            flex: 1;
+        }
+
+        .channel-name {
+            font-weight: 500;
+            color: #f1f5f9;
+            font-size: 0.9rem;
+        }
+
+        .channel-meta {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .channel-type {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-left: 5px;
+        }
+
+        .type-newsletter {
+            background: rgba(139, 92, 246, 0.2);
+            color: #a78bfa;
+        }
+
+        .type-group {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>📤 Disparador de Mensagens</h1>
+            <div class="header-actions">
+                <span id="status-badge" class="status-badge status-idle">⏸️ Parado</span>
+                <a href="/" class="btn btn-outline">⬅️ Voltar</a>
+            </div>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Left Column - Configuration -->
+            <div>
+                <!-- Instance Selection -->
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-header">
+                        <span class="card-title">📱 Instância</span>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <select id="instance-select" class="form-control">
+                            <option value="">Carregando instâncias...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Message Type Tabs -->
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-header">
+                        <span class="card-title">💬 Tipo de Mensagem</span>
+                    </div>
+
+                    <div class="tabs">
+                        <div class="tab active" data-tab="text">📝 Texto</div>
+                        <div class="tab" data-tab="image">🖼️ Imagem</div>
+                        <div class="tab" data-tab="audio">🎵 Áudio</div>
+                        <div class="tab" data-tab="document">📄 Documento</div>
+                    </div>
+
+                    <!-- Text Tab -->
+                    <div id="tab-text" class="tab-content active">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Mensagem</label>
+                            <textarea id="message-text" class="form-control"
+                                placeholder="Digite sua mensagem aqui...&#10;&#10;Use {nome} para personalizar (se tiver na lista)"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Image Tab -->
+                    <div id="tab-image" class="tab-content">
+                        <div class="form-group">
+                            <label>Imagem</label>
+                            <div class="file-input-wrapper">
+                                <div class="file-input-btn">📷 Clique ou arraste uma imagem</div>
+                                <input type="file" id="image-file" accept="image/*">
+                            </div>
+                            <div id="image-preview" class="file-preview">
+                                <img id="image-thumb" src="" alt="">
+                                <span id="image-name"></span>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Legenda (opcional)</label>
+                            <textarea id="image-caption" class="form-control" placeholder="Legenda da imagem..."
+                                style="min-height: 80px;"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Audio Tab -->
+                    <div id="tab-audio" class="tab-content">
+                        <div class="form-group">
+                            <label>🎤 Enviar Áudio (PTT)</label>
+
+                            <!-- File upload -->
+                            <label
+                                style="color: #64748b; font-size: 0.8rem; margin-top: 10px; display: block;">Selecione o
+                                áudio:</label>
+                            <div style="display: flex; gap: 10px; margin-top: 5px;">
+                                <div class="file-input-wrapper" style="flex: 1;">
+                                    <div class="file-input-btn" style="padding: 20px;">📁 Escolher Arquivo</div>
+                                    <input type="file" id="audio-file"
+                                        accept="audio/ogg,audio/mpeg,audio/mp3,audio/wav,.ogg,.mp3,.wav">
+                                </div>
+                                <button type="button" id="btn-record" class="btn btn-danger" onclick="toggleRecording()"
+                                    style="width: 150px;">
+                                    🔴 Gravar Áudio
+                                </button>
+                            </div>
+
+                            <div id="audio-preview" class="file-preview">
+                                <span>🎵</span>
+                                <span id="audio-name"></span>
+                                <audio id="audio-player" controls style="height: 30px; margin-left: 10px;"></audio>
+                            </div>
+
+                            <!-- URL input -->
+                            <label style="color: #64748b; font-size: 0.8rem; margin-top: 15px; display: block;">URL do
+                                Áudio (alternativa):</label>
+                            <input type="url" id="audio-url" class="form-control" style="margin-top: 5px;"
+                                placeholder="https://exemplo.com/audio.mp3">
+                            <p style="color: #64748b; font-size: 0.7rem; margin-top: 5px;">
+                                Cole uma URL direta para o arquivo de áudio (MP3, OGG, WAV)
+                            </p>
+
+                            <p
+                                style="color: #eab308; font-size: 0.75rem; margin-top: 10px; padding: 8px; background: rgba(234,179,8,0.1); border-radius: 6px;">
+                                ⚠️ Para melhor compatibilidade PTT, use arquivos .OGG (formato Opus).
+                                Outros formatos podem não abrir corretamente no WhatsApp.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Document Tab -->
+                    <div id="tab-document" class="tab-content">
+                        <div class="form-group">
+                            <label>Documento</label>
+                            <div class="file-input-wrapper">
+                                <div class="file-input-btn">📄 Clique ou arraste um documento</div>
+                                <input type="file" id="document-file">
+                            </div>
+                            <div id="document-preview" class="file-preview">
+                                <span>📄</span>
+                                <span id="document-name"></span>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Legenda (opcional)</label>
+                            <textarea id="document-caption" class="form-control" placeholder="Legenda do documento..."
+                                style="min-height: 80px;"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">⚙️ Configurações</span>
+                    </div>
+                    <div class="settings-row">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Intervalo Min (seg)</label>
+                            <input type="number" id="delay-min" class="form-control" value="5" min="1">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Intervalo Max (seg)</label>
+                            <input type="number" id="delay-max" class="form-control" value="15" min="1">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Lote</label>
+                            <input type="number" id="batch-size" class="form-control" value="10" min="1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Numbers & Progress -->
+            <div>
+                <!-- Recipients -->
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-header">
+                        <span class="card-title">👥 Destinatários</span>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn btn-outline" onclick="clearNumbers()"
+                                style="padding: 6px 12px; font-size: 0.8rem;">🗑️ Limpar</button>
+                        </div>
+                    </div>
+
+                    <!-- Recipient Source Tabs -->
+                    <div class="tabs" style="margin-bottom: 15px;">
+                        <div class="tab active" data-source="manual" onclick="switchSource('manual')">✍️ Manual</div>
+                        <div class="tab" data-source="channels" onclick="switchSource('channels')">📰 Canais/Grupos
+                        </div>
+                    </div>
+
+                    <!-- Manual Input -->
+                    <div id="source-manual" class="source-content active">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <textarea id="numbers-list" class="form-control numbers-area"
+                                placeholder="Cole os números aqui, um por linha:&#10;&#10;5511999999999&#10;5511888888888&#10;&#10;Ou use JIDs de canais:&#10;120363... @newsletter"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Channels/Groups List -->
+                    <div id="source-channels" class="source-content" style="display: none;">
+                        <div style="margin-bottom: 10px;">
+                            <button class="btn btn-secondary" onclick="loadChannelsAndGroups()"
+                                style="width: 100%; font-size: 0.9rem;">
+                                🔄 Carregar Grupos e Canais
+                            </button>
+                        </div>
+                        <div id="channels-list"
+                            style="max-height: 200px; overflow-y: auto; background: rgba(15, 23, 42, 0.6); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                            <p style="text-align: center; color: #64748b; padding: 20px;">Clique em Carregar para ver
+                                seus grupos e canais</p>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <button class="btn btn-primary" onclick="addSelectedChannels()" style="width: 100%;">
+                                ➕ Adicionar Selecionados à Lista
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="numbers-count">
+                        <span>Total de destinatários:</span>
+                        <strong id="numbers-count">0</strong>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="card" style="margin-bottom: 20px;">
+                    <div style="display: flex; gap: 10px;">
+                        <button id="btn-start" class="btn btn-primary" style="flex: 1;" onclick="startDispatch()">
+                            🚀 Iniciar Disparo
+                        </button>
+                        <button id="btn-pause" class="btn btn-outline" onclick="pauseDispatch()" disabled>
+                            ⏸️ Pausar
+                        </button>
+                        <button id="btn-stop" class="btn btn-danger" onclick="stopDispatch()" disabled>
+                            ⏹️ Parar
+                        </button>
+                    </div>
+
+                    <!-- Progress -->
+                    <div id="progress-container" class="progress-container">
+                        <div class="progress-bar">
+                            <div id="progress-fill" class="progress-fill"></div>
+                        </div>
+                        <div class="progress-stats">
+                            <span>Enviados: <span id="sent-count" class="success">0</span></span>
+                            <span>Erros: <span id="error-count" class="error">0</span></span>
+                            <span>Restantes: <span id="remaining-count">0</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Log -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📜 Log de Envios</span>
+                        <button class="btn btn-outline" onclick="clearLog()"
+                            style="padding: 6px 12px; font-size: 0.8rem;">🗑️ Limpar</button>
+                    </div>
+                    <div id="log-container" class="log-container">
+                        <div class="log-entry info">Aguardando início...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // State
+        let state = {
+            running: false,
+            paused: false,
+            numbers: [],
+            currentIndex: 0,
+            sent: 0,
+            errors: 0,
+            selectedTab: 'text',
+            mediaBase64: null,
+            mediaType: null,
+            mediaName: null
+        };
+
+        // DOM Elements
+        const instanceSelect = document.getElementById('instance-select');
+        const numbersInput = document.getElementById('numbers-list');
+        const numbersCountEl = document.getElementById('numbers-count');
+        const logContainer = document.getElementById('log-container');
+        const progressContainer = document.getElementById('progress-container');
+        const progressFill = document.getElementById('progress-fill');
+        const statusBadge = document.getElementById('status-badge');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadInstances();
+            setupTabs();
+            setupFileInputs();
+            numbersInput.addEventListener('input', updateNumbersCount);
+        });
+
+        // Load instances
+        async function loadInstances() {
+            try {
+                const response = await fetch('/api/instance/fetchInstances');
+                const data = await response.json();
+
+                instanceSelect.innerHTML = '<option value="">Selecione uma instância</option>';
+
+                if (Array.isArray(data)) {
+                    data.forEach(inst => {
+                        const info = inst.instance || inst;
+                        const name = info.instanceName || info.name;
+                        const status = info.status || 'disconnected';
+                        const icon = status === 'connected' || status === 'open' ? '🟢' : '🔴';
+
+                        const option = document.createElement('option');
+                        option.value = name;
+                        option.textContent = `${icon} ${name}`;
+                        option.disabled = status !== 'connected' && status !== 'open';
+                        instanceSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao carregar instâncias:', error);
+                instanceSelect.innerHTML = '<option value="">Erro ao carregar</option>';
+            }
+        }
+
+        // Setup tabs
+        function setupTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+                    tab.classList.add('active');
+                    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+                    state.selectedTab = tab.dataset.tab;
+                });
+            });
+        }
+
+        // Setup file inputs
+        function setupFileInputs() {
+            document.getElementById('image-file').addEventListener('change', (e) => handleFileSelect(e, 'image'));
+            document.getElementById('audio-file').addEventListener('change', (e) => handleFileSelect(e, 'audio'));
+            document.getElementById('document-file').addEventListener('change', (e) => handleFileSelect(e, 'document'));
+        }
+
+        function handleFileSelect(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const dataUrl = e.target.result;
+                // Store clean base64 (without data:...;base64, prefix)
+                state.mediaBase64 = dataUrl.split(',')[1];
+                state.mediaType = file.type;
+                state.mediaName = file.name;
+                state.mediaDataUrl = dataUrl; // Keep full URL for preview
+
+                const preview = document.getElementById(type + '-preview');
+                const nameEl = document.getElementById(type + '-name');
+
+                preview.classList.add('show');
+                nameEl.textContent = file.name;
+
+                if (type === 'image') {
+                    document.getElementById('image-thumb').src = dataUrl;
+                }
+
+                if (type === 'audio') {
+                    document.getElementById('audio-player').src = dataUrl;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Audio Recording
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+
+        async function toggleRecording() {
+            const btn = document.getElementById('btn-record');
+
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = (e) => {
+                        audioChunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const dataUrl = e.target.result;
+                            state.mediaBase64 = dataUrl.split(',')[1];
+                            state.mediaType = 'audio/ogg; codecs=opus';
+                            state.mediaName = 'gravacao.ogg';
+
+                            document.getElementById('audio-preview').classList.add('show');
+                            document.getElementById('audio-name').textContent = 'Gravação de áudio';
+                            document.getElementById('audio-player').src = dataUrl;
+                        };
+                        reader.readAsDataURL(audioBlob);
+
+                        stream.getTracks().forEach(t => t.stop());
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    btn.innerHTML = '⏹️ Parar';
+                    btn.classList.add('recording');
+                } catch (err) {
+                    showToast('Erro ao acessar microfone: ' + err.message, 'error');
+                }
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                btn.innerHTML = '🔴 Gravar Áudio';
+                btn.classList.remove('recording');
+            }
+        }
+
+        function updateNumbersCount() {
+            const lines = numbersInput.value.trim().split('\n').filter(line => line.trim());
+            numbersCountEl.textContent = lines.length;
+        }
+
+        function clearNumbers() {
+            numbersInput.value = '';
+            updateNumbersCount();
+        }
+
+        function clearLog() {
+            logContainer.innerHTML = '<div class="log-entry info">Log limpo.</div>';
+        }
+
+        function addLog(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + type;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.insertBefore(entry, logContainer.firstChild);
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show ' + type;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function updateUI() {
+            const btnStart = document.getElementById('btn-start');
+            const btnPause = document.getElementById('btn-pause');
+            const btnStop = document.getElementById('btn-stop');
+
+            if (state.running) {
+                btnStart.disabled = true;
+                btnPause.disabled = false;
+                btnStop.disabled = false;
+                progressContainer.classList.add('active');
+
+                if (state.paused) {
+                    statusBadge.className = 'status-badge status-paused';
+                    statusBadge.textContent = '⏸️ Pausado';
+                    btnPause.textContent = '▶️ Continuar';
+                } else {
+                    statusBadge.className = 'status-badge status-running';
+                    statusBadge.textContent = '🚀 Enviando...';
+                    btnPause.textContent = '⏸️ Pausar';
+                }
+            } else {
+                btnStart.disabled = false;
+                btnPause.disabled = true;
+                btnStop.disabled = true;
+
+                if (state.sent > 0 || state.errors > 0) {
+                    statusBadge.className = 'status-badge status-done';
+                    statusBadge.textContent = '✅ Concluído';
+                } else {
+                    statusBadge.className = 'status-badge status-idle';
+                    statusBadge.textContent = '⏸️ Parado';
+                }
+            }
+
+            const total = state.numbers.length;
+            const done = state.sent + state.errors;
+            const percent = total > 0 ? (done / total) * 100 : 0;
+
+            progressFill.style.width = percent + '%';
+            document.getElementById('sent-count').textContent = state.sent;
+            document.getElementById('error-count').textContent = state.errors;
+            document.getElementById('remaining-count').textContent = total - done;
+        }
+
+        function parseNumbers(text) {
+            const lines = text.trim().split('\n').filter(line => line.trim());
+            return lines.map(line => {
+                const parts = line.split(',');
+                const number = parts[0].replace(/\D/g, '');
+                const name = parts[1]?.trim() || '';
+                return { number, name };
+            }).filter(n => n.number.length >= 10);
+        }
+
+        function getRandomDelay() {
+            const min = parseInt(document.getElementById('delay-min').value) || 5;
+            const max = parseInt(document.getElementById('delay-max').value) || 15;
+            return (Math.random() * (max - min) + min) * 1000;
+        }
+
+        async function sendMessage(number, name) {
+            const instance = instanceSelect.value;
+            let endpoint, body;
+
+            if (state.selectedTab === 'text') {
+                let text = document.getElementById('message-text').value;
+                if (name) text = text.replace(/{nome}/gi, name);
+                endpoint = `/api/message/sendText/${instance}`;
+                body = {
+                    number: number,
+                    textMessage: { text: text }
+                };
+            } else if (state.selectedTab === 'image') {
+                const caption = document.getElementById('image-caption').value;
+                endpoint = `/api/message/sendMedia/${instance}`;
+                body = {
+                    number: number,
+                    mediaMessage: {
+                        mediatype: 'image',
+                        mimetype: state.mediaType || 'image/jpeg',
+                        media: state.mediaBase64,
+                        caption: name ? caption.replace(/{nome}/gi, name) : caption
+                    }
+                };
+            } else if (state.selectedTab === 'audio') {
+                // Check if URL is provided
+                const audioUrl = document.getElementById('audio-url')?.value?.trim();
+                const audioData = audioUrl || state.mediaBase64;
+
+                if (!audioData) {
+                    throw new Error('Selecione um arquivo ou informe uma URL');
+                }
+
+                endpoint = `/api/message/sendWhatsAppAudio/${instance}`;
+                body = {
+                    number: number,
+                    audioMessage: {
+                        audio: audioData,
+                        ptt: true
+                    }
+                };
+            } else if (state.selectedTab === 'document') {
+                const caption = document.getElementById('document-caption').value;
+                endpoint = `/api/message/sendMedia/${instance}`;
+                body = {
+                    number: number,
+                    mediaMessage: {
+                        mediatype: 'document',
+                        mimetype: state.mediaType || 'application/octet-stream',
+                        media: state.mediaBase64,
+                        fileName: state.mediaName,
+                        caption: name ? caption.replace(/{nome}/gi, name) : caption
+                    }
+                };
+            }
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            const text = await response.text();
+            let result;
+            try {
+                result = JSON.parse(text);
+            } catch (e) {
+                throw new Error(`Resposta inválida do servidor: ${text.substring(0, 100)}`);
+            }
+
+            if (!response.ok) {
+                throw new Error(result.message || result.error || 'Erro ao enviar');
+            }
+
+            return result;
+        }
+
+        async function dispatchLoop() {
+            while (state.running && state.currentIndex < state.numbers.length) {
+                if (state.paused) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    continue;
+                }
+
+                const { number, name } = state.numbers[state.currentIndex];
+
+                try {
+                    await sendMessage(number, name);
+                    state.sent++;
+                    addLog(`✅ Enviado para ${number}${name ? ' (' + name + ')' : ''}`, 'success');
+                } catch (error) {
+                    state.errors++;
+                    addLog(`❌ Erro em ${number}: ${error.message}`, 'error');
+                }
+
+                state.currentIndex++;
+                updateUI();
+
+                if (state.currentIndex < state.numbers.length) {
+                    const delay = getRandomDelay();
+                    addLog(`⏳ Aguardando ${(delay / 1000).toFixed(1)}s...`, 'info');
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+
+            state.running = false;
+            updateUI();
+
+            if (state.currentIndex >= state.numbers.length) {
+                showToast(`Disparo concluído! ${state.sent} enviados, ${state.errors} erros.`);
+                addLog(`🏁 Disparo finalizado! ${state.sent} enviados, ${state.errors} erros.`, 'info');
+            }
+        }
+
+        function startDispatch() {
+            const instance = instanceSelect.value;
+            if (!instance) {
+                showToast('Selecione uma instância!', 'error');
+                return;
+            }
+
+            const numbersText = numbersInput.value;
+            state.numbers = parseNumbers(numbersText);
+
+            if (state.numbers.length === 0) {
+                showToast('Adicione números à lista!', 'error');
+                return;
+            }
+
+            if (state.selectedTab === 'text' && !document.getElementById('message-text').value.trim()) {
+                showToast('Digite uma mensagem!', 'error');
+                return;
+            }
+
+            if (state.selectedTab !== 'text' && !state.mediaBase64) {
+                showToast('Selecione um arquivo!', 'error');
+                return;
+            }
+
+            state.running = true;
+            state.paused = false;
+            state.currentIndex = 0;
+            state.sent = 0;
+            state.errors = 0;
+
+            addLog(`🚀 Iniciando disparo para ${state.numbers.length} números...`, 'info');
+            updateUI();
+            dispatchLoop();
+        }
+
+        function pauseDispatch() {
+            state.paused = !state.paused;
+            addLog(state.paused ? '⏸️ Disparo pausado' : '▶️ Disparo retomado', 'info');
+            updateUI();
+        }
+
+        function stopDispatch() {
+            state.running = false;
+            state.paused = false;
+            addLog('⏹️ Disparo cancelado pelo usuário', 'error');
+            updateUI();
+        }
+        // Recipient Handling
+        function switchSource(source) {
+            document.querySelectorAll('.tab[data-source]').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.source-content').forEach(c => c.style.display = 'none');
+
+            document.querySelector(`.tab[data-source="${source}"]`).classList.add('active');
+            document.getElementById(`source-${source}`).style.display = 'block';
+        }
+
+        async function loadChannelsAndGroups() {
+            const container = document.getElementById('channels-list');
+            container.innerHTML = '<p style="text-align: center; padding: 20px;">Carregando...</p>';
+
+            try {
+                // Load both parallel
+                const [groupsRes, newsletterRes] = await Promise.all([
+                    fetch('/api/whatsmiau2/groups'),
+                    fetch('/newsletter/list')
+                ]);
+
+                const groupsData = await groupsRes.json();
+                const newsletterData = await newsletterRes.json();
+
+                const items = [];
+
+                // Process Groups
+                if (groupsData.success && groupsData.groups) {
+                    groupsData.groups.forEach(g => {
+                        items.push({
+                            type: 'group',
+                            jid: g.jid,
+                            name: g.name || g.subject || 'Sem nome',
+                            meta: `${g.participantCount || 0} membros`
+                        });
+                    });
+                }
+
+                // Process Newsletters
+                if (newsletterData.success && newsletterData.newsletters) {
+                    newsletterData.newsletters.forEach(n => {
+                        items.push({
+                            type: 'newsletter',
+                            jid: n.jid,
+                            name: n.name || 'Sem nome',
+                            meta: 'Canal'
+                        });
+                    });
+                }
+
+                if (items.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">Nenhum grupo ou canal encontrado.</p>';
+                    return;
+                }
+
+                container.innerHTML = items.map(item => `
+                    <label class="channel-item">
+                        <input type="checkbox" value="${item.jid}" data-name="${item.name}">
+                        <div class="channel-info">
+                            <div class="channel-name">
+                                ${item.name}
+                                <span class="channel-type type-${item.type}">${item.type === 'group' ? 'Grupo' : 'Canal'}</span>
+                            </div>
+                            <div class="channel-meta">${item.jid}</div>
+                        </div>
+                    </label>
+                `).join('');
+
+            } catch (err) {
+                container.innerHTML = `<p style="text-align: center; color: #ef4444; padding: 20px;">Erro: ${err.message}</p>`;
+            }
+        }
+
+        function addSelectedChannels() {
+            const checkboxes = document.querySelectorAll('#channels-list input[type="checkbox"]:checked');
+            const currentText = numbersInput.value.trim();
+            const newLines = [];
+
+            checkboxes.forEach(cb => {
+                newLines.push(`${cb.value},${cb.getAttribute('data-name')}`);
+            });
+
+            if (newLines.length > 0) {
+                if (currentText) {
+                    numbersInput.value = currentText + '\n' + newLines.join('\n');
+                } else {
+                    numbersInput.value = newLines.join('\n');
+                }
+
+                updateNumbersCount();
+                showToast(`✅ ${newLines.length} destinatários adicionados!`, 'success');
+
+                // Switch back to manual tab to show added numbers
+                switchSource('manual');
+            } else {
+                showToast('Selecione pelo menos um item!', 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  whatsmiau2:
+    build: .
+    container_name: whatsmiau2
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_URL=redis:6379
+      - DB_URL=postgres://postgres:2553e70e4c6cf5a652a3@docker_postgres:5432/docker?sslmode=disable
+    volumes:
+      - whatsmeow:/app/data
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+  db:
+    image: postgres:latest
+    container_name: postgres
+    volumes:
+      - pg-data:/pg-data
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: whatsmiau2
+      POSTGRES_PASSWORD: 2553e70e4c6cf5a652a3
+      POSTGRES_DB: whatsmiau2
+
+volumes:
+  redis-data:
+    driver: local
+  whatsmeow:
+    driver: local
