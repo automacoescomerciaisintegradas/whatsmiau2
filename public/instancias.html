@@ -86,11 +86,11 @@
                 </div>
             </nav>
 
-            <div class="container-fluid p-4">
+            <div class="responsive-container p-resp">
                 <h4 class="fw-bold mb-4">Configurações de Conexão</h4>
 
                 <!-- API Integration Hub -->
-                <div class="row g-4 mb-5">
+                <div class="responsive-grid grid-cols-2 grid-cols-3 mb-5">
                     <!-- Evolution API Card -->
                     <div class="col-xl-4 col-md-6">
                         <div class="card p-4 h-100 border-primary border-opacity-10 shadow-sm glass-box">
@@ -130,143 +130,138 @@
                     </div>
 
                     <!-- WhatsMiau2 Go Card -->
-                    <div class="col-xl-4 col-md-6">
-                        <div class="card p-4 h-100 border-info border-opacity-10 shadow-sm glass-box">
-                            <h6 class="fw-bold mb-3 d-flex align-items-center">
-                                <i class="fas fa-microchip me-2 text-info"></i> Configuração WhatsMiau2 Go
-                            </h6>
-                            <div class="row g-2 mb-3">
-                                <div class="col-12">
-                                    <label class="small fw-bold opacity-75">Base URL*</label>
-                                    <input type="text" id="go-base-url" class="form-control form-control-sm"
-                                        placeholder="Ex: http://localhost:8081/v1">
-                                </div>
-                                <div class="col-12">
-                                    <label class="small fw-bold opacity-75">API_KEY*</label>
-                                    <input type="password" id="go-api-key" class="form-control form-control-sm"
-                                        placeholder="Go Static Key">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="small fw-bold opacity-75">Token</label>
-                                    <input type="text" id="go-token" class="form-control form-control-sm"
-                                        placeholder="miau_v2...">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="small fw-bold opacity-75">Webhook</label>
-                                    <input type="text" id="go-webhook" class="form-control form-control-sm"
-                                        placeholder="Go Webhook">
-                                </div>
+                    <div class="card p-4 h-100 border-info border-opacity-10 shadow-sm glass-box">
+                        <h6 class="fw-bold mb-3 d-flex align-items-center">
+                            <i class="fas fa-microchip me-2 text-info"></i> Configuração WhatsMiau2 Go
+                        </h6>
+                        <div class="row g-2 mb-3">
+                            <div class="col-12">
+                                <label class="small fw-bold opacity-75">Base URL*</label>
+                                <input type="text" id="go-base-url" class="form-control form-control-sm"
+                                    placeholder="Ex: http://localhost:8081/v1">
                             </div>
-                            <div class="mt-auto">
-                                <button class="btn btn-info btn-sm text-white w-100 fw-bold"
-                                    onclick="testDetailedConnection('go')">
-                                    🔌 VALIDAR SERVIÇO GO
-                                </button>
-                                <div id="go-status-box" class="mt-2" style="display:none;"></div>
+                            <div class="col-12">
+                                <label class="small fw-bold opacity-75">API_KEY*</label>
+                                <input type="password" id="go-api-key" class="form-control form-control-sm"
+                                    placeholder="Go Static Key">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small fw-bold opacity-75">Token</label>
+                                <input type="text" id="go-token" class="form-control form-control-sm"
+                                    placeholder="miau_v2...">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small fw-bold opacity-75">Webhook</label>
+                                <input type="text" id="go-webhook" class="form-control form-control-sm"
+                                    placeholder="Go Webhook">
                             </div>
                         </div>
-                    </div>
-
-                    <!-- WhatsApp Cloud API Card -->
-                    <div class="col-xl-4 col-md-6">
-                        <div class="card p-4 h-100 border-warning border-opacity-10 shadow-sm glass-box">
-                            <h6 class="fw-bold mb-3 d-flex align-items-center">
-                                <i class="fab fa-facebook me-2 text-primary"></i> WhatsApp Cloud API
-                            </h6>
-                            <div class="row g-2 mb-3">
-                                <div class="col-12">
-                                    <label class="small fw-bold opacity-75">Token*</label>
-                                    <input type="password" class="form-control form-control-sm" placeholder="EAABw...">
-                                </div>
-                                <div class="col-6">
-                                    <label class="small fw-bold opacity-75">Number</label>
-                                    <input type="text" class="form-control form-control-sm" placeholder="5511...">
-                                </div>
-                                <div class="col-6">
-                                    <label class="small fw-bold opacity-75">Business ID*</label>
-                                    <input type="text" class="form-control form-control-sm" placeholder="10293...">
-                                </div>
-                            </div>
-                            <div class="mt-auto">
-                                <button class="btn btn-warning btn-sm text-dark w-100 fw-bold"
-                                    onclick="testDetailedConnection('cloud')">
-                                    🔌 TESTAR CLOUD
-                                </button>
-                                <div id="cloud-status-box" class="mt-2" style="display:none;"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quick Connection Cards -->
-                <h5 class="fw-bold mb-3 mt-5">🚀 Conexão Rápida</h5>
-                <div class="row g-3 mb-4">
-                    <!-- QR Code Card -->
-                    <div class="col-md-6">
-                        <div class="card p-4 h-100 border-success border-opacity-25 shadow-sm glass-box"
-                            style="cursor: pointer; transition: all 0.3s;"
-                            onclick="window.location.href='/pairing.html?method=qr'">
-                            <div class="d-flex align-items-start">
-                                <div class="me-3" style="font-size: 2.5rem;">📷</div>
-                                <div class="flex-grow-1">
-                                    <h6 class="fw-bold mb-2">
-                                        <i class="fas fa-qrcode me-2 text-success"></i>
-                                        Conectar via QR Code
-                                    </h6>
-                                    <p class="text-muted small mb-3">
-                                        Escaneie o QR Code com seu WhatsApp para conectar rapidamente
-                                    </p>
-                                    <div class="d-flex align-items-center text-success small">
-                                        <i class="fas fa-check-circle me-2"></i>
-                                        <span>Método tradicional e rápido</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <button class="btn btn-success mt-3 w-100 fw-bold">
-                                <i class="fas fa-qrcode me-2"></i> Gerar QR Code
+                        <div class="mt-auto">
+                            <button class="btn btn-info btn-sm text-white w-100 fw-bold"
+                                onclick="testDetailedConnection('go')">
+                                🔌 VALIDAR SERVIÇO GO
                             </button>
+                            <div id="go-status-box" class="mt-2" style="display:none;"></div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Phone Pairing Card -->
-                    <div class="col-md-6">
-                        <div class="card p-4 h-100 border-primary border-opacity-25 shadow-sm glass-box"
-                            style="cursor: pointer; transition: all 0.3s;"
-                            onclick="window.location.href='/pairing.html?method=phone'">
-                            <div class="d-flex align-items-start">
-                                <div class="me-3" style="font-size: 2.5rem;">📱</div>
-                                <div class="flex-grow-1">
-                                    <h6 class="fw-bold mb-2">
-                                        <i class="fas fa-mobile-alt me-2 text-primary"></i>
-                                        Conectar via Código
-                                    </h6>
-                                    <p class="text-muted small mb-3">
-                                        Digite seu número e receba um código de 8 dígitos para conectar
-                                    </p>
-                                    <div class="d-flex align-items-center text-primary small">
-                                        <i class="fas fa-check-circle me-2"></i>
-                                        <span>Ideal para WhatsApp Business</span>
-                                    </div>
-                                </div>
+                <!-- WhatsApp Cloud API Card -->
+                <div class="col-xl-4 col-md-6">
+                    <div class="card p-4 h-100 border-warning border-opacity-10 shadow-sm glass-box">
+                        <h6 class="fw-bold mb-3 d-flex align-items-center">
+                            <i class="fab fa-facebook me-2 text-primary"></i> WhatsApp Cloud API
+                        </h6>
+                        <div class="row g-2 mb-3">
+                            <div class="col-12">
+                                <label class="small fw-bold opacity-75">Token*</label>
+                                <input type="password" class="form-control form-control-sm" placeholder="EAABw...">
                             </div>
-                            <button class="btn btn-primary mt-3 w-100 fw-bold">
-                                <i class="fas fa-key me-2"></i> Obter Código
-                            </button>
+                            <div class="col-6">
+                                <label class="small fw-bold opacity-75">Number</label>
+                                <input type="text" class="form-control form-control-sm" placeholder="5511...">
+                            </div>
+                            <div class="col-6">
+                                <label class="small fw-bold opacity-75">Business ID*</label>
+                                <input type="text" class="form-control form-control-sm" placeholder="10293...">
+                            </div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="fw-bold mb-0">Suas Instâncias</h5>
-                </div>
-
-                <div id="instances-grid" class="row g-4">
-                    <div class="col-12 text-center py-5">
-                        <div class="spinner-border text-success" role="status"></div>
+                        <div class="mt-auto">
+                            <button class="btn btn-warning btn-sm text-dark w-100 fw-bold"
+                                onclick="testDetailedConnection('cloud')">
+                                🔌 TESTAR CLOUD
+                            </button>
+                            <div id="cloud-status-box" class="mt-2" style="display:none;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Quick Connection Cards -->
+            <h5 class="fw-bold mb-3 mt-5">🚀 Conexão Rápida</h5>
+            <div class="responsive-grid grid-cols-2 mb-4">
+                <!-- QR Code Card -->
+                <div class="card p-4 h-100 border-success border-opacity-25 shadow-sm glass-box"
+                    style="cursor: pointer; transition: all 0.3s;"
+                    onclick="window.location.href='/pairing.html?method=qr'">
+                    <div class="d-flex align-items-start">
+                        <div class="me-3" style="font-size: 2.5rem;">📷</div>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold mb-2">
+                                <i class="fas fa-qrcode me-2 text-success"></i>
+                                Conectar via QR Code
+                            </h6>
+                            <p class="text-muted small mb-3">
+                                Escaneie o QR Code com seu WhatsApp para conectar rapidamente
+                            </p>
+                            <div class="d-flex align-items-center text-success small">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span>Método tradicional e rápido</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-success mt-3 w-100 fw-bold">
+                        <i class="fas fa-qrcode me-2"></i> Gerar QR Code
+                    </button>
+                </div>
+
+                <!-- Phone Pairing Card -->
+                <div class="card p-4 h-100 border-primary border-opacity-25 shadow-sm glass-box"
+                    style="cursor: pointer; transition: all 0.3s;"
+                    onclick="window.location.href='/pairing.html?method=phone'">
+                    <div class="d-flex align-items-start">
+                        <div class="me-3" style="font-size: 2.5rem;">📱</div>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold mb-2">
+                                <i class="fas fa-mobile-alt me-2 text-primary"></i>
+                                Conectar via Código
+                            </h6>
+                            <p class="text-muted small mb-3">
+                                Digite seu número e receba um código de 8 dígitos para conectar
+                            </p>
+                            <div class="d-flex align-items-center text-primary small">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span>Ideal para WhatsApp Business</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary mt-3 w-100 fw-bold">
+                        <i class="fas fa-key me-2"></i> Obter Código
+                    </button>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0">Suas Instâncias</h5>
+            </div>
+
+            <div id="instances-grid" class="responsive-grid grid-cols-2 grid-cols-3">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-success" role="status"></div>
+                </div>
+            </div>
         </div>
+    </div>
     </div>
 
     <!-- Modal: New Instance -->

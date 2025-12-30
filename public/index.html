@@ -192,7 +192,7 @@
                 </div>
             </nav>
 
-            <div class="container-fluid p-4">
+            <div class="responsive-container p-resp">
 
                 <!-- Dashboard Section -->
                 <div class="section active" id="dashboard">
@@ -221,41 +221,31 @@
                         </div>
                     </div>
 
-                    <div class="row g-4 mb-4">
-                        <div class="col-md-3">
-                            <div class="card p-4 stat-card card-purple shadow-sm">
-                                <small class="text-white text-uppercase fw-bold opacity-75"
-                                    style="font-size: 0.7rem;">Instâncias Ativas</small>
-                                <h1 class="fw-bold mb-0 mt-2" id="stat-instances">0</h1>
-                                <div class="mt-2 small opacity-75"><i class="fas fa-server me-1"></i> Monitorando</div>
+                    <div class="responsive-grid grid-cols-2 grid-cols-4 mb-4">
+                        <div class="stat-card card-purple shadow-sm">
+                            <small class="text-white text-uppercase fw-bold opacity-75"
+                                style="font-size: 0.7rem;">Instâncias Ativas</small>
+                            <h1 class="fw-bold mb-0 mt-2" id="stat-instances">0</h1>
+                            <div class="mt-2 small opacity-75"><i class="fas fa-server me-1"></i> Monitorando</div>
+                        </div>
+                        <div class="stat-card card-green shadow-sm">
+                            <small class="text-white text-uppercase fw-bold opacity-75"
+                                style="font-size: 0.7rem;">Mensagens (Hoje)</small>
+                            <h1 class="fw-bold mb-0 mt-2" id="stat-messages">1.284</h1>
+                            <div class="mt-2 small opacity-75"><i class="fas fa-check-circle me-1"></i> 98% entregues
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card p-4 stat-card card-green shadow-sm">
-                                <small class="text-white text-uppercase fw-bold opacity-75"
-                                    style="font-size: 0.7rem;">Mensagens (Hoje)</small>
-                                <h1 class="fw-bold mb-0 mt-2" id="stat-messages">1.284</h1>
-                                <div class="mt-2 small opacity-75"><i class="fas fa-check-circle me-1"></i> 98%
-                                    entregues</div>
-                            </div>
+                        <div class="stat-card card-blue shadow-sm">
+                            <small class="text-white text-uppercase fw-bold opacity-75"
+                                style="font-size: 0.7rem;">Grupos Monitorados</small>
+                            <h1 class="fw-bold mb-0 mt-2" id="stat-groups">0</h1>
+                            <div class="mt-2 small opacity-75"><i class="fas fa-users me-1"></i> Capturando leads</div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card p-4 stat-card card-blue shadow-sm">
-                                <small class="text-white text-uppercase fw-bold opacity-75"
-                                    style="font-size: 0.7rem;">Grupos Monitorados</small>
-                                <h1 class="fw-bold mb-0 mt-2" id="stat-groups">0</h1>
-                                <div class="mt-2 small opacity-75"><i class="fas fa-users me-1"></i> Capturando leads
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card p-4 stat-card card-orange shadow-sm">
-                                <small class="text-white text-uppercase fw-bold opacity-75"
-                                    style="font-size: 0.7rem;">Tickets Pendentes</small>
-                                <h1 class="fw-bold mb-0 mt-2" id="stat-tickets">0</h1>
-                                <div class="mt-2 small opacity-75"><i class="fas fa-ticket-alt me-1"></i>
-                                    Aguardando</div>
-                            </div>
+                        <div class="stat-card card-orange shadow-sm">
+                            <small class="text-white text-uppercase fw-bold opacity-75"
+                                style="font-size: 0.7rem;">Tickets Pendentes</small>
+                            <h1 class="fw-bold mb-0 mt-2" id="stat-tickets">0</h1>
+                            <div class="mt-2 small opacity-75"><i class="fas fa-ticket-alt me-1"></i> Aguardando</div>
                         </div>
                     </div>
 

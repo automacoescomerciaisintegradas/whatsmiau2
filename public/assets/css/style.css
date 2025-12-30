@@ -26,6 +26,19 @@
     --border-color: #374151;
     --hover-bg: #374151;
     --shadow-color: rgba(0, 0, 0, 0.4);
+    --bg-card: rgba(31, 41, 55, 0.7);
+    --bg-paper: rgba(17, 24, 39, 0.9);
+}
+
+:root {
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 1.5rem;
+    --spacing-lg: 2rem;
+    --spacing-xl: 3rem;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
 }
 
 body {
@@ -141,13 +154,60 @@ body.sb-sidenav-toggled #sidebar-wrapper {
 
 /* Cards e Paineis */
 .card,
-.modal-content {
+.modal-content,
+.glass-panel {
     background-color: var(--card-bg) !important;
+    backdrop-filter: blur(12px);
     border: 1px solid var(--border-color) !important;
     color: var(--text-primary);
-    box-shadow: 0 4px 6px var(--shadow-color);
-    border-radius: 12px;
+    box-shadow: 0 4px 20px var(--shadow-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
+.card:hover {
+    box-shadow: 0 8px 30px var(--shadow-color);
+}
+
+.responsive-container {
+    width: 100%;
+    padding-right: var(--spacing-md);
+    padding-left: var(--spacing-md);
+    margin-right: auto;
+    margin-left: auto;
+}
+
+@media (min-width: 576px) { .responsive-container { max-width: 540px; } }
+@media (min-width: 768px) { .responsive-container { max-width: 720px; } }
+@media (min-width: 992px) { .responsive-container { max-width: 960px; } }
+@media (min-width: 1200px) { .responsive-container { max-width: 1140px; } }
+@media (min-width: 1400px) { .responsive-container { max-width: 1320px; } }
+
+/* Grid System Improvement */
+.responsive-grid {
+    display: grid;
+    gap: var(--spacing-md);
+}
+
+@media (min-width: 768px) {
+    .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 1200px) {
+    .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Margin and Padding Utilities */
+.p-resp { padding: var(--spacing-sm); }
+@media (min-width: 768px) { .p-resp { padding: var(--spacing-md); } }
+@media (min-width: 1200px) { .p-resp { padding: var(--spacing-lg); } }
+
+.m-resp { margin: var(--spacing-sm); }
+@media (min-width: 768px) { .m-resp { margin: var(--spacing-md); } }
+@media (min-width: 1200px) { .m-resp { margin: var(--spacing-lg); } }
 
 .table {
     color: var(--text-primary);
