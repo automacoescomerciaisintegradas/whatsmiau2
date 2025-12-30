@@ -32,7 +32,7 @@ services:
     environment:
       - PORT=3002
       # Aponta para o container da API internamente
-      - API_URL=http://whatsmiau2:8081/v1
+      - API_URL=http://whatsmiau2:8081
       - API_KEY=2wtLvtb20wXePp8D9uRhm55aCjINiciO
     depends_on:
       - whatsmiau2

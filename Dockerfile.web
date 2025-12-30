@@ -6,9 +6,11 @@ COPY package*.json ./
 RUN npm install --production
 
 COPY server.js ./
-COPY *.html ./
+COPY public ./public
 
-# Expose port (usado internamente)
+ENV PORT=3002
+
+# Expose port
 EXPOSE 3002
 
 CMD ["node", "server.js"]

@@ -95,33 +95,31 @@ func (m *Manager) GetOrCreateClient(instanceID string) (*Client, error) {
 		return client, nil
 	}
 
-	// Get or create device store - use instance-specific device
+	// Get or create device store - each instance MUST have its own device
 	ctx := context.Background()
 
-	// Get all devices and find one for this instance, or create new
+	// Get all devices and find one specifically for this instanceID
 	devices, err := m.container.GetAllDevices(ctx)
 	var device *store.Device
 
 	if err == nil && len(devices) > 0 {
-		// Try to find an existing device that matches this instanceID
-		// For now, use the first available device or create new
-		for _, d := range devices {
-			if d.ID != nil {
-				device = d
-				break
-			}
+		// Try to find an existing device for THIS specific instance
+		// We need to match by some identifier - for now we'll use a mapping approach
+		// Check if we have a stored mapping of instanceID -> device JID
+		instanceDevice := m.findDeviceForInstance(instanceID, devices)
+		if instanceDevice != nil {
+			device = instanceDevice
+			zap.L().Info("Found existing device for instance",
+				zap.String("instanceId", instanceID),
+				zap.Bool("hasJID", device.ID != nil),
+			)
 		}
 	}
 
-	// If no valid device found, create a new one
+	// If no device found for this instance, create a NEW one
 	if device == nil {
 		device = m.container.NewDevice()
-		zap.L().Info("Created new device store", zap.String("instanceId", instanceID))
-	} else {
-		zap.L().Info("Using existing device store",
-			zap.String("instanceId", instanceID),
-			zap.Bool("hasJID", device.ID != nil),
-		)
+		zap.L().Info("Created new device store for instance", zap.String("instanceId", instanceID))
 	}
 
 	// Apply custom OS/Platform configuration
@@ -197,6 +195,33 @@ func (m *Manager) GetAllClients() map[string]*Client {
 		clients[k] = v
 	}
 	return clients
+}
+
+// findDeviceForInstance finds the device associated with a specific instance
+func (m *Manager) findDeviceForInstance(instanceID string, devices []*store.Device) *store.Device {
+	// Get the instance from database to find its stored JID
+	instance, err := m.db.GetInstanceByName(instanceID)
+	if err != nil {
+		// Try by ID
+		instance, err = m.db.GetInstance(instanceID)
+		if err != nil {
+			return nil
+		}
+	}
+
+	// If instance has a phone number (JID), find the matching device
+	if instance.PhoneNumber != "" {
+		for _, d := range devices {
+			if d.ID != nil && d.ID.User == instance.PhoneNumber {
+				return d
+			}
+		}
+	}
+
+	// If we have multiple devices and the instance was previously connected,
+	// we need to match by order of creation or another identifier
+	// For now, return nil to create a new device
+	return nil
 }
 
 // Close closes all clients and the container

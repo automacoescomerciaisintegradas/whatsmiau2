@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automações Integradas - Disparador</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/assets/css/style.css" rel="stylesheet">
+    <style>
+        .msg-preview {
+            background: #e5ddd5;
+            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 300px;
+        }
+
+        .bubble {
+            background: white;
+            border-radius: 8px;
+            padding: 10px 15px;
+            max-width: 80%;
+            position: relative;
+            box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
+        }
+
+        .bubble::before {
+            content: "";
+            position: absolute;
+            left: -10px;
+            top: 0;
+            border-width: 10px 10px 0 0;
+            border-color: white transparent transparent transparent;
+        }
+
+        .import-box {
+            border: 2px dashed #dee2e6;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .import-box:hover {
+            border-color: #6610f2;
+            background: #f8f7ff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading text-center">
+                <i class="fas fa-robot"></i> Automações
+            </div>
+            <div class="list-group list-group-flush mt-3">
+                <a href="/dashboard" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                </a>
+                <a href="/connections" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-wifi me-2"></i> Conexões
+                </a>
+                <a href="/disparador" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-paper-plane me-2"></i> Disparador
+                </a>
+                <a href="/resumo-grupos" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-chart-pie me-2"></i> Resumo Grupos
+                </a>
+                <a href="/internal-chat" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-comments me-2"></i> Chat Interno
+                </a>
+                <a href="/kanban" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-columns me-2"></i> Kanban
+                </a>
+                <a href="/tickets" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-ticket-alt me-2"></i> Tickets
+                </a>
+                <div class="border-top my-3"></div>
+                <a href="/settings" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-cog me-2"></i> Configurações
+                </a>
+                <a href="/" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
+                    <i class="fas fa-sign-out-alt me-2"></i> Sair
+                </a>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <nav class="navbar navbar-expand-lg navbar-custom px-4">
+                <div class="d-flex align-items-center w-100 justify-content-between">
+                    <button class="btn btn-outline-secondary" id="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark"
+                            id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="https://ui-avatars.com/api/?name=Admin&background=6610f2&color=fff" alt="user"
+                                width="32" height="32" class="rounded-circle me-2">
+                            <strong>Admin</strong>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownUser1">
+                            <li><a class="dropdown-item" href="#">Perfil</a></li>
+                            <li><a class="dropdown-item" href="#">Assinatura</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="#">Sair</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container-fluid p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fw-bold mb-0">Disparador de Mensagens</h2>
+                    <div class="badge bg-primary px-3 py-2">Envio em Massa</div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-lg-7">
+                        <div class="card border-0 shadow-sm p-4 mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="fw-bold mb-0">Configuração do Disparo</h5>
+                                <button class="btn btn-outline-primary btn-sm fw-bold" data-bs-toggle="modal"
+                                    data-bs-target="#modalImport">
+                                    <i class="fas fa-file-excel me-2"></i> Importar Planilha
+                                </button>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Instância de Envio</label>
+                                    <select class="form-select" id="instance-select">
+                                        <option value="minha-instancia">minha-instancia</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Atraso entre envios (s)</label>
+                                    <input type="number" class="form-control" id="delay" value="5" min="1">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small fw-bold">Lista de Números (um por linha)</label>
+                                    <textarea class="form-control" id="numbers" rows="5"
+                                        placeholder="5511999998888&#13;5511777776666"></textarea>
+                                    <div class="form-text small">Ou use o botão de importar planilha acima.</div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small fw-bold">Mensagem</label>
+                                    <textarea class="form-control" id="message-text" rows="5"
+                                        placeholder="Olá, tudo bem?" oninput="updatePreview()"></textarea>
+                                </div>
+                                <div class="col-12 text-end">
+                                    <button class="btn btn-primary px-5 fw-bold" onclick="iniciarDisparo()">
+                                        <i class="fas fa-play me-2"></i> Iniciar Disparo
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-5">
+                        <div class="card border-0 shadow-sm p-4">
+                            <h5 class="fw-bold mb-4">Visualização</h5>
+                            <div class="msg-preview">
+                                <div class="bubble" id="preview-bubble">
+                                    Olá, sua mensagem aparecerá aqui...
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <h6 class="fw-bold small mb-2">Progresso do Envio</h6>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                        id="progress-bar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <div class="d-flex justify-content-between mt-2 small text-muted">
+                                    <span id="progress-text">Aguardando início...</span>
+                                    <span id="progress-percent">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Importar Planilha -->
+    <div class="modal fade" id="modalImport" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold">Importar Contatos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <div class="mb-4">
+                        <p class="text-muted small mb-3">Siga o modelo para garantir a importação correta.</p>
+                        <button class="btn btn-info btn-sm text-white fw-bold" onclick="downloadTemplate()">
+                            <i class="fas fa-download me-2"></i> Baixar Modelo (.csv)
+                        </button>
+                    </div>
+
+                    <div class="import-box mb-3" onclick="document.getElementById('file-input').click()">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                        <h6 class="fw-bold">Arraste ou clique para selecionar</h6>
+                        <p class="text-muted small">Suporta .csv, .xls, .xlsx</p>
+                        <input type="file" id="file-input" class="d-none" accept=".csv, .xls, .xlsx"
+                            onchange="handleFileUpload(event)">
+                    </div>
+                    <div id="file-status" class="small text-muted"></div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script>
+        var el = document.getElementById("wrapper");
+        var toggleButton = document.getElementById("menu-toggle");
+        toggleButton.onclick = function () { el.classList.toggle("sb-sidenav-toggled"); };
+
+        function updatePreview() {
+            const text = document.getElementById('message-text').value;
+            const bubble = document.getElementById('preview-bubble');
+            bubble.innerText = text || "Olá, sua mensagem aparecerá aqui...";
+        }
+
+        function downloadTemplate() {
+            const csvContent = "Nome,Numero\nJoao Silva,5511999998888\nMaria Souza,5511777776666";
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "modelo_disparo.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                let numbers = [];
+                jsonData.forEach(row => {
+                    // Tenta achar a coluna de número (Numero ou Number ou semelhante)
+                    const numCol = Object.keys(row).find(key =>
+                        key.toLowerCase().includes('num') ||
+                        key.toLowerCase().includes('tel') ||
+                        key.toLowerCase().includes('cel')
+                    );
+                    if (numCol && row[numCol]) {
+                        numbers.push(row[numCol].toString().replace(/\D/g, ''));
+                    }
+                });
+
+                if (numbers.length > 0) {
+                    document.getElementById('numbers').value = numbers.join('\n');
+                    document.getElementById('file-status').innerHTML = `<span class="text-success fw-bold">${numbers.length} números importados!</span>`;
+                    setTimeout(() => {
+                        bootstrap.Modal.getInstance(document.getElementById('modalImport')).hide();
+                    }, 1000);
+                } else {
+                    alert("Não foi possível encontrar uma coluna de números na planilha. Certifique-se que o cabeçalho contenha 'Numero'.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        async function iniciarDisparo() {
+            const numbersStr = document.getElementById('numbers').value;
+            const message = document.getElementById('message-text').value;
+            const numbers = numbersStr.split('\n').filter(n => n.trim() !== '');
+
+            if (numbers.length === 0 || !message) return alert("Preencha todos os campos!");
+
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const progressPercent = document.getElementById('progress-percent');
+
+            progressBar.style.width = `0%`;
+            progressPercent.innerText = `0%`;
+
+            for (let i = 0; i < numbers.length; i++) {
+                const num = numbers[i].trim();
+                const percent = Math.round(((i + 1) / numbers.length) * 100);
+
+                progressText.innerText = `Enviando para ${num}...`;
+
+                try {
+                    await fetch('/api/instance/sendMessage/minha-instancia', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ number: num, text: message })
+                    });
+                } catch (e) { }
+
+                progressBar.style.width = `${percent}%`;
+                progressPercent.innerText = `${percent}%`;
+
+                if (i < numbers.length - 1) {
+                    const delay = parseInt(document.getElementById('delay').value) * 1000;
+                    await new Promise(r => setTimeout(r, delay));
+                }
+            }
+
+            progressText.innerText = `Concluído! ${numbers.length} mensagens enviadas.`;
+        }
+    </script>
+
+</body>
+
+</html>

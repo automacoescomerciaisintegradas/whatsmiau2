@@ -63,8 +63,8 @@ func Load() (*Config, error) {
 	}
 
 	cfg := &Config{
-		// Server
-		Port:           getEnv("PORT", "8081"),
+		// Server - Use GO_PORT first, then PORT, then default 8085
+		Port:           getEnvWithFallback("GO_PORT", "PORT", "8085"),
 		DebugMode:      getEnvBool("DEBUG_MODE", false),
 		DebugWhatsmeow: getEnvBool("DEBUG_WHATSMEOW", false),
 
@@ -113,6 +113,17 @@ func Load() (*Config, error) {
 // getEnv gets an environment variable or returns a default value
 func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+// getEnvWithFallback tries primary key first, then fallback key, then default
+func getEnvWithFallback(primaryKey, fallbackKey, defaultValue string) string {
+	if value := os.Getenv(primaryKey); value != "" {
+		return value
+	}
+	if value := os.Getenv(fallbackKey); value != "" {
 		return value
 	}
 	return defaultValue

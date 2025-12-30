@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsMiau2 - Automação WhatsApp Premium</title>
+    <meta name="description"
+        content="Sistema premium de automação para WhatsApp. Chatbots, disparos e integração completa.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* Nova paleta de cores - Tons dourados/âmbar com acentos neon */
+            --gold: #f59e0b;
+            --gold-light: #fbbf24;
+            --gold-dark: #d97706;
+            --neon-pink: #ec4899;
+            --neon-cyan: #06b6d4;
+            --neon-lime: #84cc16;
+
+            /* Fundos escuros com tons quentes */
+            --bg-dark: #0c0a09;
+            --bg-warm: #1c1917;
+            --bg-card: rgba(28, 25, 23, 0.85);
+
+            /* Texto */
+            --text-white: #fafaf9;
+            --text-stone: #a8a29e;
+            --text-muted: #78716c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-white);
+            overflow-x: hidden;
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* WebP Video Background */
+        .hero-bg-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 0 0 40px 40px;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .hero-bg-video::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg,
+                    rgba(12, 10, 9, 0.9) 0%,
+                    rgba(12, 10, 9, 0.7) 30%,
+                    rgba(12, 10, 9, 0.5) 60%,
+                    rgba(12, 10, 9, 0.8) 100%);
+            z-index: 1;
+        }
+
+        .hero-bg-video img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: saturate(1.2) brightness(0.8);
+            will-change: transform, filter;
+            transform: translateZ(0);
+            /* Force GPU */
+        }
+
+        /* Parallax optimization */
+        .text-block,
+        .feature-grid,
+        .social-bar,
+        .hero-gradient {
+            will-change: transform, opacity;
+            transform: translateZ(0);
+        }
+
+        /* Animated gradient overlay */
+        .hero-gradient {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(ellipse at 10% 90%, rgba(245, 158, 11, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 90% 10%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+            z-index: 2;
+            animation: gradientShift 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes gradientShift {
+            0% {
+                opacity: 0.8;
+                transform: scale(1);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+        }
+
+        /* Hero Content */
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 80px 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        @media (max-width: 1024px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+        }
+
+        /* Text Block with glassmorphism */
+        .text-block {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            position: relative;
+        }
+
+        .intro-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--gold);
+            font-weight: 500;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 30px;
+        }
+
+        .main-title {
+            font-size: clamp(2.8rem, 5vw, 4.5rem);
+            font-weight: 900;
+            line-height: 1.05;
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
+        }
+
+        .main-title .highlight {
+            background: linear-gradient(135deg, var(--gold) 0%, var(--neon-pink) 50%, var(--neon-cyan) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% 200%;
+            animation: gradientText 5s ease infinite;
+        }
+
+        @keyframes gradientText {
+
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-stone);
+            margin-bottom: 32px;
+            line-height: 1.7;
+            font-weight: 400;
+        }
+
+        /* CTA Buttons */
+        .cta-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 1024px) {
+            .cta-group {
+                justify-content: center;
+            }
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+            color: var(--bg-dark);
+            box-shadow: 0 4px 30px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn-gold:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 8px 40px rgba(245, 158, 11, 0.6);
+        }
+
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-white);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-4px);
+            border-color: var(--gold);
+        }
+
+        /* Feature Cards */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .feature-card {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 24px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.1), transparent);
+            transition: left 0.6s;
+        }
+
+        .feature-card:hover::before {
+            left: 100%;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--gold);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+        }
+
+        .feature-card:nth-child(2) .feature-icon {
+            background: linear-gradient(135deg, var(--neon-pink) 0%, #be185d 100%);
+        }
+
+        .feature-card:nth-child(3) .feature-icon {
+            background: linear-gradient(135deg, var(--neon-cyan) 0%, #0891b2 100%);
+        }
+
+        .feature-card:nth-child(4) .feature-icon {
+            background: linear-gradient(135deg, var(--neon-lime) 0%, #65a30d 100%);
+        }
+
+        .feature-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Social Links */
+        .social-bar {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .social-link {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            text-decoration: none;
+            transition: all 0.3s;
+            filter: grayscale(100%);
+        }
+
+        .social-link:hover {
+            background: var(--gold);
+            border-color: var(--gold);
+            transform: translateY(-5px);
+            filter: grayscale(0%);
+        }
+
+        /* ===== FEATURES SECTION ===== */
+        .features-section {
+            padding: 120px 40px;
+            background: linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-warm) 100%);
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 60px;
+        }
+
+        .section-label {
+            display: inline-block;
+            font-size: 0.85rem;
+            color: var(--gold);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+
+        .section-desc {
+            color: var(--text-stone);
+            font-size: 1.1rem;
+            line-height: 1.7;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .big-feature-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 36px;
+            transition: all 0.4s;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .big-feature-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--gold);
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
+        }
+
+        .big-feature-card .icon-box {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 24px;
+        }
+
+        .big-feature-card.gold .icon-box {
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+        }
+
+        .big-feature-card.pink .icon-box {
+            background: linear-gradient(135deg, var(--neon-pink), #be185d);
+        }
+
+        .big-feature-card.cyan .icon-box {
+            background: linear-gradient(135deg, var(--neon-cyan), #0891b2);
+        }
+
+        .big-feature-card.lime .icon-box {
+            background: linear-gradient(135deg, var(--neon-lime), #65a30d);
+        }
+
+        .big-feature-card h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .big-feature-card p {
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* ===== QUICK ACCESS ===== */
+        .quick-section {
+            padding: 80px 40px;
+            background: var(--bg-warm);
+        }
+
+        .quick-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 16px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .quick-btn {
+            padding: 20px 36px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 60px;
+            color: var(--text-white);
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+
+        .quick-btn:hover {
+            background: var(--gold);
+            color: var(--bg-dark);
+            border-color: var(--gold);
+            transform: scale(1.05);
+        }
+
+        .quick-btn .icon {
+            font-size: 1.3rem;
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            background: var(--bg-dark);
+            padding: 60px 40px 30px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .footer-brand {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--gold), var(--neon-pink));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .footer-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .footer-text a {
+            color: var(--gold);
+            text-decoration: none;
+        }
+
+        /* Status Badge */
+        .api-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--neon-lime);
+            animation: statusPulse 2s infinite;
+        }
+
+        @keyframes statusPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(0.9);
+            }
+        }
+
+        .status-dot.offline {
+            background: #ef4444;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <!-- WebP Background -->
+        <div class="hero-bg-video">
+            <img src="https://s2.ezgif.com/tmp/ezgif-2ae17c02d844e0e0.webp" alt="Background Animation" loading="eager">
+        </div>
+
+        <div class="hero-gradient"></div>
+
+        <div class="hero-content">
+            <!-- Text Block -->
+            <div class="text-block">
+                <div class="intro-badge">
+                    ✨ Olá, bem-vindo(a) ao WhatsMiau2
+                </div>
+
+                <h1 class="main-title">
+                    Automação<br>
+                    <span class="highlight">WhatsApp</span><br>
+                    Premium
+                </h1>
+
+                <p class="subtitle">
+                    Gerencie instâncias, crie chatbots inteligentes e automatize
+                    seu atendimento com tecnologia de ponta.
+                </p>
+
+                <div class="cta-group">
+                    <a href="pairing.html" class="btn btn-gold">
+                        🚀 Começar Agora
+                    </a>
+                    <a href="automacao.html" class="btn btn-ghost">
+                        Ver Funcionalidades →
+                    </a>
+                </div>
+            </div>
+
+            <!-- Feature Cards -->
+            <div class="feature-grid">
+                <a href="automacao.html" class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>Automação</h3>
+                    <p>Chatbots e respostas automáticas</p>
+                </a>
+                <a href="disparador.html" class="feature-card">
+                    <div class="feature-icon">📤</div>
+                    <h3>Disparador</h3>
+                    <p>Envios em massa controlados</p>
+                </a>
+                <a href="webhooks.html" class="feature-card">
+                    <div class="feature-icon">🔗</div>
+                    <h3>Webhooks</h3>
+                    <p>Integração em tempo real</p>
+                </a>
+                <a href="instancias.html" class="feature-card">
+                    <div class="feature-icon">⚙️</div>
+                    <h3>Instâncias</h3>
+                    <p>Multi-conexões WhatsApp</p>
+                </a>
+            </div>
+        </div>
+
+        <!-- Social Bar -->
+        <div class="social-bar">
+            <a href="https://youtube.com" class="social-link" title="YouTube">📺</a>
+            <a href="https://instagram.com" class="social-link" title="Instagram">📷</a>
+            <a href="https://twitter.com" class="social-link" title="X">✖️</a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="section-header">
+            <span class="section-label">Funcionalidades</span>
+            <h2 class="section-title">Tudo que você precisa em um só lugar</h2>
+            <p class="section-desc">
+                Ferramentas poderosas para automatizar e escalar seu atendimento via WhatsApp.
+            </p>
+        </div>
+
+        <div class="features-grid">
+            <a href="pairing.html" class="big-feature-card gold">
+                <div class="icon-box">📱</div>
+                <h3>Conexão Rápida</h3>
+                <p>Conecte seu WhatsApp em segundos usando código de pareamento ou QR Code tradicional.</p>
+            </a>
+
+            <a href="automacao.html" class="big-feature-card pink">
+                <div class="icon-box">🤖</div>
+                <h3>Chatbots Inteligentes</h3>
+                <p>Crie fluxos de automação para responder mensagens automaticamente 24/7.</p>
+            </a>
+
+            <a href="disparador.html" class="big-feature-card cyan">
+                <div class="icon-box">📤</div>
+                <h3>Disparo em Massa</h3>
+                <p>Envie mensagens para múltiplos grupos e contatos com controle de velocidade.</p>
+            </a>
+
+            <a href="webhooks.html" class="big-feature-card lime">
+                <div class="icon-box">🔗</div>
+                <h3>Webhooks Real-time</h3>
+                <p>Receba eventos instantaneamente e integre com seus sistemas externos.</p>
+            </a>
+        </div>
+    </section>
+
+    <!-- Quick Access -->
+    <section class="quick-section">
+        <div class="section-header">
+            <span class="section-label">Acesso Rápido</span>
+            <h2 class="section-title">Navegue facilmente</h2>
+        </div>
+
+        <div class="quick-grid">
+            <a href="pairing.html" class="quick-btn">
+                <span class="icon">🔑</span> Pareamento
+            </a>
+            <a href="automacao.html" class="quick-btn">
+                <span class="icon">🤖</span> Automação
+            </a>
+            <a href="disparador.html" class="quick-btn">
+                <span class="icon">📤</span> Disparador
+            </a>
+            <a href="webhooks.html" class="quick-btn">
+                <span class="icon">🔗</span> Webhooks
+            </a>
+            <a href="instancias.html" class="quick-btn">
+                <span class="icon">⚙️</span> Instâncias
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-brand">WhatsMiau2</div>
+        <p class="footer-text">
+            © 2025 <a href="mailto:contato@automacoescomerciais.com.br">Automações Comerciais Integradas</a><br>
+            Todos os direitos reservados.
+        </p>
+    </footer>
+
+    <!-- API Status -->
+    <div class="api-status" id="apiStatus">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Verificando...</span>
+    </div>
+
+    <script>
+        // ===== SMOOTH PARALLAX EFFECT =====
+        class SmoothParallax {
+            constructor() {
+                this.heroSection = document.querySelector('.hero');
+                this.heroBg = document.querySelector('.hero-bg-video');
+                this.heroBgImg = document.querySelector('.hero-bg-video img');
+                this.heroGradient = document.querySelector('.hero-gradient');
+                this.textBlock = document.querySelector('.text-block');
+                this.featureGrid = document.querySelector('.feature-grid');
+                this.socialBar = document.querySelector('.social-bar');
+
+                // Smooth scroll values
+                this.currentScroll = 0;
+                this.targetScroll = 0;
+                this.ease = 0.08; // Lower = smoother
+
+                this.init();
+            }
+
+            init() {
+                // Use requestAnimationFrame for smooth updates
+                this.animate();
+
+                // Listen to scroll
+                window.addEventListener('scroll', () => {
+                    this.targetScroll = window.pageYOffset;
+                }, { passive: true });
+
+                // Handle resize
+                window.addEventListener('resize', () => {
+                    this.heroHeight = this.heroSection.offsetHeight;
+                }, { passive: true });
+
+                this.heroHeight = this.heroSection.offsetHeight;
+            }
+
+            lerp(start, end, factor) {
+                return start + (end - start) * factor;
+            }
+
+            animate() {
+                // Smooth interpolation
+                this.currentScroll = this.lerp(this.currentScroll, this.targetScroll, this.ease);
+
+                // Only apply effects within hero section
+                if (this.targetScroll < this.heroHeight) {
+                    const progress = this.currentScroll / this.heroHeight;
+                    const smoothProgress = Math.min(progress, 1);
+
+                    // Background parallax - moves slower than scroll (cinematic feel)
+                    if (this.heroBgImg) {
+                        const bgY = this.currentScroll * 0.4; // 40% of scroll speed
+                        const bgScale = 1 + (smoothProgress * 0.1); // Slight zoom
+                        this.heroBgImg.style.transform = `translateY(${bgY}px) scale(${bgScale})`;
+                        this.heroBgImg.style.filter = `saturate(${1.2 - smoothProgress * 0.4}) brightness(${0.8 - smoothProgress * 0.2})`;
+                    }
+
+                    // Gradient overlay parallax
+                    if (this.heroGradient) {
+                        const gradY = this.currentScroll * 0.2;
+                        this.heroGradient.style.transform = `translateY(${gradY}px) scale(${1 + smoothProgress * 0.05})`;
+                    }
+
+                    // Text block - slight upward movement + fade
+                    if (this.textBlock) {
+                        const textY = -this.currentScroll * 0.15;
+                        const textOpacity = 1 - (smoothProgress * 0.8);
+                        this.textBlock.style.transform = `translateY(${textY}px)`;
+                        this.textBlock.style.opacity = Math.max(textOpacity, 0);
+                    }
+
+                    // Feature cards - staggered parallax
+                    if (this.featureGrid) {
+                        const gridY = -this.currentScroll * 0.1;
+                        const gridOpacity = 1 - (smoothProgress * 0.6);
+                        this.featureGrid.style.transform = `translateY(${gridY}px)`;
+                        this.featureGrid.style.opacity = Math.max(gridOpacity, 0);
+                    }
+
+                    // Social bar fades out
+                    if (this.socialBar) {
+                        const socialOpacity = 1 - (smoothProgress * 2);
+                        this.socialBar.style.opacity = Math.max(socialOpacity, 0);
+                    }
+                }
+
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        // ===== FEATURE CARDS ENTRANCE ANIMATION =====
+        class ScrollReveal {
+            constructor() {
+                this.elements = document.querySelectorAll('.big-feature-card, .quick-btn');
+                this.init();
+            }
+
+            init() {
+                // Set initial state
+                this.elements.forEach((el, i) => {
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateY(40px)';
+                    el.style.transition = `all 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${i * 0.1}s`;
+                });
+
+                // Create observer
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.style.opacity = '1';
+                            entry.target.style.transform = 'translateY(0)';
+                        }
+                    });
+                }, { threshold: 0.2 });
+
+                this.elements.forEach(el => observer.observe(el));
+            }
+        }
+
+        // ===== API STATUS CHECK =====
+        async function checkStatus() {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+
+            try {
+                const response = await fetch('/api/whatsmiau2/status', { timeout: 5000 });
+                if (response.ok) {
+                    dot.classList.remove('offline');
+                    text.textContent = 'API Online';
+                } else {
+                    dot.classList.add('offline');
+                    text.textContent = 'API Parcial';
+                }
+            } catch (e) {
+                dot.classList.add('offline');
+                text.textContent = 'API Offline';
+            }
+        }
+
+        // ===== INITIALIZE =====
+        document.addEventListener('DOMContentLoaded', () => {
+            new SmoothParallax();
+            new ScrollReveal();
+            checkStatus();
+            setInterval(checkStatus, 30000);
+        });
+    </script>
+</body>
+
+</html>

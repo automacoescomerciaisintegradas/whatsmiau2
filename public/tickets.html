@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automações Integradas - Tickets</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/assets/css/style.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="d-flex" id="wrapper">
+
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading text-center">
+                <i class="fas fa-robot"></i> Automações
+            </div>
+            <div class="list-group list-group-flush mt-3">
+                <a href="/dashboard" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                </a>
+
+                <a href="/connections" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-wifi me-2"></i> Conexões
+                </a>
+
+                <a href="/disparador" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-paper-plane me-2"></i> Disparador
+                </a>
+                <a href="/resumo-grupos" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-chart-pie me-2"></i> Resumo Grupos
+                </a>
+                <a href="/internal-chat" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-comments me-2"></i> Chat Interno
+                </a>
+                <a href="/kanban" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-columns me-2"></i> Kanban
+                </a>
+                <a href="/tickets" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-ticket-alt me-2"></i> Tickets
+                </a>
+
+                <div class="border-top my-3"></div>
+
+                <a href="/settings" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-cog me-2"></i> Configurações
+                </a>
+
+                <a href="/" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
+                    <i class="fas fa-sign-out-alt me-2"></i> Sair
+                </a>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+
+            <nav class="navbar navbar-expand-lg navbar-custom px-4">
+                <div class="d-flex align-items-center w-100 justify-content-between">
+                    <button class="btn btn-outline-secondary" id="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark"
+                            id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="/assets/img/avatar-support.png" alt="user" width="32" height="32"
+                                class="rounded-circle me-2 bg-light">
+                            <strong>Admin</strong>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownUser1">
+                            <li><a class="dropdown-item" href="#">Perfil</a></li>
+                            <li><a class="dropdown-item" href="#">Assinatura</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="#">Sair</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container-fluid p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fw-bold mb-0">Gestão de Tickets</h2>
+                    <button class="btn btn-primary fw-bold" onclick="alert('Funcionalidade em desenvolvimento')">
+                        <i class="fas fa-plus me-2"></i> Novo Ticket
+                    </button>
+                </div>
+
+                <div class="card border-0 shadow-sm p-4">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="border-0">Lead/Cliente</th>
+                                    <th class="border-0">Última Mensagem</th>
+                                    <th class="border-0">Status</th>
+                                    <th class="border-0">Prioridade</th>
+                                    <th class="border-0">Última Ativ.</th>
+                                    <th class="border-0 text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tickets-tbody">
+                                <!-- Dinâmico -->
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <div class="spinner-border text-primary" role="status"></div>
+                                        <div class="mt-2 text-muted">Carregando tickets...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket.IO dependency -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        var el = document.getElementById("wrapper");
+        var toggleButton = document.getElementById("menu-toggle");
+        toggleButton.onclick = function () { el.classList.toggle("sb-sidenav-toggled"); };
+
+        // Ticket Management Logic
+        let tickets = [];
+        const socket = io();
+
+        async function loadTickets() {
+            try {
+                const res = await fetch('/api/tickets');
+                const data = await res.json();
+                tickets = data.tickets || [];
+                renderTickets();
+            } catch (err) {
+                console.error("Erro ao carregar tickets", err);
+            }
+        }
+
+        function renderTickets() {
+            const tbody = document.getElementById('tickets-tbody');
+            if (tickets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">Nenhum ticket encontrado.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = tickets.map(ticket => {
+                const statusClass = {
+                    'NOVO': 'bg-info-subtle text-info',
+                    'PENDENTE': 'bg-warning-subtle text-warning',
+                    'ABERTO': 'bg-primary-subtle text-primary',
+                    'FECHADO': 'bg-success-subtle text-success',
+                    'EM ANDAMENTO': 'bg-success-subtle text-success'
+                }[ticket.status] || 'bg-light text-dark';
+
+                const time = new Date(ticket.lastActivity).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                return `
+                    <tr>
+                        <td>
+                            <div class="fw-bold">${ticket.customerName}</div>
+                            <div class="text-muted small">${ticket.customerPhone.split('@')[0]}</div>
+                        </td>
+                        <td>
+                            <div class="text-truncate" style="max-width: 250px;" title="${ticket.subject}">
+                                ${ticket.subject}
+                            </div>
+                        </td>
+                        <td><span class="badge ${statusClass}">${ticket.status}</span></td>
+                        <td><span class="badge bg-light text-dark border">${ticket.priority}</span></td>
+                        <td class="small text-muted">${time}</td>
+                        <td class="text-end">
+                            <div class="btn-group">
+                                <button class="btn btn-outline-warning btn-sm" onclick="updateStatus(${ticket.id}, 'PENDENTE')" title="Pendente">
+                                    <i class="fas fa-clock"></i>
+                                </button>
+                                <button class="btn btn-outline-success btn-sm ms-1" onclick="updateStatus(${ticket.id}, 'FECHADO')" title="Resolver">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm ms-1" onclick="deleteTicket(${ticket.id})" title="Excluir">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <a href="/internal-chat" class="btn btn-primary btn-sm ms-1" title="Conversar">
+                                    <i class="fas fa-comments"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function updateStatus(id, status) {
+            try {
+                await fetch(`/api/tickets/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                loadTickets();
+            } catch (err) {
+                alert("Erro ao atualizar status");
+            }
+        }
+
+        async function deleteTicket(id) {
+            if (!confirm("Deseja excluir este ticket?")) return;
+            try {
+                await fetch(`/api/tickets/${id}`, { method: 'DELETE' });
+                loadTickets();
+            } catch (err) {
+                alert("Erro ao excluir ticket");
+            }
+        }
+
+        // Real-time updates
+        socket.on('ticket-update', (updatedTicket) => {
+            console.log("Ticket updated live:", updatedTicket);
+            loadTickets();
+        });
+
+        // Init
+        loadTickets();
+    </script>
+
+</body>
+
+</html>

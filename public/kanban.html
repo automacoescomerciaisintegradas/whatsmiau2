@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanban CRM - WhatsMiau2</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/assets/css/style.css" rel="stylesheet">
+    <style>
+        .kanban-board {
+            display: flex;
+            gap: 1.5rem;
+            overflow-x: auto;
+            padding-bottom: 1rem;
+            min-height: calc(100vh - 180px);
+        }
+
+        .kanban-col {
+            min-width: 300px;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+        }
+
+        [data-theme="dark"] .kanban-col {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .kanban-header {
+            padding: 1rem;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .kanban-list {
+            flex: 1;
+            padding: 1rem;
+            min-height: 100px;
+        }
+
+        .kanban-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            cursor: grab;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px var(--shadow-color);
+        }
+
+        .kanban-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .kanban-card:active {
+            cursor: grabbing;
+        }
+
+        .sortable-ghost {
+            opacity: 0.4;
+            background: var(--primary-color) !important;
+        }
+
+        .card-tag {
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+
+<body data-theme="dark">
+
+    <div class="d-flex" id="wrapper">
+
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading text-center py-4">
+                <img src="/assets/logo.jpg" alt="Logo" class="rounded-circle mb-2"
+                    style="width: 48px; height: 48px; border: 2px solid #10b981;">
+                <div class="small fw-bold letter-spacing-1">WHATSMIAU2</div>
+            </div>
+            <div class="list-group list-group-flush mt-3">
+                <a href="/dashboard" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                </a>
+                <a href="/connections" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-wifi me-2"></i> Conexões
+                </a>
+                <a href="/ai-agents" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-brain me-2"></i> Agentes de IA
+                </a>
+                <a href="/kanban" class="list-group-item list-group-item-action bg-transparent active">
+                    <i class="fas fa-columns me-2"></i> Kanban
+                </a>
+                <a href="/internal-chat" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-comments me-2"></i> Chat Interno
+                </a>
+                <a href="/tickets" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-ticket-alt me-2"></i> Tickets
+                </a>
+                <div class="border-top my-3"></div>
+                <a href="/settings" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-cog me-2"></i> Configurações
+                </a>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div id="page-content-wrapper">
+            <nav class="navbar navbar-expand-lg navbar-custom px-4">
+                <div class="d-flex align-items-center w-100 justify-content-between">
+                    <button class="btn btn-outline-secondary" id="menu-toggle"><i class="fas fa-bars"></i></button>
+                    <h5 class="my-0 ms-2 fw-bold text-success">Pipeline de Vendas (CRM)</h5>
+                    <button class="btn btn-primary btn-sm fw-bold px-3 shadow-sm" onclick="showAddLead()">+ NOVO
+                        LEAD</button>
+                </div>
+            </nav>
+
+            <div class="container-fluid p-4">
+                <div class="kanban-board" id="board">
+                    <!-- Colunas serão inseridas via JS -->
+                    <div class="kanban-col" data-status="novo">
+                        <div class="kanban-header">NOVOS <span
+                                class="badge bg-primary rounded-pill badge-count">0</span></div>
+                        <div class="kanban-list" id="list-novo"></div>
+                    </div>
+                    <div class="kanban-col" data-status="contato">
+                        <div class="kanban-header">EM CONTATO <span
+                                class="badge bg-info rounded-pill badge-count">0</span></div>
+                        <div class="kanban-list" id="list-contato"></div>
+                    </div>
+                    <div class="kanban-col" data-status="negociacao">
+                        <div class="kanban-header">NEGOCIAÇÃO <span
+                                class="badge bg-warning rounded-pill badge-count">0</span></div>
+                        <div class="kanban-list" id="list-negociacao"></div>
+                    </div>
+                    <div class="kanban-col" data-status="fechado">
+                        <div class="kanban-header">FECHADOS <span
+                                class="badge bg-success rounded-pill badge-count">0</span></div>
+                        <div class="kanban-list" id="list-fechado"></div>
+                    </div>
+                    <div class="kanban-col" data-status="perdido">
+                        <div class="kanban-header">PERDIDOS <span
+                                class="badge bg-danger rounded-pill badge-count">0</span></div>
+                        <div class="kanban-list" id="list-perdido"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script>
+        const API_URL = '/v1/crm';
+        const wrapper = document.getElementById("wrapper");
+        document.getElementById("menu-toggle").onclick = function () { wrapper.classList.toggle("sb-sidenav-toggled"); };
+
+        // Initialize Sortable on each list
+        const statuses = ['novo', 'contato', 'negociacao', 'fechado', 'perdido'];
+        statuses.forEach(status => {
+            const el = document.getElementById(`list-${status}`);
+            new Sortable(el, {
+                group: 'kanban',
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: async function (evt) {
+                    const leadId = evt.item.dataset.id;
+                    const newStatus = evt.to.parentElement.dataset.status;
+                    if (evt.from !== evt.to) {
+                        console.log(`Lead ${leadId} moved to ${newStatus}`);
+                        await updateLeadStatus(leadId, newStatus);
+                        updateCounts();
+                    }
+                }
+            });
+        });
+
+        async function fetchLeads() {
+            try {
+                const res = await fetch(`${API_URL}/leads`);
+                const data = await res.json();
+                if (data.success) {
+                    renderLeads(data.leads);
+                }
+            } catch (e) { console.error("Error fetching leads:", e); }
+        }
+
+        function renderLeads(leads) {
+            statuses.forEach(s => document.getElementById(`list-${s}`).innerHTML = '');
+
+            leads.forEach(lead => {
+                const list = document.getElementById(`list-${lead.status}`) || document.getElementById('list-novo');
+                const card = `
+                    <div class="kanban-card" data-id="${lead.id}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                             <div class="fw-bold small">${lead.nome}</div>
+                             <span class="card-tag bg-light text-dark">${lead.temperatura || 'morno'}</span>
+                        </div>
+                        <div class="text-muted" style="font-size: 0.75rem;">
+                            <i class="fab fa-whatsapp text-success me-1"></i> ${lead.whatsapp}
+                        </div>
+                        <div class="mt-2 d-flex justify-content-between align-items-center">
+                             <small class="text-primary fw-bold">R$ ${lead.valor || '0,00'}</small>
+                             <button class="btn btn-link btn-sm p-0 text-muted" onclick="editLead(${lead.id})"><i class="fas fa-edit"></i></button>
+                        </div>
+                    </div>
+                `;
+                list.insertAdjacentHTML('beforeend', card);
+            });
+            updateCounts();
+        }
+
+        function updateCounts() {
+            statuses.forEach(s => {
+                const count = document.getElementById(`list-${s}`).children.length;
+                document.querySelector(`[data-status="${s}"] .badge-count`).textContent = count;
+            });
+        }
+
+        async function updateLeadStatus(id, status) {
+            try {
+                await fetch(`${API_URL}/leads/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: status })
+                });
+            } catch (e) { alert("Erro ao atualizar status"); }
+        }
+
+        function showAddLead() {
+            alert("Módulo de Novo Lead no CRM");
+        }
+
+        fetchLeads();
+    </script>
+</body>
+
+</html>

@@ -237,35 +237,29 @@ Esta API é compatível com a Evolution API. Se você está migrando da Evolutio
 | POST /message/sendText/:instance | POST /v1/message/sendText/:instance |
 | GET /instance/connect/:id | GET /v1/instance/connect/:id |
 
-## 📁 Estrutura do Projeto
+## 📁 Estrutura do Projeto (Organizada)
 
 ```
 whatsmiau2/
-├── main.go                    # Ponto de entrada
+├── main.go                    # Ponto de entrada Backend (Go)
+├── server.js                  # BFF / Proxy Node.js (Porta 3002)
 ├── go.mod                     # Dependências Go
 ├── .env                       # Variáveis de ambiente
 ├── Dockerfile                 # Docker build
 ├── docker-compose.yml         # Docker Compose
-└── internal/
-    ├── config/
-    │   └── config.go          # Carregamento de configurações
-    ├── database/
-    │   └── database.go        # Conexão com banco de dados
-    ├── handlers/
-    │   ├── instance.go        # Handlers de instância
-    │   ├── message.go         # Handlers de mensagem
-    │   └── chat.go            # Handlers de chat
-    ├── middleware/
-    │   └── middleware.go      # Middlewares (auth, cors, logger)
-    ├── models/
-    │   ├── instance.go        # Modelos de instância
-    │   └── message.go         # Modelos de mensagem
-    ├── server/
-    │   └── server.go          # Servidor HTTP
-    └── whatsapp/
-        ├── manager.go         # Gerenciador de clientes
-        ├── events.go          # Handler de eventos
-        └── webhook.go         # Emissor de webhooks
+├── internal/                  # Lógica interna do Backend (Go)
+├── public/                    # Frontend estático (HTML, CSS, JS)
+├── docs/                      # Documentação organizada
+│   ├── business/              # PRDs, Briefings e Planos de Negócio
+│   ├── technical/             # Docs Técnicos e Integração
+│   ├── guides/                # Guias de Instalação e Inicialização
+│   ├── plans/                 # Planos de Implementação
+│   └── maintenance/           # Homologação e Histórico de Correções
+├── scripts/                   # Scripts de Deploy e Utilização (.sh, .ps1, .bat)
+├── tests/                     # Testes de API e Integração
+├── migrations/                # Migrações do Banco de Dados
+├── backups/                   # Arquivos antigos e temporários
+└── bin/                       # Executáveis compilados
 ```
 
 ## 🤝 Contribuindo
@@ -282,3 +276,8 @@ Este projeto está sob a licença MIT.
 - [Gin](https://github.com/gin-gonic/gin) - Framework HTTP
 - [GORM](https://gorm.io/) - ORM para Go
 - [Evolution API](https://doc.evolution-api.com/) - Referência de API
+
+
+## Desenvolvido por
+Automações Comerciais Integradas! ⚙️ - contato@automacoescomerciais.com.br
+© 2025 Automações Comerciais Integradas. Todos os direitos reservados.

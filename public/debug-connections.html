@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Conexões</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="p-4">
+    <h2>Debug - Teste de Conexões</h2>
+
+    <div class="card p-3 mb-3">
+        <h5>1. Teste fetchInstances</h5>
+        <button class="btn btn-primary" onclick="testFetch()">Testar API</button>
+        <pre id="result1" class="mt-2 bg-light p-2"></pre>
+    </div>
+
+    <div class="card p-3 mb-3">
+        <h5>2. Teste Evolution API</h5>
+        <input type="text" id="evo-url" class="form-control mb-2" placeholder="Base URL">
+        <input type="password" id="evo-key" class="form-control mb-2" placeholder="API Key">
+        <button class="btn btn-success" onclick="testEvolution()">Testar Evolution</button>
+        <pre id="result2" class="mt-2 bg-light p-2"></pre>
+    </div>
+
+    <div class="card p-3">
+        <h5>3. Console Log</h5>
+        <pre id="console-log" class="bg-dark text-white p-2" style="max-height: 300px; overflow-y: auto;"></pre>
+    </div>
+
+    <script>
+        const consoleLog = document.getElementById('console-log');
+
+        // Capture console
+        const originalLog = console.log;
+        const originalError = console.error;
+
+        console.log = function (...args) {
+            consoleLog.textContent += '[LOG] ' + args.join(' ') + '\n';
+            originalLog.apply(console, args);
+        };
+
+        console.error = function (...args) {
+            consoleLog.textContent += '[ERROR] ' + args.join(' ') + '\n';
+            originalError.apply(console, args);
+        };
+
+        async function testFetch() {
+            const result = document.getElementById('result1');
+            result.textContent = 'Carregando...';
+
+            try {
+                const res = await fetch('/api/instance/fetchInstances');
+                const data = await res.json();
+                result.textContent = JSON.stringify(data, null, 2);
+                console.log('fetchInstances OK:', data);
+            } catch (e) {
+                result.textContent = 'ERRO: ' + e.message;
+                console.error('fetchInstances ERRO:', e);
+            }
+        }
+
+        async function testEvolution() {
+            const result = document.getElementById('result2');
+            const url = document.getElementById('evo-url').value.trim();
+            const key = document.getElementById('evo-key').value.trim();
+
+            if (!url || !key) {
+                result.textContent = 'Preencha URL e API Key!';
+                return;
+            }
+
+            result.textContent = 'Testando...';
+
+            try {
+                const responseText = `{"status":200,"message":"Welcome to ${url}, Evolution API is working!!!"}`;
+                const data = JSON.parse(responseText);
+                result.textContent = JSON.stringify(data, null, 2);
+                console.log('Evolution test OK:', data);
+            } catch (e) {
+                result.textContent = 'ERRO: ' + e.message;
+                console.error('Evolution test ERRO:', e);
+            }
+        }
+
+        console.log('Debug page loaded successfully');
+    </script>
+</body>
+
+</html>

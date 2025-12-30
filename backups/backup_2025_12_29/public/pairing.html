@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automações Integradas - Pareamento</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/assets/css/style.css" rel="stylesheet">
+    <style>
+        .pairing-card {
+            max-width: 500px;
+            margin: 40px auto;
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .pairing-code {
+            font-size: 2rem;
+            letter-spacing: 0.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px dashed #dee2e6;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="d-flex" id="wrapper">
+
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading text-center">
+                <i class="fas fa-robot"></i> Automações
+            </div>
+            <div class="list-group list-group-flush mt-3">
+                <a href="/dashboard" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                </a>
+
+                <a href="/connections" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-wifi me-2"></i> Conexões
+                </a>
+
+                <a href="/disparador" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-paper-plane me-2"></i> Disparador
+                </a>
+                <a href="/resumo-grupos" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-chart-pie me-2"></i> Resumo Grupos
+                </a>
+                <a href="/internal-chat" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-comments me-2"></i> Chat Interno
+                </a>
+                <a href="/kanban" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-columns me-2"></i> Kanban
+                </a>
+                <a href="/tickets" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-ticket-alt me-2"></i> Tickets
+                </a>
+
+                <div class="border-top my-3"></div>
+
+                <a href="/settings" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-cog me-2"></i> Configurações
+                </a>
+
+                <a href="/" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
+                    <i class="fas fa-sign-out-alt me-2"></i> Sair
+                </a>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+
+            <nav class="navbar navbar-expand-lg navbar-custom px-4">
+                <div class="d-flex align-items-center w-100 justify-content-between">
+                    <button class="btn btn-outline-secondary" id="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark"
+                            id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="https://ui-avatars.com/api/?name=Admin&background=6610f2&color=fff" alt="user"
+                                width="32" height="32" class="rounded-circle me-2">
+                            <strong>Admin</strong>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownUser1">
+                            <li><a class="dropdown-item" href="#">Perfil</a></li>
+                            <li><a class="dropdown-item" href="#">Assinatura</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="#">Sair</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container-fluid p-4 text-center">
+                <div class="card pairing-card p-5">
+                    <h2 class="fw-bold mb-3">Conectar via Código</h2>
+                    <p class="text-muted mb-4">Digite o número do WhatsApp com o DDI (ex: 5511999998888)</p>
+
+                    <div class="mb-4">
+                        <input type="text" id="phone" class="form-control form-control-lg text-center fw-bold"
+                            placeholder="5511999998888">
+                    </div>
+
+                    <div id="code-display" class="d-none">
+                        <div class="pairing-code" id="pair-code">--------</div>
+                        <p class="small text-muted">Digite este código no seu WhatsApp: <br>Menu > Aparelhos Conectados
+                            > Conectar com número de telefone</p>
+                    </div>
+
+                    <button class="btn btn-primary btn-lg w-100 fw-bold" id="btn-generate" onclick="generateCode()">
+                        Gerar Código de Pareamento
+                    </button>
+
+                    <div class="mt-4">
+                        <a href="/connections" class="text-decoration-none small text-muted"><i
+                                class="fas fa-arrow-left me-1"></i> Voltar para Conexões</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        var el = document.getElementById("wrapper");
+        var toggleButton = document.getElementById("menu-toggle");
+        toggleButton.onclick = function () { el.classList.toggle("sb-sidenav-toggled"); };
+
+        const currentPath = window.location.pathname;
+        document.querySelectorAll('.list-group-item').forEach(link => {
+            if (link.getAttribute('href') === currentPath) link.classList.add('active');
+        });
+
+        async function generateCode() {
+            const phone = document.getElementById('phone').value;
+            const btn = document.getElementById('btn-generate');
+            const codeDisplay = document.getElementById('code-display');
+            const pairCode = document.getElementById('pair-code');
+
+            if (!phone) return alert("Digite o número!");
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Gerando...';
+
+            try {
+                // Usando a instância 'minha-instancia' por padrão ou criando se não existir
+                const res = await fetch(`/api/instance/connect/minha-instancia?phone=${phone}`);
+                const data = await res.json();
+
+                if (data.code) {
+                    pairCode.innerText = data.code;
+                    codeDisplay.classList.remove('d-none');
+                    btn.classList.add('d-none');
+                } else {
+                    alert("Erro ao gerar código. Verifique se a instância está pronta.");
+                    btn.disabled = false;
+                    btn.innerText = 'Gerar Código de Pareamento';
+                }
+            } catch (e) {
+                alert("Erro de conexão");
+                btn.disabled = false;
+                btn.innerText = 'Gerar Código de Pareamento';
+            }
+        }
+    </script>
+
+</body>
+
+</html>

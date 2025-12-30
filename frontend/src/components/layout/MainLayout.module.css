@@ -1,0 +1,28 @@
+.container {
+    display: flex;
+    min-height: 100vh;
+    background: var(--bg-primary);
+}
+
+.contentWrapper {
+    flex: 1;
+    margin-left: 260px;
+    /* Sidebar width */
+    display: flex;
+    flex-direction: column;
+}
+
+.main {
+    margin-top: 72px;
+    /* Header height */
+    flex: 1;
+    padding: var(--space-8);
+    overflow-y: auto;
+}
+
+.innerContent {
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+    animation: fadeIn 0.5s ease-out;
+}

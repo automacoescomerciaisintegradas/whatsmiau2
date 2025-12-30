@@ -1,18 +1,43 @@
 // server.js – versão simplificada
+import "dotenv/config";
 import express from "express";
 import axios from "axios";
 import cors from "cors";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
+import { generateAudioWithOpenAI, generateSummaryWithGemini } from "./services/ai.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const API_URL = process.env.API_URL || "http://localhost:8085/v1";
+// API URL - No Docker, use service name. Locally, use localhost
+// Docker: http://whatsmiau2:8081/v1
+// Local: http://localhost:8085/v1
+// NOTE: All endpoints require /v1 prefix
+const API_URL = (process.env.API_URL || "http://localhost:8085").replace(/\/v1$/, "");
 const API_KEY = process.env.API_KEY || "2wtLvtb20wXePp8D9uRhm55aCjINiciO";
-const DEFAULT_INSTANCE = "minha-instancia";
+const DEFAULT_INSTANCE = process.env.DEFAULT_INSTANCE || "minha-instancia";
+const DEVELOPER_NUMBER = "558894227586";
+const ALERT_GROUP_JID = "120363306948488101@g.us";
+
+// Configurações do Agente de IA (Atendimento)
+let AI_AGENT_ENABLED = true;
+let AI_AGENT_PROMPT = `
+Você é um assistente virtual VIP da Automações Comerciais.
+Siga este roteiro de atendimento:
+
+1. Mensagem de boas-vindas: "Olá! Seja bem-vindo ao nosso grupo VIP! 🚀" (Se for o primeiro contato, peça o nome do cliente).
+2. Apresentação da solução: "Nossos chatbots são perfeitos para quem busca automatizar o atendimento ao cliente e aumentar as vendas. Eles são fáceis de usar e podem ser personalizados de acordo com a sua necessidade."
+3. Qualificação: "Você já utiliza alguma ferramenta de chat para atender seus clientes? Quais são os principais desafios que você enfrenta nessa área?"
+4. Chamada para a ação: "Que tal agendar uma demonstração gratuita para conhecer melhor nossas soluções? 📅"
+
+Observação: Adapte o tom à persona do cliente. O objetivo é construir confiança e oferecer uma solução real.
+Responda de forma curta e use emojis.
+`;
 
 const app = express();
+let io = null; // Socket.IO placeholder
 app.use(cors());
 app.use(express.json({ limit: '200mb' }));
 app.use(express.urlencoded({ limit: '200mb', extended: true }));
@@ -26,24 +51,81 @@ app.use((req, res, next) => {
 });
 
 // Servir arquivos estáticos
-app.use(express.static(__dirname, { etag: false, lastModified: false }));
-console.log("Servindo arquivos estáticos de:", __dirname);
+app.use(express.static(path.join(__dirname, "public"), { etag: false, lastModified: false }));
+console.log("Servindo arquivos estáticos de:", path.join(__dirname, "public"));
 
 // Rotas HTML estáticas
-app.get("/", (req, res) => res.sendFile(path.join(__dirname, "instancias.html")));
-app.get("/instancias", (req, res) => res.sendFile(path.join(__dirname, "instancias.html")));
-app.get("/manager", (req, res) => res.sendFile(path.join(__dirname, "manager.html")));
-app.get("/pairing.html", (req, res) => res.sendFile(path.join(__dirname, "pairing.html")));
-app.get("/disparador", (req, res) => res.sendFile(path.join(__dirname, "disparador.html")));
-app.get("/disparador.html", (req, res) => res.sendFile(path.join(__dirname, "disparador.html")));
-app.get("/webhooks", (req, res) => res.sendFile(path.join(__dirname, "webhooks.html")));
-app.get("/webhooks.html", (req, res) => res.sendFile(path.join(__dirname, "webhooks.html")));
-app.get("/automacao", (req, res) => res.sendFile(path.join(__dirname, "automacao.html")));
-app.get("/automacao.html", (req, res) => res.sendFile(path.join(__dirname, "automacao.html")));
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
+app.get("/dashboard", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
+app.get("/home", (req, res) => res.sendFile(path.join(__dirname, "public", "home.html")));
+app.get("/connections", (req, res) => res.sendFile(path.join(__dirname, "public", "instancias.html")));
+app.get("/instancias", (req, res) => res.sendFile(path.join(__dirname, "public", "instancias.html")));
+app.get("/pairing", (req, res) => res.sendFile(path.join(__dirname, "public", "pairing.html")));
+app.get("/tickets", (req, res) => res.sendFile(path.join(__dirname, "public", "tickets.html")));
+app.get("/kanban", (req, res) => res.sendFile(path.join(__dirname, "public", "kanban.html")));
+app.get("/contacts", (req, res) => res.sendFile(path.join(__dirname, "public", "contacts.html")));
+app.get("/settings", (req, res) => res.sendFile(path.join(__dirname, "public", "settings.html")));
+app.get("/disparador", (req, res) => res.sendFile(path.join(__dirname, "public", "disparador.html")));
+app.get("/webhooks", (req, res) => res.sendFile(path.join(__dirname, "public", "webhooks.html")));
+app.get("/automacao", (req, res) => res.sendFile(path.join(__dirname, "public", "automacao.html")));
+app.get("/crm", (req, res) => res.sendFile(path.join(__dirname, "public", "crm-new.html")));
+app.get("/ai-agents", (req, res) => res.sendFile(path.join(__dirname, "public", "ai-agents.html")));
+app.get("/internal-chat", (req, res) => res.sendFile(path.join(__dirname, "public", "internal-chat.html")));
+app.get("/resumo-grupos", (req, res) => res.sendFile(path.join(__dirname, "public", "resumo-grupos.html")));
+app.get("/logout", (req, res) => res.redirect("/"));
 
 /* -------------------------------------------------
    Utility Functions
    ------------------------------------------------- */
+
+/**
+ * Envia um alerta para o desenvolvedor via WhatsApp
+ */
+async function sendAlert(message) {
+  console.log(`[ALERT] Tentando enviar alerta: ${message}`);
+  try {
+    // Tenta enviar para o privado do desenvolvedor
+    await axios.post(`${API_URL}/v1/message/sendText/${DEFAULT_INSTANCE}`, {
+      number: DEVELOPER_NUMBER,
+      textMessage: { text: `⚠️ *ALERTA WHATSMIAU2*\n\n${message}` }
+    }, {
+      headers: { 'apikey': API_KEY }
+    });
+
+    // Tenta enviar para o grupo de alertas
+    await axios.post(`${API_URL}/v1/message/sendText/${DEFAULT_INSTANCE}`, {
+      number: ALERT_GROUP_JID,
+      textMessage: { text: `⚠️ *ALERTA SISTEMA*\n\n${message}` }
+    }, {
+      headers: { 'apikey': API_KEY }
+    });
+
+    console.log(`[ALERT] Alerta enviado com sucesso.`);
+  } catch (err) {
+    console.error(`[ALERT ERROR] Falha ao enviar alerta via WhatsApp:`, err.message);
+  }
+}
+
+/**
+ * Registra o webhook no backend Go
+ */
+async function registerWebhook() {
+  try {
+    const webhookUrl = `http://localhost:${PORT}/api/webhook/instance-status`;
+    console.log(`[SETUP] Registrando webhook: ${webhookUrl}`);
+    await axios.put(`${API_URL}/v1/instance/webhook/${DEFAULT_INSTANCE}`, {
+      url: webhookUrl
+    }, {
+      headers: {
+        'apikey': API_KEY,
+        'Content-Type': 'application/json'
+      }
+    });
+    console.log(`[SETUP] Webhook registrado com sucesso.`);
+  } catch (err) {
+    console.error(`[SETUP ERROR] Falha ao registrar webhook:`, err.message);
+  }
+}
 
 // Normaliza entrada de número para formato JID do WhatsApp
 function normalizeInputToJid(input) {
@@ -62,17 +144,17 @@ function normalizeInputToJid(input) {
     return inputStr; // Já está no formato lid
   }
   if (inputStr.includes('@s.whatsapp.net')) {
-    return inputStr; // Já está no formato de contato
+    return inputStr; // Já está
+  }
+  if (inputStr.includes('@g.us') || inputStr.includes('@newsletter')) {
+    return inputStr;
   }
 
   // Remove tudo que não é número
   const numeric = inputStr.replace(/\D/g, '');
 
   // Valida se tem pelo menos 10 dígitos (número brasileiro)
-  if (numeric.length < 10) {
-    console.warn(`[normalizeInputToJid] Número muito curto: ${numeric}`);
-    return null;
-  }
+  if (numeric.length < 10) return null;
 
   // Adiciona código do país se não tiver (assume Brasil +55)
   let normalized = numeric;
@@ -80,8 +162,8 @@ function normalizeInputToJid(input) {
     normalized = '55' + numeric;
   }
 
-  // Retorna no formato @lid (sem espaço extra)
-  return `${normalized}@lid`;
+  // Retorna no formato @s.whatsapp.net
+  return `${normalized}@s.whatsapp.net`;
 }
 
 // Formata JID para exibição amigável
@@ -121,7 +203,7 @@ app.get("/api/normalize-jid", (req, res) => {
 // WhatsMiau2 API Status
 app.get("/api/whatsmiau2/status", async (req, res) => {
   try {
-    const response = await axios.get(`${API_URL}/instance/connectionState/${DEFAULT_INSTANCE}`, {
+    const response = await axios.get(`${API_URL}/v1/instance/connectionState/${DEFAULT_INSTANCE}`, {
       headers: { 'apikey': API_KEY }
     });
 
@@ -144,42 +226,100 @@ app.get("/api/whatsmiau2/groups", async (req, res) => {
   const { getParticipants } = req.query;
 
   try {
-    const response = await axios.get(`${API_URL}/group/list/${DEFAULT_INSTANCE}`, {
+    const response = await axios.get(`${API_URL}/v1/group/list/${DEFAULT_INSTANCE}`, {
+      headers: { 'apikey': API_KEY }
+    });
+
+    // Return in the format expected by frontend
+    res.json({
+      success: true,
+      data: response.data // Changed from 'groups' to 'data'
+    });
+  } catch (err) {
+    const statusCode = err.response?.status || 500;
+    const errorData = err.response?.data || { message: err.message };
+
+    console.error(`[Groups Error] ${statusCode}:`, errorData);
+
+    res.status(statusCode).json({
+      success: false,
+      error: err.message,
+    });
+  }
+});
+
+// Get Group Details
+app.get("/api/whatsmiau2/groups/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const response = await axios.get(`${API_URL}/v1/group/info/${DEFAULT_INSTANCE}`, {
+      params: { jid: id },
       headers: { 'apikey': API_KEY }
     });
 
     res.json({
       success: true,
-      groups: response.data
+      data: response.data
     });
   } catch (err) {
-    res.status(500).json({
+    const statusCode = err.response?.status || 500;
+    const errorData = err.response?.data || { message: err.message };
+    console.error(`[Group Info Error] ${statusCode}:`, errorData);
+    res.status(statusCode).json({
       success: false,
       error: err.message,
-      details: err.response?.data
+      details: errorData
     });
   }
 });
 
-// Alias for groups
-app.get("/api/groups", async (req, res) => {
-  const { getParticipants } = req.query;
-
+// Get Newsletters
+app.get("/api/whatsmiau2/newsletters", async (req, res) => {
   try {
-    const response = await axios.get(`${API_URL}/group/list/${DEFAULT_INSTANCE}`, {
+    // Backend: GET /v1/newsletter/list/:instance
+    const response = await axios.get(`${API_URL}/v1/newsletter/list/${DEFAULT_INSTANCE}`, {
       headers: { 'apikey': API_KEY }
     });
 
-    res.json(response.data);
+    res.json({
+      success: true,
+      data: response.data.newsletters || [] // Backend returns { newsletters: [...] }
+    });
   } catch (err) {
-    res.status(500).json({
+    const statusCode = err.response?.status || 500;
+    const errorData = err.response?.data || { message: err.message };
+    console.error(`[Newsletters Error] ${statusCode}:`, errorData);
+    res.status(statusCode).json({
+      success: false,
       error: err.message,
-      details: err.response?.data
+      details: errorData
     });
   }
 });
 
-// Send Text via WhatsMiau2 API
+// Get Newsletter Info (Participants logic is different for channels, usually only viewer count, but we check metadata)
+app.get("/api/whatsmiau2/newsletters/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Backend: GET /v1/newsletter/:instance/info?jid=...
+    const response = await axios.get(`${API_URL}/v1/newsletter/${DEFAULT_INSTANCE}/info`, {
+      params: { jid: id },
+      headers: { 'apikey': API_KEY }
+    });
+
+    res.json({
+      success: true,
+      data: response.data
+    });
+  } catch (err) {
+    // Handle 404/Error
+    res.json({ success: false, error: err.message });
+  }
+});
+
+
+// Send Text Message (Unified & Fixed)
 app.post("/api/whatsmiau2/send-text", async (req, res) => {
   const { number, text, instance } = req.body;
   const instanceName = instance || DEFAULT_INSTANCE;
@@ -189,49 +329,21 @@ app.post("/api/whatsmiau2/send-text", async (req, res) => {
   }
 
   try {
-    // Normalize the number
     const jid = normalizeInputToJid(number);
-    if (!jid) {
-      return res.status(400).json({ success: false, error: "Invalid phone number" });
-    }
+    if (!jid) return res.status(400).json({ success: false, error: "Invalid phone number" });
 
-    // If it's a newsletter, use the newsletter endpoint
-    if (jid.includes('@newsletter')) {
-      const response = await axios.post(
-        `${API_URL}/newsletter/send/${instanceName}`,
-        {
-          jid: jid,
-          message: text
-        },
-        { headers: { 'Content-Type': 'application/json', 'apikey': API_KEY } }
-      );
+    const payload = {
+      number: jid,
+      textMessage: { text: text }
+    };
 
-      res.json({
-        success: true,
-        ...response.data
-      });
-      return;
-    }
-
-    const response = await axios.post(
-      `${API_URL}/message/sendText/${instanceName}`,
-      {
-        number: jidToFriendly(jid),
-        textMessage: { text: text }
-      },
-      { headers: { 'Content-Type': 'application/json', 'apikey': API_KEY } }
-    );
-
-    res.json({
-      success: true,
-      ...response.data
+    const response = await axios.post(`${API_URL}/v1/message/sendText/${instanceName}`, payload, {
+      headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' }
     });
+
+    res.json({ success: true, ...response.data });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message,
-      details: err.response?.data
-    });
+    res.status(500).json({ success: false, error: err.message, details: err.response?.data });
   }
 });
 
@@ -273,7 +385,7 @@ app.post("/api/whatsmiau2/send-media", async (req, res) => {
     }
 
     const response = await axios.post(
-      `${API_URL}/message/sendMedia/${instanceName}`,
+      `${API_URL}/v1/message/sendMedia/${instanceName}`,
       {
         number: targetNumber,
         mediaMessage: {
@@ -327,7 +439,7 @@ app.post("/api/whatsmiau2/send-audio", async (req, res) => {
     const targetNumber = jid.includes('@g.us') ? jid : jidToFriendly(jid);
 
     const response = await axios.post(
-      `${API_URL}/message/sendWhatsAppAudio/${instanceName}`,
+      `${API_URL}/v1/message/sendWhatsAppAudio/${instanceName}`,
       {
         number: targetNumber,
         audioMessage: {
@@ -365,7 +477,7 @@ app.get("/api/group/invite-link", async (req, res) => {
 
   try {
     const response = await axios.get(
-      `${API_URL}/group/invite-link/${instanceName}`,
+      `${API_URL}/v1/group/invite-link/${instanceName}`,
       {
         headers: { 'apikey': API_KEY },
         params: { group_id: group_id }
@@ -395,7 +507,7 @@ app.get("/group/invite-link", async (req, res) => {
 
   try {
     const response = await axios.get(
-      `${API_URL}/group/invite-link/${DEFAULT_INSTANCE}`,
+      `${API_URL}/v1/group/invite-link/${DEFAULT_INSTANCE}`,
       {
         headers: { 'apikey': API_KEY },
         params: { group_id: group_id }
@@ -428,7 +540,7 @@ app.post("/api/newsletter/follow", async (req, res) => {
 
   try {
     const response = await axios.post(
-      `${API_URL}/newsletter/follow/${instanceName}`,
+      `${API_URL}/v1/newsletter/follow/${instanceName}`,
       { jid: newsletterJid },
       { headers: { 'Content-Type': 'application/json', 'apikey': API_KEY } }
     );
@@ -453,7 +565,7 @@ app.post("/newsletter/follow", async (req, res) => {
 
   try {
     const response = await axios.post(
-      `${API_URL}/newsletter/follow/${DEFAULT_INSTANCE}`,
+      `${API_URL}/v1/newsletter/follow/${DEFAULT_INSTANCE}`,
       { jid: newsletterJid },
       { headers: { 'Content-Type': 'application/json', 'apikey': API_KEY } }
     );
@@ -479,7 +591,7 @@ app.post("/api/newsletter/unfollow", async (req, res) => {
 
   try {
     const response = await axios.post(
-      `${API_URL}/newsletter/unfollow/${instanceName}`,
+      `${API_URL}/v1/newsletter/unfollow/${instanceName}`,
       { jid: newsletterJid },
       { headers: { 'Content-Type': 'application/json', 'apikey': API_KEY } }
     );
@@ -504,7 +616,7 @@ app.post("/newsletter/unfollow", async (req, res) => {
 
   try {
     const response = await axios.post(
-      `${API_URL}/newsletter/unfollow/${DEFAULT_INSTANCE}`,
+      `${API_URL}/v1/newsletter/unfollow/${DEFAULT_INSTANCE}`,
       { jid: newsletterJid },
       { headers: { 'Content-Type': 'application/json', 'apikey': API_KEY } }
     );
@@ -525,7 +637,7 @@ app.get("/api/newsletter/list", async (req, res) => {
 
   try {
     const response = await axios.get(
-      `${API_URL}/newsletter/list/${instanceName}`,
+      `${API_URL}/v1/newsletter/list/${instanceName}`,
       { headers: { 'apikey': API_KEY } }
     );
 
@@ -542,7 +654,7 @@ app.get("/api/newsletter/list", async (req, res) => {
 app.get("/newsletter/list", async (req, res) => {
   try {
     const response = await axios.get(
-      `${API_URL}/newsletter/list/${DEFAULT_INSTANCE}`,
+      `${API_URL}/v1/newsletter/list/${DEFAULT_INSTANCE}`,
       { headers: { 'apikey': API_KEY } }
     );
 
@@ -566,7 +678,7 @@ app.get("/api/newsletter/info", async (req, res) => {
 
   try {
     const response = await axios.get(
-      `${API_URL}/newsletter/${instanceName}/info`,
+      `${API_URL}/v1/newsletter/${instanceName}/info`,
       {
         headers: { 'apikey': API_KEY },
         params: { jid }
@@ -582,56 +694,769 @@ app.get("/api/newsletter/info", async (req, res) => {
   }
 });
 
+
+/* -------------------------------------------------
+   Instance Management API
+   ------------------------------------------------- */
+
+// List all instances
+app.get("/api/instance/list", async (req, res) => {
+  try {
+    const url = `${API_URL}/v1/instance/fetchInstances`;
+    console.log(`[PROXY] Fetching instances from: ${url}`);
+    const response = await axios.get(url, {
+      headers: { 'apikey': API_KEY }
+    });
+
+    res.json(response.data || []);
+  } catch (err) {
+    console.error('[Instance List Error]:', err.response?.status === 404 ? '404 Not Found' : err.message);
+    res.status(err.response?.status || 500).json({
+      error: err.message,
+      details: err.response?.data
+    });
+  }
+});
+
+// Get instance info
+app.get("/api/instance/info/:instance", async (req, res) => {
+  const { instance } = req.params;
+
+  try {
+    const response = await axios.get(`${API_URL}/v1/instance/info/${instance}`, {
+      headers: { 'apikey': API_KEY }
+    });
+
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+      details: err.response?.data
+    });
+  }
+});
+
+// Get QR Code
+app.get("/api/instance/qrcode/:instance", async (req, res) => {
+  const { instance } = req.params;
+
+  try {
+    const response = await axios.get(`${API_URL}/v1/instance/connect/${instance}`, {
+      headers: { 'apikey': API_KEY }
+    });
+
+    res.json(response.data);
+  } catch (err) {
+    const statusCode = err.response?.status || 500;
+    const errorData = err.response?.data || { message: err.message };
+
+    console.error(`[QRCode Error] ${statusCode}:`, errorData);
+
+    res.status(statusCode).json({
+      error: err.message,
+      details: errorData
+    });
+  }
+});
+
+// Create instance
+app.post("/api/instance/create", async (req, res) => {
+  const { instanceName, qrcode = true } = req.body;
+
+  if (!instanceName) {
+    return res.status(400).json({ error: "instanceName is required" });
+  }
+
+  try {
+    const response = await axios.post(
+      `${API_URL}/v1/instance/create`,
+      { instanceName, qrcode },
+      { headers: { 'Content-Type': 'application/json', 'apikey': API_KEY } }
+    );
+
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+      details: err.response?.data
+    });
+  }
+});
+
+// Delete instance
+app.delete("/api/instance/delete/:instance", async (req, res) => {
+  const { instance } = req.params;
+
+  try {
+    const response = await axios.delete(`${API_URL}/v1/instance/delete/${instance}`, {
+      headers: { 'apikey': API_KEY }
+    });
+
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+      details: err.response?.data
+    });
+  }
+});
+
+// Logout instance
+app.delete("/api/instance/logout/:instance", async (req, res) => {
+  const { instance } = req.params;
+
+  try {
+    const response = await axios.delete(`${API_URL}/v1/instance/logout/${instance}`, {
+      headers: { 'apikey': API_KEY }
+    });
+
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+      details: err.response?.data
+    });
+  }
+});
+
+// Get connection state
+// Connect instance and get QR code
+app.get("/api/instance/connect/:instance", async (req, res) => {
+  const { instance } = req.params;
+
+  try {
+    // Use the correct backend endpoint
+    const response = await axios.get(`${API_URL}/v1/instance/connect/${instance}`, {
+      headers: { 'apikey': API_KEY }
+    });
+
+    // Extract base64 from nested qrcode object
+    let base64 = null;
+    if (response.data.qrcode && response.data.qrcode.base64) {
+      base64 = response.data.qrcode.base64;
+    } else if (response.data.qr && response.data.qr.base64) {
+      base64 = response.data.qr.base64;
+    } else if (response.data.base64) {
+      base64 = response.data.base64;
+    }
+
+    res.json({
+      success: true,
+      base64: base64,
+      ...response.data
+    });
+  } catch (err) {
+    const statusCode = err.response?.status || 500;
+    const errorData = err.response?.data || { message: err.message };
+
+    console.error(`[Connect Error] ${statusCode}:`, errorData);
+
+    res.status(statusCode).json({
+      success: false,
+      error: err.message,
+      details: errorData
+    });
+  }
+});
+
+app.get("/api/instance/connectionState/:instance", async (req, res) => {
+  const { instance } = req.params;
+
+  try {
+    const response = await axios.get(`${API_URL}/v1/instance/connectionState/${instance}`, {
+      headers: { 'apikey': API_KEY }
+    });
+
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+      details: err.response?.data
+    });
+  }
+});
+
 /* -------------------------------------------------
    API Proxy - Forward all /api/* requests to Go backend
    ------------------------------------------------- */
 
-// Generic API proxy handler - using regex for Express 5.x
-app.all(/^\/api\/.*/, async (req, res) => {
-  const apiPath = req.path.replace("/api", "");
-  const url = `${API_URL}${apiPath}`;
-
-  console.log(`[PROXY] ${req.method} ${apiPath}`);
-
+// Health Check Proxy - Bypass /v1 prefix
+app.get("/api/health", async (req, res) => {
   try {
-    const config = {
-      method: req.method,
-      url: url,
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': API_KEY
-      },
-      timeout: 60000
-    };
-
-    // Forward query params
-    if (Object.keys(req.query).length > 0) {
-      config.params = req.query;
-    }
-
-    // Forward body for POST/PUT/PATCH
-    if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body) {
-      config.data = req.body;
-    }
-
-    const response = await axios(config);
-    res.status(response.status).json(response.data);
+    const response = await axios.get(`${API_URL}/health`);
+    res.json(response.data);
   } catch (err) {
-    console.error(`[PROXY ERROR] ${req.method} ${apiPath}:`, err.message);
-
-    if (err.response) {
-      // API responded with error
-      res.status(err.response.status).json(err.response.data);
-    } else {
-      // Network or other error
-      res.status(500).json({
-        error: "Proxy error",
-        message: err.message
-      });
-    }
+    res.status(500).json({ status: "offline", error: err.message });
   }
 });
 
-// Start server
-const PORT = process.env.PORT || 3002;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+// ============================================
+// API DE LEADS - CRM ACI
+// ============================================
+
+// Armazenamento temporário de leads (em memória)
+// Para produção, use um banco de dados como SQLite, PostgreSQL, etc.
+let leadsDatabase = [];
+
+// Carregar leads do arquivo (persistência simples)
+const LEADS_FILE = path.join(__dirname, 'data', 'leads.json');
+try {
+  if (fs.existsSync(LEADS_FILE)) {
+    leadsDatabase = JSON.parse(fs.readFileSync(LEADS_FILE, 'utf8'));
+  }
+} catch (e) {
+  console.log('Iniciando com banco de leads vazio');
+}
+
+// Salvar leads no arquivo
+function saveLeadsToFile() {
+  const dir = path.dirname(LEADS_FILE);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(LEADS_FILE, JSON.stringify(leadsDatabase, null, 2));
+}
+
+// Listar todos os leads
+app.get('/api/leads', (req, res) => {
+  res.json({ success: true, leads: leadsDatabase, count: leadsDatabase.length });
+});
+
+// Criar novo lead
+app.post('/api/leads', (req, res) => {
+  try {
+    const lead = req.body;
+
+    // Validar dados mínimos
+    if (!lead.whatsapp) {
+      return res.status(400).json({ success: false, error: 'WhatsApp é obrigatório' });
+    }
+
+    // Verificar se já existe (evitar duplicatas)
+    const existing = leadsDatabase.find(l => l.whatsapp === lead.whatsapp);
+    if (existing) {
+      // Atualizar observações com nova mensagem
+      existing.obs = `${existing.obs || ''}\n[${new Date().toLocaleString()}] ${lead.obs || ''}`.trim();
+      saveLeadsToFile();
+      console.log('📝 Lead atualizado:', existing.nome, existing.whatsapp);
+      return res.json({ success: true, lead: existing, updated: true });
+    }
+
+    // Adicionar novo lead
+    const newLead = {
+      id: lead.id || Date.now(),
+      nome: lead.nome || 'Sem nome',
+      whatsapp: lead.whatsapp.replace(/\D/g, ''),
+      email: lead.email || '',
+      localizacao: lead.localizacao || '',
+      empresa: lead.empresa || '',
+      site: lead.site || '',
+      instagram: lead.instagram || '',
+      linkedin: lead.linkedin || '',
+      valor: parseFloat(lead.valor) || 0,
+      fonte: lead.fonte || 'whatsapp',
+      status: lead.status || 'novo',
+      temperatura: lead.temperatura || 'quente',
+      obs: lead.obs || '',
+      createdAt: lead.createdAt || new Date().toISOString()
+    };
+
+    leadsDatabase.push(newLead);
+    saveLeadsToFile();
+
+    console.log('✅ Novo lead capturado:', newLead.nome, newLead.whatsapp);
+
+    // Emitir evento via Socket.IO para atualizar CRM em tempo real
+    if (io) {
+      io.emit('new-lead', newLead);
+    }
+
+    res.json({ success: true, lead: newLead, created: true });
+  } catch (error) {
+    console.error('❌ Erro ao salvar lead:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Atualizar lead
+app.put('/api/leads/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const index = leadsDatabase.findIndex(l => l.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({ success: false, error: 'Lead não encontrado' });
+  }
+
+  leadsDatabase[index] = { ...leadsDatabase[index], ...req.body };
+  saveLeadsToFile();
+
+  res.json({ success: true, lead: leadsDatabase[index] });
+});
+
+// Deletar lead
+app.delete('/api/leads/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  leadsDatabase = leadsDatabase.filter(l => l.id !== id);
+  saveLeadsToFile();
+  res.json({ success: true });
+});
+
+// Estatísticas dos Leads
+app.get('/api/leads/stats', (req, res) => {
+  const stats = {
+    total: leadsDatabase.length,
+    novos: leadsDatabase.filter(l => l.status === 'novo').length,
+    negociacao: leadsDatabase.filter(l => l.status === 'negociacao').length,
+    fechados: leadsDatabase.filter(l => l.status === 'fechado').length
+  };
+  res.json({ success: true, stats });
+});
+
+// Tickets Database
+let ticketsDatabase = [];
+const TICKETS_FILE = path.join(__dirname, 'data', 'tickets.json');
+try {
+  if (fs.existsSync(TICKETS_FILE)) {
+    ticketsDatabase = JSON.parse(fs.readFileSync(TICKETS_FILE, 'utf8'));
+  }
+} catch (e) {
+  console.log('Iniciando com banco de tickets vazio');
+}
+
+function saveTicketsToFile() {
+  const dir = path.dirname(TICKETS_FILE);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(TICKETS_FILE, JSON.stringify(ticketsDatabase, null, 2));
+}
+
+// Routes for Tickets
+app.get('/api/tickets', (req, res) => {
+  res.json({ success: true, tickets: ticketsDatabase });
+});
+
+app.post('/api/tickets', (req, res) => {
+  const ticket = {
+    id: Date.now(),
+    customerName: req.body.customerName || 'Cliente Novo',
+    customerPhone: req.body.customerPhone,
+    subject: req.body.subject || 'Nenhum assunto',
+    status: req.body.status || 'NOVO',
+    priority: req.body.priority || 'MÉDIA',
+    lastActivity: new Date().toISOString(),
+    messages: []
+  };
+  ticketsDatabase.push(ticket);
+  saveTicketsToFile();
+  res.json({ success: true, ticket });
+});
+
+app.patch('/api/tickets/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const ticket = ticketsDatabase.find(t => t.id === id);
+  if (ticket) {
+    if (req.body.status) ticket.status = req.body.status;
+    if (req.body.priority) ticket.priority = req.body.priority;
+    ticket.lastActivity = new Date().toISOString();
+    saveTicketsToFile();
+    if (io) io.emit('ticket-update', ticket);
+    res.json({ success: true, ticket });
+  } else {
+    res.status(404).json({ success: false, error: 'Ticket não encontrado' });
+  }
+});
+
+app.delete('/api/tickets/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  ticketsDatabase = ticketsDatabase.filter(t => t.id !== id);
+  saveTicketsToFile();
+  res.json({ success: true });
+});
+
+// ============================================
+// API DE EMAIL CAMPAIGNS (Resend Integration)
+// ============================================
+let campaignsDatabase = [];
+const CAMPAIGNS_FILE = path.join(__dirname, 'data', 'campaigns.json');
+
+try {
+  if (fs.existsSync(CAMPAIGNS_FILE)) {
+    campaignsDatabase = JSON.parse(fs.readFileSync(CAMPAIGNS_FILE, 'utf8'));
+  }
+} catch (e) {
+  console.log('Iniciando com banco de campanhas vazio');
+}
+
+function saveCampaignsToFile() {
+  const dir = path.dirname(CAMPAIGNS_FILE);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(CAMPAIGNS_FILE, JSON.stringify(campaignsDatabase, null, 2));
+}
+
+app.get('/api/campaigns', (req, res) => {
+  res.json({ success: true, campaigns: campaignsDatabase });
+});
+
+app.post('/api/campaigns', async (req, res) => {
+  try {
+    const { subject, body, recipients } = req.body;
+    const resendKey = process.env.RESEND_API_KEY;
+
+    if (!resendKey || !resendKey.startsWith('re_')) {
+      throw new Error('Chave API do Resend não configurada ou inválida no .env');
+    }
+
+    console.log(`[EMAIL] Iniciando envio de campanha: ${subject}`);
+
+    // Check if recipients is an array, if not make it one
+    const toList = Array.isArray(recipients) ? recipients : [recipients];
+
+    if (toList.length === 0) throw new Error("Nenhum destinatário definido");
+
+    // Resend API Payload
+    // Note: In Sandbox (onboarding@resend.dev), you can ONLY send to the email address
+    // you registered with Resend. Sending to other emails will fail with 403.
+    let emailPayload = {
+      from: 'onboarding@resend.dev',
+      to: toList, // Try sending to actual recipients (must be owner email in sandbox)
+      subject: subject,
+      html: body.replace(/\n/g, '<br>')
+    };
+
+    // Log para depuração
+    console.log(`[EMAIL] Tentando enviar de ${emailPayload.from} para ${toList.join(', ')}`);
+
+    // AVISO IMPORTANTE:
+    // Se o domínio (from) for 'onboarding@resend.dev', O Resend SÓ aceita enviar para o e-mail do dono da conta.
+    // Qualquer outro e-mail causará erro 403 Forbidden.
+    // Isso é esperado até que você configure seu domínio próprio.
+
+    // Override for safety to avoid error "scolding" from Resend about unverified domains if user keys are new
+    // If user provided a key, they might not have verified domain yet.
+    // We will try to send to the logic provided.
+    // If toList contains non-verified emails and domain is default, it will fail.
+    // We'll trust the user has read the guide about "Email Remetente".
+
+    // emailPayload.to será definido pela lógica acima.
+    // emailPayload.to = toList; // REMOVIDO PARA EVITAR ERRO EM SANDBOX
+
+    console.log('[EMAIL] Enviando payload via Resend API...');
+
+    const response = await axios.post('https://api.resend.com/emails', emailPayload, {
+      headers: {
+        'Authorization': `Bearer ${resendKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('[EMAIL] Sucesso:', response.data);
+
+    const newCampaign = {
+      id: response.data.id || Date.now(),
+      subject,
+      body,
+      recipientsCount: toList.length,
+      status: 'Enviado',
+      sentAt: new Date().toISOString(),
+      resendId: response.data.id
+    };
+
+    campaignsDatabase.unshift(newCampaign);
+    saveCampaignsToFile();
+
+    res.json({ success: true, campaign: newCampaign });
+  } catch (error) {
+    console.error('[EMAIL ERROR]', error.response?.data || error.message);
+    res.status(500).json({
+      success: false,
+      error: error.response?.data?.message || error.message
+    });
+  }
+});
+
+// Sincronizar leads com frontend
+app.post('/api/leads/sync', (req, res) => {
+  const { leads } = req.body;
+  if (Array.isArray(leads)) {
+    // Merge leads do frontend com backend
+    leads.forEach(lead => {
+      const existing = leadsDatabase.find(l => l.id === lead.id || l.whatsapp === lead.whatsapp);
+      if (!existing) {
+        leadsDatabase.push(lead);
+      }
+    });
+    saveLeadsToFile();
+  }
+  res.json({ success: true, leads: leadsDatabase });
+});
+
+// Configuração do Agente de IA (API para o Frontend)
+app.get("/api/ai/agent-config", (req, res) => {
+  res.json({ enabled: AI_AGENT_ENABLED, prompt: AI_AGENT_PROMPT });
+});
+
+app.post("/api/ai/agent-config", (req, res) => {
+  const { enabled, prompt } = req.body;
+  if (typeof enabled === 'boolean') AI_AGENT_ENABLED = enabled;
+  if (prompt) AI_AGENT_PROMPT = prompt;
+  res.json({ success: true });
+  /* -------------------------------------------------
+     Settings & AI Configuration Routes
+     ------------------------------------------------- */
+
+  // --- Agent Configuration Storage ---
+  let AGENT_CONFIGS = {
+    'model-selection': { model: 'gemini-1.5-flash', temp: 0.7, tokens: 2000 },
+    'planning': { model: 'gemini-1.5-pro', temp: 0.9, tokens: 20000 },
+    'chat': { model: 'gpt-4o', temp: 0.7, tokens: 4000 }
+  };
+
+  // --- API Keys Storage (Mock DB) ---
+  let API_KEYS = [
+    // { id: 'key_1', name: 'Default Key', prefix: 'sk_live_...', created: new Date() }
+  ];
+
+  // Get Agent Configs
+  app.get("/api/ai/agent-configs", (req, res) => {
+    res.json(AGENT_CONFIGS);
+  });
+
+  // Update specific Agent Config
+  app.post("/api/ai/agent-configs/:type", (req, res) => {
+    const { type } = req.params;
+    const config = req.body;
+    if (AGENT_CONFIGS[type]) {
+      AGENT_CONFIGS[type] = { ...AGENT_CONFIGS[type], ...config };
+
+      // If updating 'chat', also update the global AI_AGENT_PROMPT if provided
+      if (type === 'chat' && config.prompt) {
+        AI_AGENT_PROMPT = config.prompt;
+      }
+
+      res.json({ success: true, config: AGENT_CONFIGS[type] });
+    } else {
+      res.status(404).json({ error: "Agent type not found" });
+    }
+  });
+
+  // Get API Keys
+  app.get("/api/ai/keys", (req, res) => {
+    res.json(API_KEYS);
+  });
+
+  // Create API Key
+  app.post("/api/ai/keys", (req, res) => {
+    const newKey = {
+      id: 'key_' + Date.now(),
+      name: req.body.name || 'Nova Chave VibeSDK',
+      key: 'vibe_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+      created: new Date().toLocaleDateString('pt-BR'),
+      lastUsed: 'Nunca'
+    };
+    API_KEYS.push(newKey);
+    res.json(newKey);
+  });
+
+  // Revoke API Key
+  app.delete("/api/ai/keys/:id", (req, res) => {
+    API_KEYS = API_KEYS.filter(k => k.id !== req.params.id);
+    res.json({ success: true });
+  });
+
+  // Legacy Endpoint (keeping for backward compatibility if needed)
+  app.get("/api/ai/agent-config", (req, res) => {
+    res.json({
+      enabled: AI_AGENT_ENABLED,
+      prompt: AI_AGENT_PROMPT
+    });
+  });
+
+  app.post("/api/ai/agent-config", (req, res) => {
+    const { enabled, prompt } = req.body;
+    if (typeof enabled !== 'undefined') AI_AGENT_ENABLED = enabled;
+    if (typeof prompt !== 'undefined') AI_AGENT_PROMPT = prompt;
+
+    console.log(`[SETTINGS] AI Agent Updated: Enabled=${AI_AGENT_ENABLED}`);
+    res.json({ success: true, message: "Configuração atualizada com sucesso" });
+  });
+
+  // Webhook - Status de Instância e Mensagens
+  app.post("/api/webhook/instance-status", async (req, res) => {
+    const { event, instance: bodyInstance, status, data } = req.body;
+    const instance = bodyInstance || (data && data.instance);
+    const currentStatus = status || (data && data.state) || (event === "instance.close" ? "DESCONECTADO" : "CONECTADO");
+
+    console.log(`[WEBHOOK] Evento: ${event || 'raw'} | Instância ${instance}: ${currentStatus}`);
+
+    // 1. Tratar Status de Conexão
+    if (event === "instance.close" || status === "close" || status === "DESCONECTADO") {
+      console.warn(`🚨 A instância ${instance} foi DESCONECTADA!`);
+      sendAlert(`Sua API caiu ou a instância *${instance}* desconectou agora mesmo!`);
+    }
+
+    // 2. Tratar Mensagens Recebidas (Auto-Responder)
+    if (event === "message.received" && AI_AGENT_ENABLED) {
+      const msg = data;
+      const fromMe = msg.key?.fromMe;
+      const remoteJid = msg.key?.remoteJid;
+      const isGroup = remoteJid?.includes("@g.us");
+
+      const textMsg = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
+
+      if (!fromMe && textMsg && !isGroup) {
+        console.log(`[ROBOT] Processando mensagem de ${remoteJid}: ${textMsg}`);
+
+        // -- GESTÃO DE TICKETS AUTOMÁTICA --
+        let ticket = ticketsDatabase.find(t => t.customerPhone === remoteJid && t.status !== 'FECHADO');
+        if (!ticket) {
+          ticket = {
+            id: Date.now(),
+            customerName: remoteJid.split('@')[0],
+            customerPhone: remoteJid,
+            subject: textMsg.substring(0, 50) + (textMsg.length > 50 ? '...' : ''),
+            status: 'NOVO',
+            priority: 'MÉDIA',
+            lastActivity: new Date().toISOString(),
+            messages: []
+          };
+          ticketsDatabase.push(ticket);
+        } else {
+          ticket.subject = textMsg.substring(0, 50) + (textMsg.length > 50 ? '...' : '');
+          ticket.lastActivity = new Date().toISOString();
+          if (ticket.status === 'FECHADO') ticket.status = 'ABERTO';
+        }
+        ticket.messages.push({ role: 'customer', text: textMsg, time: new Date().toISOString() });
+        saveTicketsToFile();
+        if (io) io.emit('ticket-update', ticket);
+
+        try {
+          const { generateChatResponse } = await import("./services/ai.js");
+          const response = await generateChatResponse(textMsg, AI_AGENT_PROMPT);
+
+          console.log(`[ROBOT] Respondendo: ${response}`);
+
+          // Enviar a resposta via API
+          await axios.post(`${API_URL}/v1/message/sendText/${instance || DEFAULT_INSTANCE}`, {
+            number: remoteJid,
+            textMessage: { text: response }
+          }, {
+            headers: { 'apikey': API_KEY }
+          });
+        } catch (err) {
+          console.error(`[ROBOT ERROR] Falha ao responder:`, err.message);
+        }
+      }
+    }
+
+    if (io) {
+      io.emit("instance-status", { instance, status: currentStatus, event, data });
+    }
+
+    res.json({ success: true, message: "Webhook recebido" });
+  });
+
+  // AI & Audio Routes - Using /api2 to bypass generic /api proxy
+  app.post("/api2/whatsmiau2/text-to-speech", async (req, res) => {
+    try {
+      const { text, voice = 'female' } = req.body;
+      if (!text) return res.status(400).json({ error: "Texto obrigatório" });
+      const audioUrl = await generateAudioWithOpenAI(text, voice);
+      res.json({ success: true, audioUrl });
+    } catch (error) {
+      console.error("Erro no TTS:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api2/whatsmiau2/generate-summary", async (req, res) => {
+    try {
+      const { context, voice = 'female' } = req.body;
+      if (!context) return res.status(400).json({ error: "Contexto obrigatório" });
+      const { generateSummaryWithGemini, generateAudioWithOpenAI } = await import("./services/ai.js");
+      const summary = await generateSummaryWithGemini(context);
+      const audioUrl = await generateAudioWithOpenAI(summary, voice);
+      res.json({ success: true, summary, audioUrl });
+    } catch (error) {
+      console.error("Erro na IA:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Generic API proxy handler - using regex for Express 5.x
+  app.all(/^\/api\/.*/, async (req, res) => {
+    const apiPath = req.path.replace("/api", "");
+    const url = `${API_URL}/v1${apiPath}`;
+
+    console.log(`[PROXY] ${req.method} ${req.path} -> ${url}`);
+
+    try {
+      const config = {
+        method: req.method,
+        url: url,
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': API_KEY
+        },
+        timeout: 60000
+      };
+
+      if (Object.keys(req.query).length > 0) config.params = req.query;
+      if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body) config.data = req.body;
+
+      const response = await axios(config);
+      res.status(response.status).json(response.data);
+    } catch (err) {
+      console.error(`[PROXY ERROR] ${req.method} ${apiPath}:`, err.message);
+      if (err.response) {
+        res.status(err.response.status).json(err.response.data);
+      } else {
+        res.status(500).json({ error: "Proxy error", message: err.message });
+      }
+    }
+  });
+
+  // Start server
+  const PORT = process.env.PORT || 3002;
+  app.listen(PORT, async () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+
+    // Registrar webhook no início
+    await registerWebhook();
+
+    // Monitoramento de Saúde da API Go
+    let apiWasOnline = true;
+    const EVOLUTION_API_URL = "https://evolution.automacoescomerciais.com.br";
+    const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || API_KEY;
+
+    async function sendAlertFallback(message) {
+      // Tenta enviar via Evolution API externa (fallback quando API Go está offline)
+      try {
+        await axios.post(`${EVOLUTION_API_URL}/message/sendText/${DEFAULT_INSTANCE}`, {
+          number: DEVELOPER_NUMBER,
+          textMessage: { text: message }
+        }, {
+          headers: { 'apikey': EVOLUTION_API_KEY },
+          timeout: 10000
+        });
+        console.log("[FALLBACK ALERT] Alerta enviado via Evolution API externa.");
+      } catch (fallbackErr) {
+        console.error("[FALLBACK ALERT ERROR]", fallbackErr.message);
+      }
+    }
+
+    setInterval(async () => {
+      try {
+        await axios.get(`${API_URL}/health`, { timeout: 5000 });
+        if (!apiWasOnline) {
+          console.log("🟢 API Go voltou a ficar online.");
+          sendAlert("✅ *A API WhatsMiau2 voltou a ficar ONLINE!*");
+          apiWasOnline = true;
+        }
+      } catch (err) {
+        if (apiWasOnline) {
+          console.error("🔴 API Go ficou OFFLINE! Erro:", err.message);
+          const alertMessage = `🚨 *ALERTA CRÍTICO - API OFFLINE!*\n\n📌 Automações Comerciais\n🔴 A API WhatsMiau2 Go desconectou!\n⏰ ${new Date().toLocaleString('pt-BR')}\n\nVerifique o servidor imediatamente.`;
+          // Tenta via Evolution API externa como fallback
+          await sendAlertFallback(alertMessage);
+          apiWasOnline = false;
+        }
+      }
+    }, 30000); // Verifica a cada 30 segundos
+  });

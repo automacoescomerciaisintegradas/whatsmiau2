@@ -1,4 +1,6 @@
-# Stack Name sugerido: whatsmiau2-api (para evitar conflito)
+# Stack Name: whatsmiau2
+# Deploy: docker stack deploy -c docker-compose.swarm.yml whatsmiau2
+#
 # Criar volumes antes do deploy:
 #   docker volume create whatsmiau2_data
 #   docker volume create qrserver_data
@@ -39,12 +41,13 @@ services:
           - node.role == manager
       labels:
         - traefik.enable=true
+        # API principal
         - traefik.http.routers.whatsmiau2.rule=Host(`api.iau2.com.br`)
-        - traefik.http.services.whatsmiau2.loadbalancer.server.port=8081
-        - traefik.http.routers.whatsmiau2.service=whatsmiau2
-        - traefik.http.routers.whatsmiau2.tls.certresolver=letsencryptresolver
         - traefik.http.routers.whatsmiau2.entrypoints=websecure
         - traefik.http.routers.whatsmiau2.tls=true
+        - traefik.http.routers.whatsmiau2.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.whatsmiau2.service=whatsmiau2
+        - traefik.http.services.whatsmiau2.loadbalancer.server.port=8081
 
   qrserver:
     image: qrserver:latest
@@ -57,6 +60,8 @@ services:
     environment:
       - PORT=3000
       - API_URL=http://whatsmiau2:8081
+      - API_KEY=2wtLvtb20wXePp8D9uRhm55aCjINiciO
+      - DEFAULT_INSTANCE=minha-instancia
 
     deploy:
       mode: replicated
@@ -66,12 +71,32 @@ services:
           - node.role == manager
       labels:
         - traefik.enable=true
+        # QR Code Server
         - traefik.http.routers.qrserver.rule=Host(`qr.iau2.com.br`)
-        - traefik.http.services.qrserver.loadbalancer.server.port=3000
-        - traefik.http.routers.qrserver.service=qrserver
-        - traefik.http.routers.qrserver.tls.certresolver=letsencryptresolver
         - traefik.http.routers.qrserver.entrypoints=websecure
         - traefik.http.routers.qrserver.tls=true
+        - traefik.http.routers.qrserver.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.qrserver.service=qrserver
+        # Pairing (mesma aplicação)
+        - traefik.http.routers.pairing.rule=Host(`pairing.iau2.com.br`)
+        - traefik.http.routers.pairing.entrypoints=websecure
+        - traefik.http.routers.pairing.tls=true
+        - traefik.http.routers.pairing.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.pairing.service=qrserver
+        # Automação (mesma aplicação)
+        - traefik.http.routers.automacao.rule=Host(`automacao.iau2.com.br`)
+        - traefik.http.routers.automacao.entrypoints=websecure
+        - traefik.http.routers.automacao.tls=true
+        - traefik.http.routers.automacao.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.automacao.service=qrserver
+        # Painel (mesma aplicação)
+        - traefik.http.routers.painel.rule=Host(`painel.iau2.com.br`)
+        - traefik.http.routers.painel.entrypoints=websecure
+        - traefik.http.routers.painel.tls=true
+        - traefik.http.routers.painel.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.painel.service=qrserver
+        # Service port
+        - traefik.http.services.qrserver.loadbalancer.server.port=3000
 
   whatsmiau2_redis:
     image: redis:alpine

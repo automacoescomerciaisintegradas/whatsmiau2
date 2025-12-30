@@ -1,0 +1,57 @@
+# Node.js
+node_modules/
+npm-debug.log
+package-lock.json
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Build artifacts
+*.exe
+*.exe~
+whatsmiau-cli.exe
+whatsmiau2.exe
+
+# Database files
+*.db
+data/
+sessions.db
+data.db
+
+# Documentation
+*.md
+INSTALL.md
+README.md
+HOMOLOGACAO.md
+DOCUMENTACAO_API.md
+CORRECAO_QR_CODE.md
+INSTRUCOES_FINAIS.md
+
+# Test files
+test-*.js
+test-*.json
+**/test_*
+**/*_test.go
+
+# HTML pages are needed for Dockerfile.web
+# (kept in context for web container)
+
+# Environment
+.env
+.env.example
+env.txt
+
+# Miscellaneous
+*.txt
+*.log
+manager/
+
+# Docker files (evitar loop)
+docker-compose*.yml
+Dockerfile*
+!Dockerfile

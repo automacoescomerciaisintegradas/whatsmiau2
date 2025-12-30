@@ -20,8 +20,11 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 			return
 		}
 
-		// Try API key first (header: apikey or Authorization: Bearer <token>)
+		// Try API key first (header: apikey, Authorization: Bearer <token>, or query param: apikey)
 		apiKey := c.GetHeader("apikey")
+		if apiKey == "" {
+			apiKey = c.Query("apikey")
+		}
 		if apiKey == "" {
 			auth := c.GetHeader("Authorization")
 			if strings.HasPrefix(auth, "Bearer ") {

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conexões - Automações</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/assets/css/style.css" rel="stylesheet">
+</head>
+
+<body data-theme="light">
+
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading text-center">
+                <i class="fas fa-robot"></i> Automações
+            </div>
+            <div class="list-group list-group-flush mt-4">
+                <small class="text-uppercase text-muted px-4 mb-2" style="font-size: 0.75rem; letter-spacing: 1px;">Menu
+                    Principal</small>
+                <a href="/dashboard" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-chart-pie icon-dash me-3"></i> Dashboard
+                </a>
+                <a href="/connections" class="list-group-item list-group-item-action bg-transparent active">
+                    <i class="fab fa-whatsapp icon-whatsapp me-3"></i> Conexões
+                </a>
+                <a href="/internal-chat" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-comments icon-chat me-3"></i> Chat Interno
+                </a>
+                <a href="/kanban" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-columns icon-kanban me-3"></i> Kanban
+                </a>
+                <div class="mt-4">
+                    <small class="text-uppercase text-muted px-4 mb-2"
+                        style="font-size: 0.75rem; letter-spacing: 1px;">Sistema</small>
+                    <a href="/settings" class="list-group-item list-group-item-action bg-transparent">
+                        <i class="fas fa-cog icon-settings me-3"></i> Configurações
+                    </a>
+                    <div class="list-group-item bg-transparent d-flex justify-content-between align-items-center"
+                        style="cursor: pointer;" onclick="toggleTheme()">
+                        <span><i class="fas fa-moon me-3 text-secondary"></i> Tema Escuro</span>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="darkModeSwitch"
+                                style="cursor: pointer;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <nav class="navbar navbar-expand-lg navbar-custom px-4">
+                <div class="d-flex align-items-center w-100 justify-content-between">
+                    <button class="btn btn-outline-secondary d-md-none" id="menu-toggle"><i
+                            class="fas fa-bars"></i></button>
+                    <h5 class="my-0 ms-2 fw-bold">Gerenciar Conexões</h5>
+                    <button class="btn btn-success fw-bold px-4" data-bs-toggle="modal"
+                        data-bs-target="#modalNewInstance">
+                        <i class="fas fa-plus me-2"></i> Nova Conexão
+                    </button>
+                </div>
+            </nav>
+
+            <div class="container-fluid p-4">
+                <div id="instances-grid" class="row g-4">
+                    <div class="col-12 text-center py-5">
+                        <div class="spinner-border text-success" role="status"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: New Instance -->
+    <div class="modal fade" id="modalNewInstance" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold">Criar Nova Instância</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Nome da Instância</label>
+                        <input type="text" id="new-instance-name" class="form-control"
+                            placeholder="Ex: Vendas, Suporte...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Método de Conexão</label>
+                        <div class="d-flex gap-2">
+                            <input type="radio" class="btn-check" name="conn-method" id="conn-qr" value="qr" checked>
+                            <label class="btn btn-outline-success flex-grow-1" for="conn-qr">QR Code</label>
+                            <input type="radio" class="btn-check" name="conn-method" id="conn-pairing" value="pairing">
+                            <label class="btn btn-outline-success flex-grow-1" for="conn-pairing">Código</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success px-4 fw-bold"
+                        onclick="createInstance()">Continuar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: QR Code -->
+    <div class="modal fade" id="modalQR" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-center p-4">
+                <h5 class="fw-bold mb-3">Escaneie o QR Code</h5>
+                <div id="qr-container" class="my-4">
+                    <div class="spinner-border text-success"></div>
+                </div>
+                <p class="text-muted small">Abra o WhatsApp > Aparelhos Conectados > Conectar Aparelho</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sidebar & Theme
+        const toggleSwitch = document.querySelector('#darkModeSwitch');
+        const body = document.body;
+        if (localStorage.getItem('theme') === 'dark') { body.setAttribute('data-theme', 'dark'); toggleSwitch.checked = true; }
+        function toggleTheme() {
+            const theme = toggleSwitch.checked ? 'dark' : 'light';
+            body.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        }
+        toggleSwitch.addEventListener('change', toggleTheme);
+        document.getElementById("menu-toggle").onclick = function () { body.classList.toggle("sb-sidenav-toggled"); };
+
+        // Logic
+        async function fetchInstances() {
+            try {
+                const res = await fetch('/api/instance/fetchInstances');
+                const data = await res.json();
+                renderGrid(data);
+            } catch (e) { console.error(e); }
+        }
+
+        function renderGrid(instances) {
+            const grid = document.getElementById('instances-grid');
+            if (instances.length === 0) {
+                grid.innerHTML = '<div class="col-12 text-center py-5 text-muted">Ainda não há conexões criadas.</div>';
+                return;
+            }
+            grid.innerHTML = instances.map(inst => `
+            <div class="col-md-4">
+                <div class="card p-4 h-100">
+                    <div class="d-flex justify-content-between mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fab fa-whatsapp fa-2x ${inst.instance?.status === 'connected' ? 'text-success' : 'text-danger'} me-3"></i>
+                            <div>
+                                <h6 class="mb-0 fw-bold">${inst.instance?.instanceName || inst.name}</h6>
+                                <span class="badge ${inst.instance?.status === 'connected' ? 'bg-success' : 'bg-danger'} bg-opacity-10 ${inst.instance?.status === 'connected' ? 'text-success' : 'text-danger'} rounded-pill" style="font-size: 10px;">
+                                    ${inst.instance?.status === 'connected' ? 'CONECTADO' : 'PENDENTE'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-auto">
+                        ${inst.instance?.status !== 'connected' ?
+                    `<button class="btn btn-outline-success w-100 fw-bold" onclick="connectInstance('${inst.name}')">Conectar</button>` :
+                    `<div class="text-center py-2 text-success small fw-bold">Pronto para uso</div>`
+                }
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        }
+
+        async function createInstance() {
+            const name = document.getElementById('new-instance-name').value;
+            const method = document.querySelector('input[name="conn-method"]:checked').value;
+            if (!name) return;
+
+            await fetch('/api/instance/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ instanceName: name })
+            });
+            bootstrap.Modal.getInstance(document.getElementById('modalNewInstance')).hide();
+            fetchInstances();
+            if (method === 'pairing') window.location.href = `/pairing?instance=${name}`;
+            else connectInstance(name);
+        }
+
+        async function connectInstance(name) {
+            const modal = new bootstrap.Modal(document.getElementById('modalQR'));
+            modal.show();
+            const res = await fetch(`/api/instance/connect/${name}`);
+            const data = await res.json();
+            if (data.base64) document.getElementById('qr-container').innerHTML = `<img src="${data.base64}" class="img-fluid" width="220">`;
+            startPolling(name);
+        }
+
+        function startPolling(name) {
+            const it = setInterval(async () => {
+                const res = await fetch(`/api/instance/connectionState/${name}`);
+                const data = await res.json();
+                if (data.instance?.status === 'connected') {
+                    clearInterval(it);
+                    bootstrap.Modal.getInstance(document.getElementById('modalQR')).hide();
+                    fetchInstances();
+                }
+            }, 3000);
+        }
+
+        fetchInstances();
+    </script>
+
+</body>
+
+</html>

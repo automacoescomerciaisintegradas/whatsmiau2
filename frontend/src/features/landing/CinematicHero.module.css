@@ -1,0 +1,219 @@
+.heroContainer {
+    position: relative;
+    width: 100%;
+    background: var(--bg-primary);
+}
+
+.stickyWrapper {
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    /* Borda Arredondada conforme PRD */
+    border-radius: var(--radius-2xl);
+    margin: var(--space-4);
+    width: calc(100% - (var(--space-4) * 2));
+    z-index: 10;
+}
+
+.imageSequence {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+}
+
+.frame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.1s linear;
+    pointer-events: none;
+}
+
+.fallbackBg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+}
+
+.loader {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 100;
+    color: white;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--color-primary-500);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: var(--space-4);
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Bloco de texto à esquerda (preto transparente) */
+.contentOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: var(--space-20);
+    z-index: 20;
+    pointer-events: none;
+}
+
+.textBlock {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(20px);
+    padding: var(--space-12) var(--space-16);
+    border-radius: var(--radius-2xl);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    max-width: 600px;
+    pointer-events: auto;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.introWrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.introLine {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2.5px;
+    color: var(--color-primary-400);
+}
+
+.accentText {
+    background: var(--color-primary-500);
+    color: white;
+    font-size: 9px;
+    font-weight: 900;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.mainTitle {
+    font-size: 100px;
+    font-family: var(--font-family-heading);
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: var(--space-4);
+    line-height: 0.9;
+    letter-spacing: -4px;
+}
+
+.highlight {
+    color: var(--color-primary-500);
+}
+
+.description {
+    color: var(--text-secondary);
+    font-size: var(--font-size-lg);
+    line-height: 1.6;
+    margin-bottom: var(--space-12);
+    font-weight: 400;
+}
+
+/* Scroll Indicator */
+.scrollIndicator {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    color: var(--text-tertiary);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.mouse {
+    width: 20px;
+    height: 35px;
+    border: 2px solid var(--text-tertiary);
+    border-radius: 20px;
+    position: relative;
+}
+
+.wheel {
+    width: 4px;
+    height: 8px;
+    background: var(--color-primary-500);
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 2px;
+    animation: scrollWheel 2s ease-in-out infinite;
+}
+
+@keyframes scrollWheel {
+    0% {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(-50%, 15px);
+        opacity: 0;
+    }
+}
+
+.scrollSpacer {
+    width: 100%;
+}
+
+@media (max-width: 1200px) {
+    .mainTitle {
+        font-size: 80px;
+    }
+}
+
+@media (max-width: 768px) {
+    .contentOverlay {
+        padding: var(--space-6);
+    }
+
+    .textBlock {
+        padding: var(--space-8);
+        max-width: 100%;
+    }
+
+    .mainTitle {
+        font-size: 60px;
+        letter-spacing: -2px;
+    }
+}

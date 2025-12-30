@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"whatsmiau2/internal/config"
+	"whatsmiau2/internal/crm"
 	"whatsmiau2/internal/database"
 	"whatsmiau2/internal/handlers"
 	"whatsmiau2/internal/middleware"
@@ -16,10 +17,11 @@ import (
 
 // Server represents the HTTP server
 type Server struct {
-	config  *config.Config
-	router  *gin.Engine
-	db      *database.Database
-	manager *whatsapp.Manager
+	config    *config.Config
+	router    *gin.Engine
+	db        *database.Database
+	manager   *whatsapp.Manager
+	crmServer *crm.Server
 }
 
 // New creates a new server
@@ -35,11 +37,20 @@ func New(cfg *config.Config, db *database.Database, manager *whatsapp.Manager) *
 	router.Use(gin.Recovery())
 	router.Use(middleware.CORSMiddleware())
 
+	// Initialize CRM Server
+	// Get *sql.DB from GORM
+	sqlDB, err := db.DB.DB()
+	if err != nil {
+		zap.L().Fatal("Failed to get SQL DB from GORM", zap.Error(err))
+	}
+	crmServer := crm.NewServer(sqlDB)
+
 	server := &Server{
-		config:  cfg,
-		router:  router,
-		db:      db,
-		manager: manager,
+		config:    cfg,
+		router:    router,
+		db:        db,
+		manager:   manager,
+		crmServer: crmServer,
 	}
 
 	server.setupRoutes()
@@ -82,6 +93,11 @@ func (s *Server) setupRoutes() {
 			instance.PUT("/update/:id", instanceHandler.UpdateInstance)
 			// Phone pairing route
 			instance.POST("/pairPhone/:id", instanceHandler.PairPhoneInstance)
+
+			// Webhook configuration routes
+			instance.GET("/webhook/:id", instanceHandler.GetWebhookConfig)
+			instance.PUT("/webhook/:id", instanceHandler.UpdateWebhookConfig)
+			instance.POST("/webhook/:id/test", instanceHandler.TestWebhook)
 
 			// Standard routes (base routes, no path prefix)
 			instance.POST("", instanceHandler.CreateInstance)
@@ -159,7 +175,32 @@ func (s *Server) setupRoutes() {
 			group.POST("/leave/:instance", groupHandler.LeaveGroup)
 			group.GET("/invite-link/:instance", groupHandler.GetGroupInviteLink)
 		}
+
+		// CRM routes
+		crm := v1.Group("/crm")
+		{
+			// Leads
+			crm.POST("/leads", s.crmServer.CreateLead)
+			crm.GET("/leads", s.crmServer.ListLeads)
+			crm.GET("/leads/:id", s.crmServer.GetLead)
+			crm.PUT("/leads/:id", s.crmServer.UpdateLead)
+			crm.DELETE("/leads/:id", s.crmServer.DeleteLead)
+			crm.GET("/leads/stats", s.crmServer.GetLeadStats)
+		}
 	}
+
+	// Serve static files (HTML, CSS, JS)
+	s.router.Static("/static", "./")
+	s.router.StaticFile("/", "./index.html")
+	s.router.StaticFile("/manager.html", "./manager.html")
+	s.router.StaticFile("/manager-socket.js", "./manager-socket.js")
+	s.router.StaticFile("/crm.html", "./crm.html")
+	s.router.StaticFile("/index.html", "./index.html")
+	s.router.StaticFile("/automacao.html", "./automacao.html")
+	s.router.StaticFile("/pairing.html", "./pairing.html")
+	s.router.StaticFile("/instancias.html", "./instancias.html")
+	s.router.StaticFile("/disparador.html", "./disparador.html")
+	s.router.StaticFile("/styles.css", "./styles.css")
 
 	zap.L().Info("Routes configured successfully")
 }

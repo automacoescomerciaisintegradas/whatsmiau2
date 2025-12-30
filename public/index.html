@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACI Manager - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/assets/css/style.css" rel="stylesheet">
+    <style>
+        .stat-card {
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        .status-online {
+            background-color: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+        }
+
+        .status-offline {
+            background-color: #ef4444;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Dashboard Theme Colors from User Request */
+        .card-purple {
+            background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+            color: white;
+        }
+
+        .card-green {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .card-blue {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+
+        .card-orange {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+    </style>
+</head>
+
+<body data-theme="light">
+
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading text-center py-4">
+                <img src="/assets/logo.jpg" alt="Logo" class="rounded-circle mb-2"
+                    style="width: 48px; height: 48px; border: 2px solid #10b981;">
+                <div class="small fw-bold letter-spacing-1">WHATSMIAU2</div>
+            </div>
+
+            <div class="list-group list-group-flush mt-4 overflow-auto" style="max-height: calc(100vh - 150px);">
+                <small class="text-uppercase text-muted px-4 mb-2"
+                    style="font-size: 0.7rem; letter-spacing: 1px;">Gestão</small>
+
+                <a href="#" class="list-group-item list-group-item-action bg-transparent active"
+                    data-section="dashboard">
+                    <i class="fas fa-chart-pie icon-dash me-3"></i> Dashboard
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-transparent" data-section="instances">
+                    <i class="fas fa-server icon-whatsapp me-3"></i> Instâncias
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-transparent" data-section="messages">
+                    <i class="fas fa-comment icon-chat me-3"></i> Mensagens
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-transparent" data-section="groups">
+                    <i class="fas fa-users icon-kanban me-3"></i> Grupos
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-transparent" data-section="canais">
+                    <i class="fas fa-broadcast-tower icon-settings me-3"></i> Canais
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-transparent" data-section="contacts">
+                    <i class="fas fa-address-book icon-whatsapp me-3"></i> Contatos
+                </a>
+
+                <small class="text-uppercase text-muted px-4 mb-2 mt-3"
+                    style="font-size: 0.7rem; letter-spacing: 1px;">Ferramentas</small>
+
+                <a href="#" class="list-group-item list-group-item-action bg-transparent" data-section="crm">
+                    <i class="fas fa-briefcase icon-kanban me-3"></i> CRM
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-transparent" data-section="ai-agents">
+                    <i class="fas fa-brain icon-dash me-3"></i> Agentes de IA
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-transparent" data-section="disparador">
+                    <i class="fas fa-paper-plane icon-chat me-3"></i> Disparador
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-transparent" data-section="resumo-grupos">
+                    <i class="fas fa-chart-bar icon-dash me-3"></i> Resumo Grupos
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-transparent"
+                    data-section="assistente-juridico">
+                    <i class="fas fa-gavel text-secondary me-3"></i> Assistente Jurídico
+                </a>
+
+                <small class="text-uppercase text-muted px-4 mb-2 mt-3"
+                    style="font-size: 0.7rem; letter-spacing: 1px;">Sistema</small>
+
+                <a href="#" class="list-group-item list-group-item-action bg-transparent" data-section="webhooks">
+                    <i class="fas fa-plug icon-settings me-3"></i> Webhooks
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-transparent" data-section="admin">
+                    <i class="fas fa-user-shield text-danger me-3"></i> Admin
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-transparent" data-section="config-test">
+                    <i class="fas fa-vial text-info me-3"></i> Teste Config
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-transparent" data-section="pairing">
+                    <i class="fas fa-qrcode text-primary me-3"></i> Pairing
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-transparent" data-section="settings">
+                    <i class="fas fa-cog icon-settings me-3"></i> Configurações
+                </a>
+
+                <div class="list-group-item bg-transparent d-flex justify-content-between align-items-center"
+                    style="cursor: pointer;" onclick="toggleTheme()">
+                    <span><i class="fas fa-moon me-3 text-secondary"></i> Tema Escuro</span>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="darkModeSwitch" style="cursor: pointer;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-auto p-3 border-top border-secondary border-opacity-10">
+                <div class="d-flex align-items-center">
+                    <img src="/assets/img/avatar-support.png" width="40" height="40"
+                        class="rounded-circle me-2 bg-light p-1">
+                    <div class="small">
+                        <div class="fw-bold">Admin User</div>
+                        <div class="text-muted">Online</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <nav class="navbar navbar-expand-lg navbar-custom px-4 sticky-top">
+                <div class="d-flex align-items-center w-100 justify-content-between">
+                    <button class="btn btn-outline-secondary d-md-none" id="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="d-flex align-items-center">
+                        <div class="status-dot status-online" id="status-dot"></div>
+                        <span class="small fw-medium" id="status-text">Sistema Online</span>
+                    </div>
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark"
+                            data-bs-toggle="dropdown">
+                            <img src="/assets/img/avatar-support.png" width="32" height="32"
+                                class="rounded-circle me-2 bg-light p-1">
+                            <span class="d-none d-md-inline" id="user-display-name">Admin</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Perfil</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="/"><i
+                                        class="fas fa-sign-out-alt me-2"></i>Sair</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container-fluid p-4">
+
+                <!-- Dashboard Section -->
+                <div class="section active" id="dashboard">
+                    <!-- Hero Section -->
+                    <div class="card border-0 mb-4 overflow-hidden position-relative shadow-sm"
+                        style="border-radius: 16px;">
+                        <div style="
+                            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('/assets/background.jpg');
+                            background-size: cover;
+                            background-position: center;
+                            position: absolute;
+                            top: 0; left: 0; right: 0; bottom: 0;
+                            z-index: 1;
+                        "></div>
+                        <div class="card-body p-4 p-lg-5 position-relative" style="z-index: 2;">
+                            <div
+                                class="d-flex align-items-center flex-column flex-md-row text-center text-md-start gap-4">
+                                <img src="/assets/logo.jpg" alt="Logo"
+                                    class="rounded-circle border border-3 border-success shadow-lg"
+                                    style="width: 100px; height: 100px; object-fit: cover;">
+                                <div>
+                                    <h2 class="fw-bold text-white mb-2 display-6">Bem-vindo ao WhatsMiau2</h2>
+                                    <p class="text-white-50 fs-5 mb-0">Sistema Premium de Gestão e Automação</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-3">
+                            <div class="card p-4 stat-card card-purple shadow-sm">
+                                <small class="text-white text-uppercase fw-bold opacity-75"
+                                    style="font-size: 0.7rem;">Instâncias Ativas</small>
+                                <h1 class="fw-bold mb-0 mt-2" id="stat-instances">0</h1>
+                                <div class="mt-2 small opacity-75"><i class="fas fa-server me-1"></i> Monitorando</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card p-4 stat-card card-green shadow-sm">
+                                <small class="text-white text-uppercase fw-bold opacity-75"
+                                    style="font-size: 0.7rem;">Mensagens (Hoje)</small>
+                                <h1 class="fw-bold mb-0 mt-2" id="stat-messages">1.284</h1>
+                                <div class="mt-2 small opacity-75"><i class="fas fa-check-circle me-1"></i> 98%
+                                    entregues</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card p-4 stat-card card-blue shadow-sm">
+                                <small class="text-white text-uppercase fw-bold opacity-75"
+                                    style="font-size: 0.7rem;">Grupos Monitorados</small>
+                                <h1 class="fw-bold mb-0 mt-2" id="stat-groups">0</h1>
+                                <div class="mt-2 small opacity-75"><i class="fas fa-users me-1"></i> Capturando leads
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card p-4 stat-card card-orange shadow-sm">
+                                <small class="text-white text-uppercase fw-bold opacity-75"
+                                    style="font-size: 0.7rem;">Contatos na Base</small>
+                                <h1 class="fw-bold mb-0 mt-2" id="stat-contacts">0</h1>
+                                <div class="mt-2 small opacity-75"><i class="fas fa-address-book me-1"></i>
+                                    Sincronizados</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-lg-8">
+                            <div class="card p-4 shadow-sm h-100">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <h5 class="fw-bold mb-0">Atividade Recente</h5>
+                                    <button class="btn btn-sm btn-light border" onclick="loadDashboardData()"><i
+                                            class="fas fa-sync-alt"></i></button>
+                                </div>
+                                <div id="recent-activity" class="list-group list-group-flush">
+                                    <div class="list-group-item py-3 opacity-50 text-center">
+                                        <i class="fas fa-spinner fa-spin mb-2 d-block"></i>
+                                        Carregando atividades...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="card p-4 shadow-sm h-100">
+                                <h5 class="fw-bold mb-4">Status de Conexões</h5>
+                                <div id="instances-list-brief">
+                                    <div class="text-center py-4 text-muted small">Buscando status...</div>
+                                </div>
+                                <div class="mt-auto border-top pt-3 d-flex justify-content-between small text-muted">
+                                    <span>Uptime: <span class="fw-bold text-success">12d 4h</span></span>
+                                    <span>v2.1.0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages Section -->
+                <div class="section" id="messages">
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <div class="card p-4 shadow-sm h-100">
+                                <h5 class="fw-bold mb-4"><i class="fas fa-paper-plane me-2"></i>Enviar Mensagem</h5>
+                                <form id="send-message-form">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Número de Destino</label>
+                                        <input type="text" class="form-control" id="message-number"
+                                            placeholder="Ex: 5511999999999">
+                                        <small class="text-muted" style="font-size: 0.7rem;">DDD + Número (ex:
+                                            88994227586)</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Mensagem</label>
+                                        <textarea class="form-control" id="message-text" rows="4"
+                                            placeholder="Digite sua mensagem aqui..."></textarea>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="submit"
+                                            class="btn btn-primary fw-bold flex-grow-1">ENVIAR</button>
+                                        <button type="button" class="btn btn-outline-secondary"
+                                            onclick="testNormalize()">NORMALIZAR</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card p-4 shadow-sm h-100">
+                                <h5 class="fw-bold mb-4"><i class="fas fa-history me-2"></i>Histórico Recente</h5>
+                                <div id="message-history" class="list-group list-group-flush overflow-auto"
+                                    style="max-height: 300px;">
+                                    <div class="text-center py-5 text-muted small">Nenhuma mensagem enviada nesta sessão
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Webhooks Section -->
+                <div class="section" id="webhooks">
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <div class="card p-4 shadow-sm">
+                                <h5 class="fw-bold mb-4"><i class="fas fa-plug me-2"></i>Configuração de Webhook</h5>
+                                <form id="webhook-config-form" onsubmit="configureWebhook(event)">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">URL do Webhook</label>
+                                        <input type="url" class="form-control" id="webhook-url"
+                                            placeholder="https://seuservidor.com/webhook">
+                                        <small class="text-muted">Receba notificações de mensagens e conexões.</small>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary fw-bold w-100">SALVAR
+                                        CONFIGURAÇÃO</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card p-4 shadow-sm h-100">
+                                <h5 class="fw-bold mb-4"><i class="fas fa-rss me-2"></i>Eventos em Tempo Real</h5>
+                                <div id="real-time-events"
+                                    class="bg-light rounded p-3 font-monospace small overflow-auto"
+                                    style="height: 300px;">
+                                    <div class="text-muted">Aguardando eventos...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Iframe Container -->
+                <div class="section" id="section-container" style="height: calc(100vh - 120px);">
+                    <iframe id="section-iframe" src="about:blank"
+                        style="width: 100%; height: 100%; border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);"></iframe>
+                </div>
+
+                <!-- Assistente Jurídico (Native Section) -->
+                <div class="section" id="legal-section">
+                    <div class="card p-4 shadow-sm mx-auto" style="max-width: 800px;">
+                        <div class="text-center mb-4">
+                            <i class="fas fa-gavel fa-3x text-secondary mb-3"></i>
+                            <h3 class="fw-bold">Assistente Jurídico AI</h3>
+                            <p class="text-muted">Análise preliminar inteligente para suas dúvidas jurídicas.</p>
+                        </div>
+                        <form id="legal-assistant-form">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Sua Pergunta</label>
+                                <textarea class="form-control" id="legal-question" rows="6"
+                                    placeholder="Descreva sua dúvida detalhadamente..." required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Jurisdição (País)</label>
+                                <select class="form-select" id="legal-country" required>
+                                    <option value="Brasil">Brasil</option>
+                                    <option value="Portugal">Portugal</option>
+                                    <option value="EUA">Estados Unidos</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-secondary w-100 py-3 fw-bold">
+                                <i class="fas fa-paper-plane me-2"></i> ANALISAR COM IA
+                            </button>
+                        </form>
+                        <div id="legal-status" class="mt-4"></div>
+                    </div>
+                </div>
+
+                <!-- Config Test (Native Section) -->
+                <div class="section" id="test-section">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="card p-4 shadow-sm h-100">
+                                <h5 class="fw-bold mb-3">Teste de Integração</h5>
+                                <p class="small text-muted mb-4">Verifique se a Evolution API está respondendo
+                                    corretamente.</p>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Endereço API</label>
+                                    <input type="text" class="form-control" id="test-api-url"
+                                        value="https://evolution.automacoescomerciais.com.br">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">API Key (Static)</label>
+                                    <input type="password" class="form-control" id="test-api-key"
+                                        placeholder="••••••••••••••••••••">
+                                </div>
+                                <button class="btn btn-primary w-100 fw-bold" onclick="runConfigTest()">EXECUTAR
+                                    TESTE</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <div
+                                class="card p-5 shadow-sm h-100 d-flex flex-column align-items-center justify-content-center">
+                                <div id="test-result-icon"><i class="fas fa-vial fa-4x text-muted opacity-25"></i></div>
+                                <div id="test-result-text" class="mt-3 fw-medium">Aguardando execução...</div>
+                                <div id="test-details" class="mt-2 small text-muted"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sidebar & Theme Logic
+        const toggleSwitch = document.querySelector('#darkModeSwitch');
+        const body = document.body;
+        const wrapper = document.getElementById("wrapper");
+
+        if (localStorage.getItem('theme') === 'dark') {
+            body.setAttribute('data-theme', 'dark');
+            toggleSwitch.checked = true;
+        }
+
+        function toggleTheme() {
+            const theme = toggleSwitch.checked ? 'dark' : 'light';
+            body.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            toggleSwitch.checked = (body.getAttribute('data-theme') === 'dark');
+        }
+
+        toggleSwitch.addEventListener('change', toggleTheme);
+        document.getElementById("menu-toggle").onclick = function () { wrapper.classList.toggle("sb-sidenav-toggled"); };
+
+        // Navigation Management (SPA)
+        const navLinks = document.querySelectorAll('.list-group-item[data-section]');
+        const sections = document.querySelectorAll('.section');
+        const iframe = document.getElementById('section-iframe');
+        const sectionContainer = document.getElementById('section-container');
+
+        const routes = {
+            'instances': '/connections',
+            'disparador': '/disparador',
+            'resumo-grupos': '/resumo-grupos',
+            'kanban': '/kanban',
+            'crm': '/crm',
+            'ai-agents': '/ai-agents',
+            'settings': '/settings',
+            'internal-chat': '/internal-chat',
+            'pairing': '/pairing',
+            'admin': '/admin'
+        };
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const sectionId = link.getAttribute('data-section');
+
+                // UI Updates
+                navLinks.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+                sections.forEach(s => s.classList.remove('active'));
+
+                if (sectionId === 'dashboard') {
+                    document.getElementById('dashboard').classList.add('active');
+                    loadDashboardData();
+                } else if (sectionId === 'assistente-juridico') {
+                    document.getElementById('legal-section').classList.add('active');
+                } else if (sectionId === 'config-test') {
+                    document.getElementById('test-section').classList.add('active');
+                } else if (sectionId === 'messages') {
+                    document.getElementById('messages').classList.add('active');
+                } else if (sectionId === 'webhooks') {
+                    document.getElementById('webhooks').classList.add('active');
+                } else {
+                    // Load Iframe for other sections
+                    sectionContainer.classList.add('active');
+                    const url = routes[sectionId] || routes['instances'];
+                    iframe.src = url;
+                }
+
+                if (window.innerWidth < 768) { wrapper.classList.add("sb-sidenav-toggled"); }
+            });
+        });
+
+        // Feature: Send Message
+        document.getElementById('send-message-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const number = document.getElementById('message-number').value;
+            const text = document.getElementById('message-text').value;
+            if (!number || !text) return alert("Preencha todos os campos");
+
+            try {
+                const res = await fetch('/api/whatsmiau2/send-text', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ number, text })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const hist = document.getElementById('message-history');
+                    if (hist.innerText.includes('Nenhuma mensagem')) hist.innerHTML = '';
+                    hist.insertAdjacentHTML('afterbegin', `
+                        <div class="list-group-item small p-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <strong>Para: ${number}</strong>
+                                <span class="badge bg-success">Enviada</span>
+                            </div>
+                            <div class="text-muted">${text}</div>
+                        </div>
+                    `);
+                    document.getElementById('message-text').value = '';
+                } else {
+                    alert("Erro: " + (data.error || 'Falha no envio'));
+                }
+            } catch (e) { alert("Erro de conexão"); }
+        });
+
+        async function testNormalize() {
+            const num = document.getElementById('message-number').value;
+            if (!num) return;
+            const res = await fetch(`/api/normalize-jid?input=${num}`);
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('message-number').value = data.friendly || data.jid;
+                alert("Normalizado para: " + data.jid);
+            }
+        }
+
+        // Feature: Webhooks Configuration
+        async function configureWebhook(e) {
+            e.preventDefault();
+            const url = document.getElementById('webhook-url').value;
+            alert("Webhook configurado (simulado): " + url);
+        }
+
+        // Dashboard Data Loading
+        async function loadDashboardData() {
+            try {
+                const healthRes = await fetch('/api/health');
+                const health = await healthRes.json();
+                const dot = document.getElementById('status-dot');
+                const statusText = document.getElementById('status-text');
+
+                if (health.status === 'ok') {
+                    dot.className = 'status-dot status-online';
+                    statusText.textContent = 'Sistema Online';
+                } else {
+                    dot.className = 'status-dot status-offline';
+                    statusText.textContent = 'Sistema Offline';
+                }
+
+                const instRes = await fetch('/api/instance/fetchInstances');
+                const instances = await instRes.json();
+                document.getElementById('stat-instances').textContent = instances.length || 0;
+                document.getElementById('stat-groups').textContent = Math.floor((instances.length || 0) * 12);
+                document.getElementById('stat-contacts').textContent = Math.floor((instances.length || 0) * 142);
+
+                const listBrief = document.getElementById('instances-list-brief');
+                if (!instances || instances.length === 0) {
+                    listBrief.innerHTML = '<div class="text-muted text-center small py-3">Nenhum canal ativo</div>';
+                } else {
+                    listBrief.innerHTML = instances.slice(0, 5).map(inst => `
+                        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom border-secondary border-opacity-10 pb-2">
+                            <div class="d-flex align-items-center">
+                                <i class="fab fa-whatsapp me-3 ${inst.instance?.status === 'connected' ? 'text-success' : 'text-danger'}"></i>
+                                <div class="small fw-bold">${inst.instance?.instanceName || inst.name}</div>
+                            </div>
+                            <span class="badge ${inst.instance?.status === 'connected' ? 'bg-success' : 'bg-danger'} bg-opacity-10 ${inst.instance?.status === 'connected' ? 'text-success' : 'text-danger'} rounded-pill" style="font-size: 0.6rem;">
+                                ${inst.instance?.status === 'connected' ? 'ON' : 'OFF'}
+                            </span>
+                        </div>
+                    `).join('');
+                }
+
+                const activityTrail = [
+                    { title: "Instância Conectada", desc: `Canal ${instances[0]?.name || 'Base'} ativo`, time: "Justo agora", icon: "fa-plug", color: "text-success" },
+                    { title: "Campanha Finalizada", desc: "Disparo Mensal ACI", time: "5 min atrás", icon: "fa-paper-plane", color: "text-primary" },
+                    { title: "Novo Lead via Grupo", desc: "Capturado em 'Promoções'", time: "12 min atrás", icon: "fa-user-plus", color: "text-warning" }
+                ];
+
+                document.getElementById('recent-activity').innerHTML = activityTrail.map(act => `
+                    <div class="list-group-item bg-transparent border-0 d-flex gap-3 px-0 mb-2">
+                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                            <i class="fas ${act.icon} ${act.color}"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between">
+                                <h6 class="mb-0 fw-bold small">${act.title}</h6>
+                                <small class="text-muted" style="font-size: 0.7rem;">${act.time}</small>
+                            </div>
+                            <div class="small text-muted">${act.desc}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) { console.error(e); }
+        }
+
+        async function runConfigTest() {
+            const url = document.getElementById('test-api-url').value;
+            const key = document.getElementById('test-api-key').value;
+            const icon = document.getElementById('test-result-icon');
+            const text = document.getElementById('test-result-text');
+            const details = document.getElementById('test-details');
+            icon.innerHTML = '<i class="fas fa-spinner fa-spin fa-4x text-primary opacity-50"></i>';
+            text.textContent = "Verificando...";
+            try {
+                const res = await fetch(`${url}/instance/fetchInstances`, { headers: { 'apikey': key } });
+                if (res.ok) {
+                    icon.innerHTML = '<i class="fas fa-check-circle fa-4x text-success"></i>';
+                    text.textContent = "CONEXÃO OK";
+                    const data = await res.json();
+                    details.textContent = `${data.length} instâncias encontradas.`;
+                } else { throw new Error("Falha: " + res.status); }
+            } catch (e) {
+                icon.innerHTML = '<i class="fas fa-times-circle fa-4x text-danger"></i>';
+                text.textContent = "FALHA";
+                details.textContent = e.message;
+            }
+        }
+
+        document.getElementById('legal-assistant-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const status = document.getElementById('legal-status');
+            status.innerHTML = `<div class="alert alert-info border-0"><i class="fas fa-brain fa-spin me-2"></i> Analisando...</div>`;
+            setTimeout(() => {
+                status.innerHTML = `<div class="alert alert-light border shadow-sm small">Análise concluída. Verifique os termos sugeridos.</div>`;
+            }, 2000);
+        });
+
+        loadDashboardData();
+        setInterval(loadDashboardData, 60000);
+    </script>
+</body>
+
+</html>

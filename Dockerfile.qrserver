@@ -2,8 +2,15 @@ FROM golang:1.24-alpine
 
 WORKDIR /app
 
+# Copiar código Go
 COPY qrserver.go .
 
+# Copiar arquivos HTML do frontend
+COPY *.html ./
+COPY *.css ./
+COPY *.js ./
+
+# Build do servidor
 RUN go build -o qrserver qrserver.go
 
 EXPOSE 3000

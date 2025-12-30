@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -476,5 +478,173 @@ func (h *InstanceHandler) PairPhoneInstance(c *gin.Context) {
 		"instance": instanceID,
 		"code":     code,
 		"message":  "Pairing code generated successfully",
+	})
+}
+
+// GetWebhookConfig gets the webhook configuration for an instance
+// GET /v1/instance/webhook/:id
+func (h *InstanceHandler) GetWebhookConfig(c *gin.Context) {
+	instanceID := c.Param("id")
+
+	// Get instance from database
+	instance, err := h.db.GetInstance(instanceID)
+	if err != nil {
+		// Try to find by name
+		instance, err = h.db.GetInstanceByName(instanceID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error":   "Not Found",
+				"message": "Instance not found",
+			})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"instance":     instance.Name,
+		"webhookUrl":   instance.WebhookURL,
+		"webhookToken": instance.WebhookToken,
+	})
+}
+
+// UpdateWebhookConfig updates the webhook configuration for an instance
+// PUT /v1/instance/webhook/:id
+func (h *InstanceHandler) UpdateWebhookConfig(c *gin.Context) {
+	instanceID := c.Param("id")
+
+	var req struct {
+		WebhookURL   string `json:"webhookUrl"`
+		WebhookToken string `json:"webhookToken"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Bad Request",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	// Get instance from database
+	instance, err := h.db.GetInstance(instanceID)
+	if err != nil {
+		// Try to find by name
+		instance, err = h.db.GetInstanceByName(instanceID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error":   "Not Found",
+				"message": "Instance not found",
+			})
+			return
+		}
+	}
+
+	// Update webhook fields
+	instance.WebhookURL = req.WebhookURL
+	instance.WebhookToken = req.WebhookToken
+
+	if err := h.db.UpdateInstance(instance); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Internal Server Error",
+			"message": "Failed to update webhook configuration",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"instance": instance.Name,
+		"message":  "Webhook configuration updated successfully",
+	})
+}
+
+// TestWebhook sends a test event to the webhook URL
+// POST /v1/instance/webhook/:id/test
+func (h *InstanceHandler) TestWebhook(c *gin.Context) {
+	instanceID := c.Param("id")
+
+	// Get instance from database
+	instance, err := h.db.GetInstance(instanceID)
+	if err != nil {
+		// Try to find by name
+		instance, err = h.db.GetInstanceByName(instanceID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error":   "Not Found",
+				"message": "Instance not found",
+			})
+			return
+		}
+	}
+
+	if instance.WebhookURL == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Bad Request",
+			"message": "No webhook URL configured for this instance",
+		})
+		return
+	}
+
+	// Create test payload
+	testPayload := map[string]interface{}{
+		"event":    "test.webhook",
+		"instance": instance.Name,
+		"data": map[string]interface{}{
+			"message":   "This is a test webhook event from WhatsMiau2",
+			"timestamp": time.Now().Unix(),
+		},
+	}
+
+	payloadBytes, err := json.Marshal(testPayload)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Internal Server Error",
+			"message": "Failed to create test payload",
+		})
+		return
+	}
+
+	// Create HTTP request
+	req, err := http.NewRequest("POST", instance.WebhookURL, bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Internal Server Error",
+			"message": "Failed to create webhook request",
+		})
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	if instance.WebhookToken != "" {
+		req.Header.Set("Authorization", instance.WebhookToken)
+	}
+
+	// Send request with timeout
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		zap.L().Error("Failed to send test webhook",
+			zap.String("instance", instance.Name),
+			zap.String("url", instance.WebhookURL),
+			zap.Error(err),
+		)
+		c.JSON(http.StatusOK, gin.H{
+			"instance": instance.Name,
+			"message":  "Test webhook sent, but request failed: " + err.Error(),
+			"success":  false,
+		})
+		return
+	}
+	defer resp.Body.Close()
+
+	zap.L().Info("Test webhook sent successfully",
+		zap.String("instance", instance.Name),
+		zap.String("url", instance.WebhookURL),
+		zap.Int("status", resp.StatusCode),
+	)
+
+	c.JSON(http.StatusOK, gin.H{
+		"instance":   instance.Name,
+		"message":    "Test webhook sent successfully",
+		"success":    true,
+		"statusCode": resp.StatusCode,
 	})
 }

@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 WhatsMiau2 CRM - Gestão Premium</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Colors - Dark Theme */
+            --bg-primary: #0f172a;
+            --bg-secondary: #000000;
+            --surface: rgba(30, 41, 59, 0.7);
+            --surface-hover: rgba(30, 41, 59, 0.9);
+            --accent-indigo: #6366f1;
+            --accent-green: #25d366;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            --gradient-success: linear-gradient(135deg, #10b981 0%, #25d366 100%);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animated {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.3;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(37, 211, 102, 0.05) 0%, transparent 50%);
+            animation: bgPulse 15s ease-in-out infinite;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Layout */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .nav-section {
+            margin-bottom: 32px;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            padding-left: 12px;
+        }
+
+        .nav-item {
+            padding: 14px 16px;
+            border-radius: 12px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 3px;
+            height: 100%;
+            background: var(--gradient-primary);
+            transform: scaleY(0);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--text-primary);
+            transform: translateX(4px);
+        }
+
+        .nav-item.active {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--accent-indigo);
+            font-weight: 600;
+        }
+
+        .nav-item.active::before {
+            transform: scaleY(1);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: calc(100% - 280px);
+        }
+
+        /* Header */
+        .header {
+            padding: 24px 40px;
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .view-section {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-primary);
+            transform: scaleX(0);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .stat-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-change {
+            font-size: 13px;
+            font-weight: 600;
+            color: #10b981;
+        }
+
+        .stat-change.negative {
+            color: #ef4444;
+        }
+
+        /* Leads Table */
+        .table-container {
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .search-box {
+            position: relative;
+            width: 300px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 16px 12px 44px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent-indigo);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        th {
+            padding: 16px 24px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .lead-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .lead-company {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-novo {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+        }
+
+        .badge-contato {
+            background: rgba(168, 85, 247, 0.15);
+            color: #c084fc;
+        }
+
+        .badge-negociacao {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+        }
+
+        .badge-fechado {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+
+        .badge-quente {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+
+        .badge-morno {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+        }
+
+        .badge-frio {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--accent-indigo);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: none;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent-indigo);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(99, 102, 241, 0.1);
+            border-top-color: var(--accent-indigo);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 40px;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .empty-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .empty-text {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 240px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                transition: left 0.3s;
+                z-index: 100;
+            }
+
+            .sidebar.mobile-open {
+                left: 0;
+            }
+
+            .main-content {
+                max-width: 100%;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animated"></div>
+    
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">🎯</div>
+                <span>WhatsMiau2</span>
+            </div>
+
+            <nav>
+                <div class="nav-section">
+                    <div class="nav-label">Principal</div>
+                    <div class="nav-item active" data-view="dashboard">
+                        <span class="nav-icon">📊</span>
+                        <span>Dashboard</span>
+                    </div>
+                    <div class="nav-item" data-view="leads">
+                        <span class="nav-icon">👥</span>
+                        <span>Leads</span>
+                    </div>
+                    <div class="nav-item" data-view="conversas">
+                        <span class="nav-icon">💬</span>
+                        <span>Conversas</span>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-label">Financeiro</div>
+                    <div class="nav-item" data-view="pagamentos">
+                        <span class="nav-icon">💳</span>
+                        <span>Pagamentos</span>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-label">Marketing</div>
+                    <div class="nav-item" data-view="emails">
+                        <span class="nav-icon">📧</span>
+                        <span>Campanhas</span>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-label">Sistema</div>
+                    <div class="nav-item" data-view="config">
+                        <span class="nav-icon">⚙️</span>
+                        <span>Configurações</span>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <h1 class="header-title" id="pageTitle">Dashboard</h1>
+                <div class="header-actions">
+                    <button class="btn btn-secondary">
+                        <span>📥</span>
+                        <span>Importar</span>
+                    </button>
+                    <button class="btn btn-primary" id="btnAddLead">
+                        <span>➕</span>
+                        <span>Novo Lead</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Dashboard View -->
+                <section class="view-section active" id="view-dashboard">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-label">Total de Leads</div>
+                                    <div class="stat-value" id="statTotal">0</div>
+                                    <div class="stat-change">+12% este mês</div>
+                                </div>
+                                <div class="stat-icon">👥</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-label">Novos Leads</div>
+                                    <div class="stat-value" id="statNovos">0</div>
+                                    <div class="stat-change">+8% este mês</div>
+                                </div>
+                                <div class="stat-icon">🆕</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-label">Em Negociação</div>
+                                    <div class="stat-value" id="statNegociacao">0</div>
+                                    <div class="stat-change">+15% este mês</div>
+                                </div>
+                                <div class="stat-icon">💼</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-header">
+                                <div>
+                                    <div class="stat-label">Fechados</div>
+                                    <div class="stat-value" id="statFechados">0</div>
+                                    <div class="stat-change">+25% este mês</div>
+                                </div>
+                                <div class="stat-icon">✅</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h2 class="table-title">Leads Recentes</h2>
+                            <div class="search-box">
+                                <input type="text" placeholder="Buscar leads..." id="searchInput">
+                            </div>
+                        </div>
+                        <div id="leadsTableContainer"></div>
+                    </div>
+                </section>
+
+                <!-- Leads View -->
+                <section class="view-section" id="view-leads">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h2 class="table-title">Todos os Leads</h2>
+                            <div class="search-box">
+                                <input type="text" placeholder="Buscar leads..." id="searchInputLeads">
+                            </div>
+                        </div>
+                        <div id="allLeadsTableContainer"></div>
+                    </div>
+                </section>
+
+                <!-- Other Views (Placeholder) -->
+                <section class="view-section" id="view-conversas">
+                    <div class="empty-state">
+                        <div class="empty-icon">💬</div>
+                        <h2 class="empty-title">Conversas</h2>
+                        <p class="empty-text">Gerencie suas conversas com leads</p>
+                        <button class="btn btn-primary">Em Breve</button>
+                    </div>
+                </section>
+
+                <section class="view-section" id="view-pagamentos">
+                    <div class="empty-state">
+                        <div class="empty-icon">💳</div>
+                        <h2 class="empty-title">Pagamentos</h2>
+                        <p class="empty-text">Gerencie pagamentos PIX</p>
+                        <button class="btn btn-primary">Em Breve</button>
+                    </div>
+                </section>
+
+                <section class="view-section" id="view-emails">
+                    <div class="empty-state">
+                        <div class="empty-icon">📧</div>
+                        <h2 class="empty-title">Campanhas de Email</h2>
+                        <p class="empty-text">Crie e gerencie campanhas</p>
+                        <button class="btn btn-primary">Em Breve</button>
+                    </div>
+                </section>
+
+                <section class="view-section" id="view-config">
+                    <div class="empty-state">
+                        <div class="empty-icon">⚙️</div>
+                        <h2 class="empty-title">Configurações</h2>
+                        <p class="empty-text">Configure seu CRM</p>
+                        <button class="btn btn-primary">Em Breve</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Add Lead -->
+    <div class="modal" id="modalAddLead">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">➕ Novo Lead</h2>
+                <button class="close-btn" onclick="closeModal('modalAddLead')">✕</button>
+            </div>
+            <form id="formAddLead">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Nome *</label>
+                        <input type="text" class="form-input" name="nome" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">WhatsApp *</label>
+                        <input type="tel" class="form-input" name="whatsapp" required placeholder="5511999999999">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" name="email">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Empresa</label>
+                        <input type="text" class="form-input" name="empresa">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Valor (R$)</label>
+                        <input type="number" class="form-input" name="valor" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fonte</label>
+                        <select class="form-select" name="fonte">
+                            <option value="instagram">Instagram</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="google">Google</option>
+                            <option value="indicacao">Indicação</option>
+                            <option value="outro">Outro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status">
+                            <option value="novo">Novo</option>
+                            <option value="contato">Em Contato</option>
+                            <option value="negociacao">Negociação</option>
+                            <option value="fechado">Fechado</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Temperatura</label>
+                        <select class="form-select" name="temperatura">
+                            <option value="quente">🔥 Quente</option>
+                            <option value="morno">🌤️ Morno</option>
+                            <option value="frio">❄️ Frio</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Observações</label>
+                    <textarea class="form-textarea" name="observacoes"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                    <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closeModal('modalAddLead')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Salvar Lead</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE = 'http://localhost:8081/v1/crm';
+        const API_KEY = '2wtLvtb20wXePp8D9uRhm55aCjINiciO';
+
+        // State
+        let leads = [];
+        let stats = {};
+
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const view = item.dataset.view;
+                switchView(view);
+                
+                // Update active state
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                
+                // Update page title
+                const titles = {
+                    dashboard: 'Dashboard',
+                    leads: 'Leads',
+                    conversas: 'Conversas',
+                    pagamentos: 'Pagamentos',
+                    emails: 'Campanhas de Email',
+                    config: 'Configurações'
+                };
+                document.getElementById('pageTitle').textContent = titles[view] || 'Dashboard';
+            });
+        });
+
+        function switchView(view) {
+            document.querySelectorAll('.view-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(`view-${view}`).classList.add('active');
+        }
+
+        // Modal
+        document.getElementById('btnAddLead').addEventListener('click', () => {
+            openModal('modalAddLead');
+        });
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Form Submit
+        document.getElementById('formAddLead').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            // Convert valor to number
+            if (data.valor) {
+                data.valor = parseFloat(data.valor);
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/leads`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': API_KEY
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Lead criado com sucesso!');
+                    closeModal('modalAddLead');
+                    e.target.reset();
+                    loadLeads();
+                    loadStats();
+                } else {
+                    alert('❌ Erro: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Erro ao criar lead');
+            }
+        });
+
+        // Load Stats
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/leads/stats`, {
+                    headers: { 'apikey': API_KEY }
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    stats = result.stats;
+                    updateStatsUI();
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        function updateStatsUI() {
+            document.getElementById('statTotal').textContent = stats.total || 0;
+            document.getElementById('statNovos').textContent = stats.novos || 0;
+            document.getElementById('statNegociacao').textContent = stats.negociacao || 0;
+            document.getElementById('statFechados').textContent = stats.fechados || 0;
+        }
+
+        // Load Leads
+        async function loadLeads() {
+            try {
+                const response = await fetch(`${API_BASE}/leads`, {
+                    headers: { 'apikey': API_KEY }
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    leads = result.leads || [];
+                    renderLeadsTable();
+                }
+            } catch (error) {
+                console.error('Error loading leads:', error);
+            }
+        }
+
+        function renderLeadsTable() {
+            const container = document.getElementById('leadsTableContainer');
+            const allContainer = document.getElementById('allLeadsTableContainer');
+            
+            if (leads.length === 0) {
+                const emptyHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">👥</div>
+                        <h2 class="empty-title">Nenhum lead encontrado</h2>
+                        <p class="empty-text">Comece adicionando seu primeiro lead</p>
+                        <button class="btn btn-primary" onclick="openModal('modalAddLead')">
+                            <span>➕</span>
+                            <span>Adicionar Lead</span>
+                        </button>
+                    </div>
+                `;
+                container.innerHTML = emptyHTML;
+                allContainer.innerHTML = emptyHTML;
+                return;
+            }
+            
+            const tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Lead</th>
+                            <th>WhatsApp</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                            <th>Temperatura</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${leads.map(lead => `
+                            <tr>
+                                <td>
+                                    <div class="lead-name">${lead.nome}</div>
+                                    ${lead.empresa ? `<div class="lead-company">${lead.empresa}</div>` : ''}
+                                </td>
+                                <td>${lead.whatsapp}</td>
+                                <td>R$ ${(lead.valor || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                                <td><span class="badge badge-${lead.status}">${lead.status}</span></td>
+                                <td><span class="badge badge-${lead.temperatura}">${lead.temperatura}</span></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-icon" title="Editar">✏️</button>
+                                        <button class="btn-icon" title="WhatsApp">💬</button>
+                                        <button class="btn-icon" title="Deletar" onclick="deleteLead(${lead.id})">🗑️</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = tableHTML;
+            allContainer.innerHTML = tableHTML;
+        }
+
+        async function deleteLead(id) {
+            if (!confirm('Tem certeza que deseja deletar este lead?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/leads/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'apikey': API_KEY }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Lead deletado com sucesso!');
+                    loadLeads();
+                    loadStats();
+                } else {
+                    alert('❌ Erro: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Erro ao deletar lead');
+            }
+        }
+
+        // Search
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            filterLeads(e.target.value);
+        });
+
+        document.getElementById('searchInputLeads').addEventListener('input', (e) => {
+            filterLeads(e.target.value);
+        });
+
+        function filterLeads(query) {
+            // TODO: Implement search filter
+            console.log('Searching for:', query);
+        }
+
+        // Initialize
+        loadStats();
+        loadLeads();
+    </script>
+</body>
+</html>
