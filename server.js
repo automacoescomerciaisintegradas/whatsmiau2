@@ -58,20 +58,34 @@ console.log("Servindo arquivos estáticos de:", path.join(__dirname, "public"));
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 app.get("/dashboard", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 app.get("/home", (req, res) => res.sendFile(path.join(__dirname, "public", "home.html")));
+app.get("/admin", (req, res) => res.sendFile(path.join(__dirname, "public", "admin_example.html")));
+
+// Core Features
 app.get("/connections", (req, res) => res.sendFile(path.join(__dirname, "public", "instancias.html")));
 app.get("/instancias", (req, res) => res.sendFile(path.join(__dirname, "public", "instancias.html")));
 app.get("/pairing", (req, res) => res.sendFile(path.join(__dirname, "public", "pairing.html")));
-app.get("/tickets", (req, res) => res.sendFile(path.join(__dirname, "public", "tickets.html")));
-app.get("/kanban", (req, res) => res.sendFile(path.join(__dirname, "public", "kanban.html")));
+app.get("/channels", (req, res) => res.sendFile(path.join(__dirname, "public", "channels.html")));
+app.get("/groups", (req, res) => res.sendFile(path.join(__dirname, "public", "groups.html")));
+app.get("/resumo-grupos", (req, res) => res.sendFile(path.join(__dirname, "public", "resumo-grupos.html")));
 app.get("/contacts", (req, res) => res.sendFile(path.join(__dirname, "public", "contacts.html")));
-app.get("/settings", (req, res) => res.sendFile(path.join(__dirname, "public", "settings.html")));
+app.get("/exportar-contatos", (req, res) => res.sendFile(path.join(__dirname, "public", "exportar-contatos.html")));
+
+// Automation & AI
+app.get("/ai-agents", (req, res) => res.sendFile(path.join(__dirname, "public", "ai-agents.html")));
+app.get("/automacao", (req, res) => res.sendFile(path.join(__dirname, "public", "automacao.html")));
 app.get("/disparador", (req, res) => res.sendFile(path.join(__dirname, "public", "disparador.html")));
 app.get("/webhooks", (req, res) => res.sendFile(path.join(__dirname, "public", "webhooks.html")));
-app.get("/automacao", (req, res) => res.sendFile(path.join(__dirname, "public", "automacao.html")));
+
+// CRM & Chat
 app.get("/crm", (req, res) => res.sendFile(path.join(__dirname, "public", "crm-new.html")));
-app.get("/ai-agents", (req, res) => res.sendFile(path.join(__dirname, "public", "ai-agents.html")));
+app.get("/kanban", (req, res) => res.sendFile(path.join(__dirname, "public", "kanban.html")));
+app.get("/tickets", (req, res) => res.sendFile(path.join(__dirname, "public", "tickets.html")));
 app.get("/internal-chat", (req, res) => res.sendFile(path.join(__dirname, "public", "internal-chat.html")));
-app.get("/resumo-grupos", (req, res) => res.sendFile(path.join(__dirname, "public", "resumo-grupos.html")));
+
+// System
+app.get("/settings", (req, res) => res.sendFile(path.join(__dirname, "public", "settings.html")));
+app.get("/debug-connections", (req, res) => res.sendFile(path.join(__dirname, "public", "debug-connections.html")));
+app.get("/test-qr", (req, res) => res.sendFile(path.join(__dirname, "public", "test-qr.html")));
 app.get("/logout", (req, res) => res.redirect("/"));
 
 /* -------------------------------------------------
@@ -1187,276 +1201,415 @@ app.post('/api/leads/sync', (req, res) => {
   res.json({ success: true, leads: leadsDatabase });
 });
 
-// Configuração do Agente de IA (API para o Frontend)
+
+/* -------------------------------------------------
+   Settings & AI Configuration Routes
+   ------------------------------------------------- */
+
+// --- Agent Configuration Storage ---
+let AGENT_CONFIGS = {
+  'model-selection': { model: 'gemini-1.5-flash', temp: 0.7, tokens: 2000 },
+  'planning': { model: 'gemini-1.5-pro', temp: 0.9, tokens: 20000 },
+  'chat': { model: 'gpt-4o', temp: 0.7, tokens: 4000 }
+};
+
+// --- API Keys Storage (Mock DB) ---
+let API_KEYS = [
+  // { id: 'key_1', name: 'Default Key', prefix: 'sk_live_...', created: new Date() }
+];
+
+// Get Agent Configs
+app.get("/api/ai/agent-configs", (req, res) => {
+  res.json(AGENT_CONFIGS);
+});
+
+// Update specific Agent Config
+app.post("/api/ai/agent-configs/:type", (req, res) => {
+  const { type } = req.params;
+  const config = req.body;
+  if (AGENT_CONFIGS[type]) {
+    AGENT_CONFIGS[type] = { ...AGENT_CONFIGS[type], ...config };
+
+    // If updating 'chat', also update the global AI_AGENT_PROMPT if provided
+    if (type === 'chat' && config.prompt) {
+      AI_AGENT_PROMPT = config.prompt;
+    }
+
+    res.json({ success: true, config: AGENT_CONFIGS[type] });
+  } else {
+    res.status(404).json({ error: "Agent type not found" });
+  }
+});
+
+// Get API Keys
+app.get("/api/ai/keys", (req, res) => {
+  res.json(API_KEYS);
+});
+
+// Create API Key
+app.post("/api/ai/keys", (req, res) => {
+  const newKey = {
+    id: 'key_' + Date.now(),
+    name: req.body.name || 'Nova Chave VibeSDK',
+    key: 'vibe_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+    created: new Date().toLocaleDateString('pt-BR'),
+    lastUsed: 'Nunca'
+  };
+  API_KEYS.push(newKey);
+  res.json(newKey);
+});
+
+// Revoke API Key
+app.delete("/api/ai/keys/:id", (req, res) => {
+  API_KEYS = API_KEYS.filter(k => k.id !== req.params.id);
+  res.json({ success: true });
+});
+
+// Legacy Endpoint (keeping for backward compatibility if needed)
 app.get("/api/ai/agent-config", (req, res) => {
-  res.json({ enabled: AI_AGENT_ENABLED, prompt: AI_AGENT_PROMPT });
+  res.json({
+    enabled: AI_AGENT_ENABLED,
+    prompt: AI_AGENT_PROMPT
+  });
 });
 
 app.post("/api/ai/agent-config", (req, res) => {
   const { enabled, prompt } = req.body;
-  if (typeof enabled === 'boolean') AI_AGENT_ENABLED = enabled;
-  if (prompt) AI_AGENT_PROMPT = prompt;
-  res.json({ success: true });
-  /* -------------------------------------------------
-     Settings & AI Configuration Routes
-     ------------------------------------------------- */
+  if (typeof enabled !== 'undefined') AI_AGENT_ENABLED = enabled;
+  if (typeof prompt !== 'undefined') AI_AGENT_PROMPT = prompt;
 
-  // --- Agent Configuration Storage ---
-  let AGENT_CONFIGS = {
-    'model-selection': { model: 'gemini-1.5-flash', temp: 0.7, tokens: 2000 },
-    'planning': { model: 'gemini-1.5-pro', temp: 0.9, tokens: 20000 },
-    'chat': { model: 'gpt-4o', temp: 0.7, tokens: 4000 }
-  };
+  console.log(`[SETTINGS] AI Agent Updated: Enabled=${AI_AGENT_ENABLED}`);
+  res.json({ success: true, message: "Configuração atualizada com sucesso" });
+});
 
-  // --- API Keys Storage (Mock DB) ---
-  let API_KEYS = [
-    // { id: 'key_1', name: 'Default Key', prefix: 'sk_live_...', created: new Date() }
-  ];
+// Webhook - Status de Instância e Mensagens
+app.post("/api/webhook/instance-status", async (req, res) => {
+  const { event, instance: bodyInstance, status, data } = req.body;
+  const instance = bodyInstance || (data && data.instance);
+  const currentStatus = status || (data && data.state) || (event === "instance.close" ? "DESCONECTADO" : "CONECTADO");
 
-  // Get Agent Configs
-  app.get("/api/ai/agent-configs", (req, res) => {
-    res.json(AGENT_CONFIGS);
-  });
+  console.log(`[WEBHOOK] Evento: ${event || 'raw'} | Instância ${instance}: ${currentStatus}`);
 
-  // Update specific Agent Config
-  app.post("/api/ai/agent-configs/:type", (req, res) => {
-    const { type } = req.params;
-    const config = req.body;
-    if (AGENT_CONFIGS[type]) {
-      AGENT_CONFIGS[type] = { ...AGENT_CONFIGS[type], ...config };
+  // 1. Tratar Status de Conexão
+  if (event === "instance.close" || status === "close" || status === "DESCONECTADO") {
+    console.warn(`🚨 A instância ${instance} foi DESCONECTADA!`);
+    sendAlert(`Sua API caiu ou a instância *${instance}* desconectou agora mesmo!`);
+  }
 
-      // If updating 'chat', also update the global AI_AGENT_PROMPT if provided
-      if (type === 'chat' && config.prompt) {
-        AI_AGENT_PROMPT = config.prompt;
-      }
+  // 2. Tratar Mensagens Recebidas (Auto-Responder)
+  if (event === "message.received" && AI_AGENT_ENABLED) {
+    const msg = data;
+    const fromMe = msg.key?.fromMe;
+    const remoteJid = msg.key?.remoteJid;
+    const isGroup = remoteJid?.includes("@g.us");
 
-      res.json({ success: true, config: AGENT_CONFIGS[type] });
-    } else {
-      res.status(404).json({ error: "Agent type not found" });
-    }
-  });
+    const textMsg = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
 
-  // Get API Keys
-  app.get("/api/ai/keys", (req, res) => {
-    res.json(API_KEYS);
-  });
+    if (!fromMe && textMsg && !isGroup) {
+      console.log(`[ROBOT] Processando mensagem de ${remoteJid}: ${textMsg}`);
 
-  // Create API Key
-  app.post("/api/ai/keys", (req, res) => {
-    const newKey = {
-      id: 'key_' + Date.now(),
-      name: req.body.name || 'Nova Chave VibeSDK',
-      key: 'vibe_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
-      created: new Date().toLocaleDateString('pt-BR'),
-      lastUsed: 'Nunca'
-    };
-    API_KEYS.push(newKey);
-    res.json(newKey);
-  });
-
-  // Revoke API Key
-  app.delete("/api/ai/keys/:id", (req, res) => {
-    API_KEYS = API_KEYS.filter(k => k.id !== req.params.id);
-    res.json({ success: true });
-  });
-
-  // Legacy Endpoint (keeping for backward compatibility if needed)
-  app.get("/api/ai/agent-config", (req, res) => {
-    res.json({
-      enabled: AI_AGENT_ENABLED,
-      prompt: AI_AGENT_PROMPT
-    });
-  });
-
-  app.post("/api/ai/agent-config", (req, res) => {
-    const { enabled, prompt } = req.body;
-    if (typeof enabled !== 'undefined') AI_AGENT_ENABLED = enabled;
-    if (typeof prompt !== 'undefined') AI_AGENT_PROMPT = prompt;
-
-    console.log(`[SETTINGS] AI Agent Updated: Enabled=${AI_AGENT_ENABLED}`);
-    res.json({ success: true, message: "Configuração atualizada com sucesso" });
-  });
-
-  // Webhook - Status de Instância e Mensagens
-  app.post("/api/webhook/instance-status", async (req, res) => {
-    const { event, instance: bodyInstance, status, data } = req.body;
-    const instance = bodyInstance || (data && data.instance);
-    const currentStatus = status || (data && data.state) || (event === "instance.close" ? "DESCONECTADO" : "CONECTADO");
-
-    console.log(`[WEBHOOK] Evento: ${event || 'raw'} | Instância ${instance}: ${currentStatus}`);
-
-    // 1. Tratar Status de Conexão
-    if (event === "instance.close" || status === "close" || status === "DESCONECTADO") {
-      console.warn(`🚨 A instância ${instance} foi DESCONECTADA!`);
-      sendAlert(`Sua API caiu ou a instância *${instance}* desconectou agora mesmo!`);
-    }
-
-    // 2. Tratar Mensagens Recebidas (Auto-Responder)
-    if (event === "message.received" && AI_AGENT_ENABLED) {
-      const msg = data;
-      const fromMe = msg.key?.fromMe;
-      const remoteJid = msg.key?.remoteJid;
-      const isGroup = remoteJid?.includes("@g.us");
-
-      const textMsg = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
-
-      if (!fromMe && textMsg && !isGroup) {
-        console.log(`[ROBOT] Processando mensagem de ${remoteJid}: ${textMsg}`);
-
-        // -- GESTÃO DE TICKETS AUTOMÁTICA --
-        let ticket = ticketsDatabase.find(t => t.customerPhone === remoteJid && t.status !== 'FECHADO');
-        if (!ticket) {
-          ticket = {
-            id: Date.now(),
-            customerName: remoteJid.split('@')[0],
-            customerPhone: remoteJid,
-            subject: textMsg.substring(0, 50) + (textMsg.length > 50 ? '...' : ''),
-            status: 'NOVO',
-            priority: 'MÉDIA',
-            lastActivity: new Date().toISOString(),
-            messages: []
-          };
-          ticketsDatabase.push(ticket);
-        } else {
-          ticket.subject = textMsg.substring(0, 50) + (textMsg.length > 50 ? '...' : '');
-          ticket.lastActivity = new Date().toISOString();
-          if (ticket.status === 'FECHADO') ticket.status = 'ABERTO';
-        }
-        ticket.messages.push({ role: 'customer', text: textMsg, time: new Date().toISOString() });
-        saveTicketsToFile();
-        if (io) io.emit('ticket-update', ticket);
-
-        try {
-          const { generateChatResponse } = await import("./services/ai.js");
-          const response = await generateChatResponse(textMsg, AI_AGENT_PROMPT);
-
-          console.log(`[ROBOT] Respondendo: ${response}`);
-
-          // Enviar a resposta via API
-          await axios.post(`${API_URL}/v1/message/sendText/${instance || DEFAULT_INSTANCE}`, {
-            number: remoteJid,
-            textMessage: { text: response }
-          }, {
-            headers: { 'apikey': API_KEY }
-          });
-        } catch (err) {
-          console.error(`[ROBOT ERROR] Falha ao responder:`, err.message);
-        }
-      }
-    }
-
-    if (io) {
-      io.emit("instance-status", { instance, status: currentStatus, event, data });
-    }
-
-    res.json({ success: true, message: "Webhook recebido" });
-  });
-
-  // AI & Audio Routes - Using /api2 to bypass generic /api proxy
-  app.post("/api2/whatsmiau2/text-to-speech", async (req, res) => {
-    try {
-      const { text, voice = 'female' } = req.body;
-      if (!text) return res.status(400).json({ error: "Texto obrigatório" });
-      const audioUrl = await generateAudioWithOpenAI(text, voice);
-      res.json({ success: true, audioUrl });
-    } catch (error) {
-      console.error("Erro no TTS:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  app.post("/api2/whatsmiau2/generate-summary", async (req, res) => {
-    try {
-      const { context, voice = 'female' } = req.body;
-      if (!context) return res.status(400).json({ error: "Contexto obrigatório" });
-      const { generateSummaryWithGemini, generateAudioWithOpenAI } = await import("./services/ai.js");
-      const summary = await generateSummaryWithGemini(context);
-      const audioUrl = await generateAudioWithOpenAI(summary, voice);
-      res.json({ success: true, summary, audioUrl });
-    } catch (error) {
-      console.error("Erro na IA:", error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Generic API proxy handler - using regex for Express 5.x
-  app.all(/^\/api\/.*/, async (req, res) => {
-    const apiPath = req.path.replace("/api", "");
-    const url = `${API_URL}/v1${apiPath}`;
-
-    console.log(`[PROXY] ${req.method} ${req.path} -> ${url}`);
-
-    try {
-      const config = {
-        method: req.method,
-        url: url,
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': API_KEY
-        },
-        timeout: 60000
-      };
-
-      if (Object.keys(req.query).length > 0) config.params = req.query;
-      if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body) config.data = req.body;
-
-      const response = await axios(config);
-      res.status(response.status).json(response.data);
-    } catch (err) {
-      console.error(`[PROXY ERROR] ${req.method} ${apiPath}:`, err.message);
-      if (err.response) {
-        res.status(err.response.status).json(err.response.data);
+      // -- GESTÃO DE TICKETS AUTOMÁTICA --
+      let ticket = ticketsDatabase.find(t => t.customerPhone === remoteJid && t.status !== 'FECHADO');
+      if (!ticket) {
+        ticket = {
+          id: Date.now(),
+          customerName: remoteJid.split('@')[0],
+          customerPhone: remoteJid,
+          subject: textMsg.substring(0, 50) + (textMsg.length > 50 ? '...' : ''),
+          status: 'NOVO',
+          priority: 'MÉDIA',
+          lastActivity: new Date().toISOString(),
+          messages: []
+        };
+        ticketsDatabase.push(ticket);
       } else {
-        res.status(500).json({ error: "Proxy error", message: err.message });
+        ticket.subject = textMsg.substring(0, 50) + (textMsg.length > 50 ? '...' : '');
+        ticket.lastActivity = new Date().toISOString();
+        if (ticket.status === 'FECHADO') ticket.status = 'ABERTO';
       }
-    }
-  });
+      ticket.messages.push({ role: 'customer', text: textMsg, time: new Date().toISOString() });
+      saveTicketsToFile();
+      if (io) io.emit('ticket-update', ticket);
 
-  // Start server
-  const PORT = process.env.PORT || 3002;
-  app.listen(PORT, async () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-
-    // Registrar webhook no início
-    await registerWebhook();
-
-    // Monitoramento de Saúde da API Go
-    let apiWasOnline = true;
-    const EVOLUTION_API_URL = "https://evolution.automacoescomerciais.com.br";
-    const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || API_KEY;
-
-    async function sendAlertFallback(message) {
-      // Tenta enviar via Evolution API externa (fallback quando API Go está offline)
       try {
-        await axios.post(`${EVOLUTION_API_URL}/message/sendText/${DEFAULT_INSTANCE}`, {
-          number: DEVELOPER_NUMBER,
-          textMessage: { text: message }
+        const { generateChatResponse } = await import("./services/ai.js");
+        const response = await generateChatResponse(textMsg, AI_AGENT_PROMPT);
+
+        console.log(`[ROBOT] Respondendo: ${response}`);
+
+        // Enviar a resposta via API
+        await axios.post(`${API_URL}/v1/message/sendText/${instance || DEFAULT_INSTANCE}`, {
+          number: remoteJid,
+          textMessage: { text: response }
         }, {
-          headers: { 'apikey': EVOLUTION_API_KEY },
-          timeout: 10000
+          headers: { 'apikey': API_KEY }
         });
-        console.log("[FALLBACK ALERT] Alerta enviado via Evolution API externa.");
-      } catch (fallbackErr) {
-        console.error("[FALLBACK ALERT ERROR]", fallbackErr.message);
+      } catch (err) {
+        console.error(`[ROBOT ERROR] Falha ao responder:`, err.message);
       }
     }
+  }
 
-    setInterval(async () => {
-      try {
-        await axios.get(`${API_URL}/health`, { timeout: 5000 });
-        if (!apiWasOnline) {
-          console.log("🟢 API Go voltou a ficar online.");
-          sendAlert("✅ *A API WhatsMiau2 voltou a ficar ONLINE!*");
-          apiWasOnline = true;
-        }
-      } catch (err) {
-        if (apiWasOnline) {
-          console.error("🔴 API Go ficou OFFLINE! Erro:", err.message);
-          const alertMessage = `🚨 *ALERTA CRÍTICO - API OFFLINE!*\n\n📌 Automações Comerciais\n🔴 A API WhatsMiau2 Go desconectou!\n⏰ ${new Date().toLocaleString('pt-BR')}\n\nVerifique o servidor imediatamente.`;
-          // Tenta via Evolution API externa como fallback
-          await sendAlertFallback(alertMessage);
-          apiWasOnline = false;
-        }
-      }
-    }, 30000); // Verifica a cada 30 segundos
+  if (io) {
+    io.emit("instance-status", { instance, status: currentStatus, event, data });
+  }
+
+  res.json({ success: true, message: "Webhook recebido" });
+});
+
+// AI & Audio Routes - Using /api2 to bypass generic /api proxy
+app.post("/api2/whatsmiau2/text-to-speech", async (req, res) => {
+  try {
+    const { text, voice = 'female' } = req.body;
+    if (!text) return res.status(400).json({ error: "Texto obrigatório" });
+    const audioUrl = await generateAudioWithOpenAI(text, voice);
+    res.json({ success: true, audioUrl });
+  } catch (error) {
+    console.error("Erro no TTS:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api2/whatsmiau2/generate-summary", async (req, res) => {
+  try {
+    const { context, voice = 'female' } = req.body;
+    if (!context) return res.status(400).json({ error: "Contexto obrigatório" });
+    const { generateSummaryWithGemini, generateAudioWithOpenAI } = await import("./services/ai.js");
+    const summary = await generateSummaryWithGemini(context);
+    const audioUrl = await generateAudioWithOpenAI(summary, voice);
+    res.json({ success: true, summary, audioUrl });
+  } catch (error) {
+    console.error("Erro na IA:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// Mock Routes for Channels (Newsletters)
+app.get("/api/whatsapp/channels/list", (req, res) => {
+  res.json([
+    { id: '120363160485602073@newsletter', name: 'WhatsMiau Updates', role: 'subscriber' },
+    { id: '120363024512399999@newsletter', name: 'Canal de Ofertas', role: 'admin' }
+  ]);
+});
+
+app.post("/api/whatsapp/channels/follow", (req, res) => {
+  const { jid } = req.body;
+  console.log(`[MOCK] Seguindo canal: ${jid}`);
+  res.json({ success: true, message: "Seguindo canal com sucesso" });
+});
+
+app.post("/api/whatsapp/channels/unfollow", (req, res) => {
+  const { jid } = req.body;
+  console.log(`[MOCK] Deixando de seguir: ${jid}`);
+  res.json({ success: true, message: "Deixou de seguir o canal" });
+});
+
+// Mock Routes for Groups
+app.get("/api/whatsapp/groups/list", (req, res) => {
+  res.json([
+    { id: '120363045678901234@g.us', name: 'Atendimento VIP', participants: 12, created_at: '2024-12-20' },
+    { id: '120363987654321098@g.us', name: 'Equipe de Vendas', participants: 5, created_at: '2024-11-15' },
+    { id: '120363112233445566@g.us', name: 'Avisos Gerais', participants: 45, created_at: '2025-01-05' }
+  ]);
+});
+
+app.post("/api/whatsapp/groups/create", (req, res) => {
+  const { name, participants } = req.body;
+  console.log(`[MOCK] Criando grupo: ${name} com ${participants}`);
+  res.json({
+    success: true,
+    message: "Grupo criado com sucesso",
+    group: { id: Date.now() + '@g.us', name, participants: participants.split(',').length, created_at: new Date().toISOString() }
   });
+});
+
+// Mock Storage for Contacts
+let CONTACTS = [
+  { id: 1, name: 'João Silva', phone: '5511999999999', tags: ['CLIENTE'] },
+  { id: 2, name: 'Maria Souza', phone: '5521988887777', tags: ['PROSPECT'] },
+  { id: 3, name: 'Carlos Tech', phone: '5531977775555', tags: ['PARCEIRO'] }
+];
+
+// Contacts API Routes
+app.get("/api/contacts", (req, res) => {
+  res.json({ success: true, contacts: CONTACTS });
+});
+
+app.post("/api/contacts", (req, res) => {
+  const { name, phone, tags = [] } = req.body;
+  const newContact = { id: Date.now(), name, phone, tags: Array.isArray(tags) ? tags : [tags] };
+  CONTACTS.unshift(newContact);
+  res.json({ success: true, contact: newContact });
+});
+
+app.post("/api/contacts/import", (req, res) => {
+  const { contacts } = req.body;
+  if (!Array.isArray(contacts)) return res.status(400).json({ error: "Invalid data format" });
+
+  let newCount = 0;
+  contacts.forEach(c => {
+    const phone = c.phone.replace(/[^0-9]/g, "");
+    if (phone && !CONTACTS.find(existing => existing.phone === phone)) {
+      CONTACTS.unshift({
+        id: Date.now() + Math.random(),
+        name: c.name || "Sem Nome",
+        phone: phone,
+        tags: c.tags || ['IMPORTADO']
+      });
+      newCount++;
+    }
+  });
+
+  res.json({ success: true, count: newCount });
+});
+
+app.post("/api/contacts/bulk-delete", (req, res) => {
+  const { ids, tag } = req.body;
+
+  if (tag) {
+    CONTACTS = CONTACTS.filter(c => !c.tags.includes(tag));
+    return res.json({ success: true, message: `Contatos com a tag ${tag} removidos.` });
+  }
+
+  if (Array.isArray(ids)) {
+    CONTACTS = CONTACTS.filter(c => !ids.includes(c.id));
+    return res.json({ success: true, message: `${ids.length} contatos removidos.` });
+  }
+
+  res.status(400).json({ error: "Parâmetros inválidos" });
+});
+
+app.delete("/api/contacts/:id", (req, res) => {
+  const { id } = req.params;
+  CONTACTS = CONTACTS.filter(c => c.id != id);
+  res.json({ success: true });
+});
+
+// Mock Storage for Tickets
+let TICKETS = [
+  { id: 1, customerName: 'Marcos Oliveira', customerPhone: '5511999990001@s.whatsapp.net', subject: 'Problema com acesso à plataforma', status: 'ABERTO', priority: 'ALTA', lastActivity: new Date().toISOString() },
+  { id: 2, customerName: 'Ana Souza', customerPhone: '5521988887777@s.whatsapp.net', subject: 'Dúvida sobre planos premium', status: 'NOVO', priority: 'MÉDIA', lastActivity: new Date(Date.now() - 3600000).toISOString() },
+  { id: 3, customerName: 'Empresa XPTO', customerPhone: '5531977775555@s.whatsapp.net', subject: 'Integração com API falhando', status: 'PENDENTE', priority: 'CRÍTICA', lastActivity: new Date(Date.now() - 7200000).toISOString() }
+];
+
+// Tickets API Routes
+app.get("/api/tickets", (req, res) => {
+  res.json({ success: true, tickets: TICKETS });
+});
+
+app.post("/api/tickets", (req, res) => {
+  const { customerName, customerPhone, subject, priority = 'MÉDIA' } = req.body;
+  const newTicket = {
+    id: Date.now(),
+    customerName,
+    customerPhone: customerPhone.includes('@') ? customerPhone : `${customerPhone}@s.whatsapp.net`,
+    subject,
+    status: 'NOVO',
+    priority,
+    lastActivity: new Date().toISOString()
+  };
+  TICKETS.unshift(newTicket);
+  res.json({ success: true, ticket: newTicket });
+});
+
+app.patch("/api/tickets/:id", (req, res) => {
+  const { id } = req.params;
+  const { status, priority } = req.body;
+  const ticket = TICKETS.find(t => t.id == id);
+  if (ticket) {
+    if (status) ticket.status = status;
+    if (priority) ticket.priority = priority;
+    ticket.lastActivity = new Date().toISOString();
+    return res.json({ success: true, ticket });
+  }
+  res.status(404).json({ error: "Ticket não encontrado" });
+});
+
+app.delete("/api/tickets/:id", (req, res) => {
+  const { id } = req.params;
+  TICKETS = TICKETS.filter(t => t.id != id);
+  res.json({ success: true });
+});
+
+// Generic API proxy handler - using regex for Express 5.x
+app.all(/^\/api\/.*/, async (req, res) => {
+  const apiPath = req.path.replace("/api", "");
+  const url = `${API_URL}/v1${apiPath}`;
+
+  console.log(`[PROXY] ${req.method} ${req.path} -> ${url}`);
+
+  try {
+    const config = {
+      method: req.method,
+      url: url,
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': API_KEY
+      },
+      timeout: 60000
+    };
+
+    if (Object.keys(req.query).length > 0) config.params = req.query;
+    if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body) config.data = req.body;
+
+    const response = await axios(config);
+    res.status(response.status).json(response.data);
+  } catch (err) {
+    console.error(`[PROXY ERROR] ${req.method} ${apiPath}:`, err.message);
+    if (err.response) {
+      res.status(err.response.status).json(err.response.data);
+    } else {
+      res.status(500).json({ error: "Proxy error", message: err.message });
+    }
+  }
+});
+
+// Start server
+const PORT = process.env.PORT || 3002;
+app.listen(PORT, async () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+
+  // Registrar webhook no início
+  await registerWebhook();
+
+  // Monitoramento de Saúde da API Go
+  let apiWasOnline = true;
+  const EVOLUTION_API_URL = "https://evolution.automacoescomerciais.com.br";
+  const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || API_KEY;
+
+  async function sendAlertFallback(message) {
+    // Tenta enviar via Evolution API externa (fallback quando API Go está offline)
+    try {
+      await axios.post(`${EVOLUTION_API_URL}/message/sendText/${DEFAULT_INSTANCE}`, {
+        number: DEVELOPER_NUMBER,
+        textMessage: { text: message }
+      }, {
+        headers: { 'apikey': EVOLUTION_API_KEY },
+        timeout: 10000
+      });
+      console.log("[FALLBACK ALERT] Alerta enviado via Evolution API externa.");
+    } catch (fallbackErr) {
+      console.error("[FALLBACK ALERT ERROR]", fallbackErr.message);
+    }
+  }
+
+  setInterval(async () => {
+    try {
+      await axios.get(`${API_URL}/health`, { timeout: 5000 });
+      if (!apiWasOnline) {
+        console.log("🟢 API Go voltou a ficar online.");
+        sendAlert("✅ *A API WhatsMiau2 voltou a ficar ONLINE!*");
+        apiWasOnline = true;
+      }
+    } catch (err) {
+      if (apiWasOnline) {
+        console.error("🔴 API Go ficou OFFLINE! Erro:", err.message);
+        const alertMessage = `🚨 *ALERTA CRÍTICO - API OFFLINE!*\n\n📌 Automações Comerciais\n🔴 A API WhatsMiau2 Go desconectou!\n⏰ ${new Date().toLocaleString('pt-BR')}\n\nVerifique o servidor imediatamente.`;
+        // Tenta via Evolution API externa como fallback
+        await sendAlertFallback(alertMessage);
+        apiWasOnline = false;
+      }
+    }
+  }, 30000); // Verifica a cada 30 segundos
+});

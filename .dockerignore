@@ -1,4 +1,10 @@
-# Node.js
+# Large directories to ignore
+backups/
+backups-html/
+frontend/
+frontend-old/
+.pagia/
+.venv/
 node_modules/
 npm-debug.log
 package-lock.json

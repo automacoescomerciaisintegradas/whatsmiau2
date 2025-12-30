@@ -89,7 +89,7 @@
             <div class="container-fluid p-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2 class="fw-bold mb-0">Gestão de Tickets</h2>
-                    <button class="btn btn-primary fw-bold" onclick="alert('Funcionalidade em desenvolvimento')">
+                    <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalNewTicket">
                         <i class="fas fa-plus me-2"></i> Novo Ticket
                     </button>
                 </div>
@@ -118,6 +118,47 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: New Ticket -->
+    <div class="modal fade" id="modalNewTicket" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Abrir Novo Ticket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Nome do Cliente*</label>
+                        <input type="text" id="new-ticket-name" class="form-control" placeholder="Ex: João Silva">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">WhatsApp/Número*</label>
+                        <input type="text" id="new-ticket-phone" class="form-control" placeholder="5511999998888">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Assunto/Problema*</label>
+                        <textarea id="new-ticket-subject" class="form-control" rows="3"
+                            placeholder="Descreva brevemente..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Prioridade</label>
+                        <select id="new-ticket-priority" class="form-select">
+                            <option value="BAIXA">Baixa</option>
+                            <option value="MÉDIA" selected>Média</option>
+                            <option value="ALTA">Alta</option>
+                            <option value="CRÍTICA">Crítica</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary px-4 fw-bold" onclick="createTicket()">Criar
+                        Ticket</button>
                 </div>
             </div>
         </div>
@@ -227,6 +268,38 @@
             console.log("Ticket updated live:", updatedTicket);
             loadTickets();
         });
+
+        async function createTicket() {
+            const name = document.getElementById('new-ticket-name').value;
+            const phone = document.getElementById('new-ticket-phone').value;
+            const subject = document.getElementById('new-ticket-subject').value;
+            const priority = document.getElementById('new-ticket-priority').value;
+
+            if (!name || !phone || !subject) {
+                alert("Por favor, preencha todos os campos obrigatórios.");
+                return;
+            }
+
+            try {
+                await fetch('/api/tickets', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ customerName: name, customerPhone: phone, subject, priority })
+                });
+
+                // Clear and hide
+                document.getElementById('new-ticket-name').value = '';
+                document.getElementById('new-ticket-phone').value = '';
+                document.getElementById('new-ticket-subject').value = '';
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalNewTicket'));
+                modal.hide();
+
+                loadTickets();
+            } catch (err) {
+                alert("Erro ao criar ticket");
+            }
+        }
 
         // Init
         loadTickets();

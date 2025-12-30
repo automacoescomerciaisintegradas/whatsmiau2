@@ -41,7 +41,8 @@ $composeFile = "$PSScriptRoot\docker-compose.swarm.yml"
 if (Test-Path $composeFile) {
     scp -P $VpsPort $composeFile "$VpsUser@$VpsHost`:$RemotePath/"
     Write-Host "[OK] docker-compose.swarm.yml enviado!" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "[ERRO] docker-compose.swarm.yml não encontrado!" -ForegroundColor Red
     exit 1
 }
@@ -90,7 +91,7 @@ Start-Sleep -Seconds 5
 
 # Deploy novo stack
 Write-Host "  Deployando novo stack..." -ForegroundColor Gray
-$deployResult = ssh -p $VpsPort "$VpsUser@$VpsHost" "cd $RemotePath && docker stack deploy -c docker-compose.swarm.yml $StackName" 2>&1
+$deployResult = ssh -p $VpsPort "$VpsUser@$VpsHost" "cd $RemotePath && docker stack deploy -c docker-compose.swarm.yml $StackName --detach=false" 2>&1
 Write-Host $deployResult
 
 # Aguardar serviços subirem
@@ -125,7 +126,8 @@ Write-Host "Testando saúde da API..." -ForegroundColor Cyan
 try {
     $health = Invoke-WebRequest -Uri "http://$VpsHost`:8085/health" -TimeoutSec 10 -UseBasicParsing
     Write-Host "[OK] API respondendo! Status: $($health.StatusCode)" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Host "[AVISO] API ainda não respondeu. Pode demorar alguns segundos para iniciar." -ForegroundColor Yellow
 }
 

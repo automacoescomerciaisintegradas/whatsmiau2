@@ -1,0 +1,45 @@
+version: "3.7"
+
+services:
+  whatsmiau2:
+    build: .
+    image: whatsmiau2:latest
+    ports:
+      - "8085:8081"
+    environment:
+      - PORT=8081
+      - DEBUG_MODE=false
+      - DEBUG_WHATSMEOW=false
+      - REDIS_URL=redis:6379
+      - REDIS_PASSWORD=
+      - DIALECT_DB=sqlite3
+      - DB_URL=file:/app/data/data.db?_foreign_keys=on
+      - API_KEY=2wtLvtb20wXePp8D9uRhm55aCjINiciO
+      - CONFIG_SESSION_PHONE_VERSION=2.3000.2.2413.51
+      - CONFIG_SESSION_PHONE_CLIENT=Chrome
+      - CONFIG_SESSION_PHONE_NAME=Chrome (Windows)
+      - QRCODE_LIMIT=30
+      - CACHE_REDIS_ENABLED=true
+    volumes:
+      - whatsmeow-data-local:/app/data
+    networks:
+      - local_net
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  redis:
+    image: redis:alpine
+    volumes:
+      - redis-data-local:/data
+    networks:
+      - local_net
+
+networks:
+  local_net:
+    driver: bridge
+
+volumes:
+  whatsmeow-data-local:
+  redis-data-local:

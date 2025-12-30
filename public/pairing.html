@@ -319,9 +319,10 @@
     </div>
 
     <script>
-        const API_URL = "http://localhost:8085/v1";
+        const API_URL = "/api";
         const API_KEY = "2wtLvtb20wXePp8D9uRhm55aCjINiciO";
-        const INSTANCE = "minha-instancia";
+        const urlParams = new URLSearchParams(window.location.search);
+        let INSTANCE = urlParams.get('instance') || "minha-instancia";
 
         let pollingInterval = null;
 

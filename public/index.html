@@ -251,10 +251,10 @@
                         <div class="col-md-3">
                             <div class="card p-4 stat-card card-orange shadow-sm">
                                 <small class="text-white text-uppercase fw-bold opacity-75"
-                                    style="font-size: 0.7rem;">Contatos na Base</small>
-                                <h1 class="fw-bold mb-0 mt-2" id="stat-contacts">0</h1>
-                                <div class="mt-2 small opacity-75"><i class="fas fa-address-book me-1"></i>
-                                    Sincronizados</div>
+                                    style="font-size: 0.7rem;">Tickets Pendentes</small>
+                                <h1 class="fw-bold mb-0 mt-2" id="stat-tickets">0</h1>
+                                <div class="mt-2 small opacity-75"><i class="fas fa-ticket-alt me-1"></i>
+                                    Aguardando</div>
                             </div>
                         </div>
                     </div>
@@ -473,7 +473,10 @@
             'settings': '/settings',
             'internal-chat': '/internal-chat',
             'pairing': '/pairing',
-            'admin': '/admin'
+            'admin': '/admin',
+            'canais': '/channels',
+            'groups': '/groups',
+            'contacts': '/contacts'
         };
 
         navLinks.forEach(link => {
@@ -579,7 +582,14 @@
                 const instances = await instRes.json();
                 document.getElementById('stat-instances').textContent = instances.length || 0;
                 document.getElementById('stat-groups').textContent = Math.floor((instances.length || 0) * 12);
-                document.getElementById('stat-contacts').textContent = Math.floor((instances.length || 0) * 142);
+
+                try {
+                    const ticketRes = await fetch('/api/tickets');
+                    const ticketData = await ticketRes.json();
+                    document.getElementById('stat-tickets').textContent = ticketData.tickets?.filter(t => t.status !== 'FECHADO').length || 0;
+                } catch (e) {
+                    document.getElementById('stat-tickets').textContent = '0';
+                }
 
                 const listBrief = document.getElementById('instances-list-brief');
                 if (!instances || instances.length === 0) {

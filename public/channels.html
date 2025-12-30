@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canais do WhatsApp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .channel-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #dcfce7;
+            color: #16a34a;
+            border-radius: 50%;
+            font-size: 1.25rem;
+        }
+
+        .btn-primary {
+            background-color: #25D366;
+            border-color: #25D366;
+        }
+
+        .btn-primary:hover {
+            background-color: #20bd5a;
+            border-color: #20bd5a;
+        }
+    </style>
+</head>
+
+<body class="p-4">
+
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="fw-bold mb-1">Canais do WhatsApp (Newsletters)</h3>
+                    <p class="text-muted">Gerencie os canais informativos que sua instância segue.</p>
+                </div>
+                <button class="btn btn-primary fw-bold" onclick="loadChannels()">
+                    <i class="fas fa-sync-alt me-2"></i> Carregar Canais
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions Row -->
+    <div class="row g-4 mb-4">
+        <!-- Seguir Canal -->
+        <div class="col-md-6">
+            <div class="card h-100 p-4">
+                <h5 class="fw-bold mb-3"><i class="fas fa-plus-circle me-2 text-success"></i>Seguir Novo Canal</h5>
+                <form id="follow-channel-form" onsubmit="followChannel(event)">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">ID do Canal (Newsletter JID)</label>
+                        <input type="text" class="form-control" id="follow-jid"
+                            placeholder="120363024512399999@newsletter" required>
+                        <small class="text-muted">Ex: 120363024512399999@newsletter</small>
+                    </div>
+                    <button type="submit" class="btn btn-outline-success fw-bold w-100">
+                        <i class="fas fa-rss me-2"></i> Seguir Canal
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Deixar de Seguir -->
+        <div class="col-md-6">
+            <div class="card h-100 p-4">
+                <h5 class="fw-bold mb-3"><i class="fas fa-minus-circle me-2 text-danger"></i>Deixar de Seguir</h5>
+                <form id="unfollow-channel-form" onsubmit="unfollowChannel(event)">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">ID do Canal (Newsletter JID)</label>
+                        <input type="text" class="form-control" id="unfollow-jid"
+                            placeholder="120363024512399999@newsletter" required>
+                        <small class="text-muted">Selecione da lista abaixo ou digite o ID</small>
+                    </div>
+                    <button type="submit" class="btn btn-outline-danger fw-bold w-100">
+                        <i class="fas fa-sign-out-alt me-2"></i> Deixar de Seguir
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Box -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-info bg-opacity-10 border-info">
+                <div class="card-body">
+                    <h5 class="fw-bold text-info mb-3"><i class="fas fa-info-circle me-2"></i>Como encontrar o JID de um
+                        Canal?</h5>
+                    <ol class="mb-0 small text-muted fw-medium">
+                        <li class="mb-1">Abra o WhatsApp no celular</li>
+                        <li class="mb-1">Vá até o canal que deseja</li>
+                        <li class="mb-1">Toque no nome do canal (topo)</li>
+                        <li class="mb-1">O JID é o ID que termina com <strong>@newsletter</strong></li>
+                        <li>Você também pode encontrar o ID no link de convite do canal copiando link.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Channels List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card p-4">
+                <h5 class="fw-bold mb-4">Canais Seguidos</h5>
+                <div id="channels-list" class="list-group list-group-flush">
+                    <div class="text-center py-5 text-muted">
+                        <i class="fas fa-broadcast-tower fa-3x mb-3 opacity-25"></i>
+                        <p>Clique em "Carregar Canais" para ver sua lista.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto" id="toast-title">Notificação</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toast-message"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE = '/api'; // Será proxied pelo server.js
+
+        function showToast(title, message, type = 'info') {
+            document.getElementById('toast-title').innerText = title;
+            const body = document.getElementById('toast-message');
+            body.innerText = message;
+            body.className = `toast-body text-${type === 'error' ? 'danger' : 'success'}`;
+            const toast = new bootstrap.Toast(document.getElementById('liveToast'));
+            toast.show();
+        }
+
+        async function loadChannels() {
+            const list = document.getElementById('channels-list');
+            list.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
+
+            try {
+                // Mock endpoint or real one
+                const res = await fetch(`${API_BASE}/whatsapp/channels/list`);
+                const data = await res.json();
+
+                if (data.length === 0) {
+                    list.innerHTML = '<div class="text-center py-4 text-muted">Nenhum canal encontrado.</div>';
+                    return;
+                }
+
+                list.innerHTML = data.map(channel => `
+                    <div class="list-group-item d-flex align-items-center justify-content-between py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="channel-icon me-3">
+                                <i class="fas fa-bullhorn"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold">${channel.name || 'Canal Desconhecido'}</h6>
+                                <small class="text-muted font-monospace">${channel.id}</small>
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger" onclick="fillUnfollow('${channel.id}')">
+                            <i class="fas fa-times me-1"></i>
+                        </button>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error(error);
+                // Mock data for demo if API fails
+                setTimeout(() => {
+                    list.innerHTML = `
+                        <div class="list-group-item d-flex align-items-center justify-content-between py-3">
+                            <div class="d-flex align-items-center">
+                                <div class="channel-icon me-3"><i class="fas fa-bullhorn"></i></div>
+                                <div><h6 class="mb-0 fw-bold">Canal Exemplo 1</h6><small class="text-muted font-monospace">12036312345678@newsletter</small></div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger" onclick="fillUnfollow('12036312345678@newsletter')"><i class="fas fa-times me-1"></i></button>
+                        </div>
+                    `;
+                    showToast('Demo', 'Dados simulados carregados (API offline ou não implementada).');
+                }, 1000);
+            }
+        }
+
+        async function followChannel(e) {
+            e.preventDefault();
+            const jid = document.getElementById('follow-jid').value;
+            if (!jid.includes('@newsletter')) {
+                showToast('Erro', 'Formato de ID inválido. Deve terminar com @newsletter', 'error');
+                return;
+            }
+
+            try {
+                // Call API
+                showToast('Processando', 'Tentando seguir o canal...');
+                // Simulação
+                setTimeout(() => showToast('Sucesso', 'Canal seguido com sucesso! (Simulação)'), 1000);
+            } catch (e) {
+                showToast('Erro', 'Falha ao seguir canal', 'error');
+            }
+        }
+
+        async function unfollowChannel(e) {
+            e.preventDefault();
+            const jid = document.getElementById('unfollow-jid').value;
+
+            if (confirm('Tem certeza que deseja deixar de seguir este canal?')) {
+                showToast('Processando', 'Deixando de seguir...');
+                setTimeout(() => showToast('Sucesso', 'Você deixou de seguir o canal. (Simulação)'), 1000);
+            }
+        }
+
+        function fillUnfollow(jid) {
+            document.getElementById('unfollow-jid').value = jid;
+            document.getElementById('unfollow-jid').scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+
+</html>

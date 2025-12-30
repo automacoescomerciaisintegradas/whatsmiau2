@@ -44,8 +44,80 @@ document.addEventListener('DOMContentLoaded', () => {
         targetList.addEventListener('input', updateCount);
     }
 
+    checkInstanceStatus();
     log('[Sistema] Disparador carregado e pronto.', 'success');
 });
+
+// Instance management
+const urlParams = new URLSearchParams(window.location.search);
+let INSTANCE_NAME = urlParams.get('instance') || 'minha-instancia';
+
+async function checkInstanceStatus() {
+    const selector = document.getElementById('instance-selector');
+    const statusDot = document.getElementById('instance-status-dot');
+
+    try {
+        const res = await fetch(`/api/instance/fetchInstances`);
+        const data = await res.json();
+        const instances = Array.isArray(data) ? data : (data.instances || []);
+
+        if (selector) {
+            selector.innerHTML = '';
+            instances.forEach(i => {
+                const name = i.instance?.instanceName || i.instance?.name || i.instanceName || i.name || "Sem Nome";
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name.toUpperCase();
+                if (name.toLowerCase() === INSTANCE_NAME.toLowerCase()) opt.selected = true;
+                selector.appendChild(opt);
+            });
+
+            // If list is empty
+            if (instances.length === 0) {
+                selector.innerHTML = '<option value="minha-instancia">SEM INSTÂNCIAS</option>';
+            }
+
+            // Listener for change
+            if (!selector.dataset.listener) {
+                selector.addEventListener('change', (e) => {
+                    INSTANCE_NAME = e.target.value;
+                    checkInstanceStatus(); // Refresh status dot
+                    log(`Instância alterada para: ${INSTANCE_NAME}`, 'info');
+                });
+                selector.dataset.listener = 'true';
+            }
+        }
+
+        const myInst = instances.find(i => {
+            const name = (i.instance?.instanceName || i.instance?.name || i.instanceName || i.name || "").toLowerCase();
+            return name === INSTANCE_NAME.toLowerCase();
+        });
+
+        if (!myInst) {
+            if (statusDot) statusDot.className = 'badge rounded-circle p-1 bg-warning';
+            log(`⚠️ Instância "${INSTANCE_NAME}" não encontrada.`, 'warning');
+            return;
+        }
+
+        const rawStatus = (myInst.instance?.status || myInst.status || 'disconnected').toLowerCase();
+
+        if (rawStatus === 'connected' || rawStatus === 'open' || rawStatus === 'conectado') {
+            if (statusDot) {
+                statusDot.className = 'badge rounded-circle p-1 bg-success';
+                statusDot.title = "Instância Ativa";
+            }
+            log(`Instância ${INSTANCE_NAME} está PRONTA.`, 'success');
+        } else {
+            if (statusDot) {
+                statusDot.className = 'badge rounded-circle p-1 bg-danger';
+                statusDot.title = `Status: ${rawStatus.toUpperCase()}`;
+            }
+            log(`⚠️ AVISO: ${INSTANCE_NAME} está ${rawStatus.toUpperCase()}.`, 'warning');
+        }
+    } catch (e) {
+        log(`Erro ao carger status: ${e.message}`, 'error');
+    }
+}
 
 // ============================================
 // TAB MANAGEMENT
@@ -64,9 +136,213 @@ function setTab(tab) {
     document.getElementById('section-text').style.display = 'none';
     document.getElementById('section-audio').style.display = 'none';
     document.getElementById('section-media').style.display = 'none';
+    document.getElementById('section-video').style.display = 'none';
     document.getElementById(`section-${tab}`).style.display = 'block';
 
+    if (tab !== 'video') {
+        stopCamera();
+    }
+
     log(`Modo alterado para: ${tab.toUpperCase()}`, 'info');
+}
+
+// ============================================
+// MICROPHONE RECORDING
+// ============================================
+
+let mediaRecorder;
+let audioChunks = [];
+let recordingInterval;
+let startTime;
+
+async function toggleRecording() {
+    const btn = document.getElementById('btn-record');
+    const icon = document.getElementById('record-icon');
+    const status = document.getElementById('record-status');
+    const timer = document.getElementById('record-timer');
+
+    if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+        // Start Recording
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+
+                // Create a File object to mimic input file
+                const file = new File([audioBlob], `gravacao_${new Date().getTime()}.mp3`, { type: 'audio/mpeg' });
+
+                // Show preview
+                const container = document.getElementById('audio-preview-container');
+                document.getElementById('audio-file-name').textContent = file.name;
+                document.getElementById('audio-file-info').textContent = `${(file.size / 1024).toFixed(2)} KB • Gravado via Mic`;
+
+                const audioPlayer = document.getElementById('audio-preview');
+                audioPlayer.src = audioUrl;
+                container.style.display = 'block';
+
+                // Important: Store this file globally or in a way startDispatch can find it
+                window.recordedAudioFile = file;
+
+                log('Gravação finalizada.', 'success');
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.start();
+            btn.classList.add('recording', 'pulse-red');
+            icon.classList.remove('fa-microphone');
+            icon.classList.add('fa-stop');
+            status.textContent = 'GRAVANDO...';
+            status.classList.add('text-danger');
+            timer.style.display = 'block';
+
+            startTime = Date.now();
+            recordingInterval = setInterval(updateTimer, 1000);
+            log('Iniciando gravação do microfone...', 'info');
+
+        } catch (err) {
+            log('Erro ao acessar microfone: ' + err.message, 'error');
+            alert('Não foi possível acessar o microfone. Verifique as permissões.');
+        }
+    } else {
+        // Stop Recording
+        mediaRecorder.stop();
+        btn.classList.remove('recording', 'pulse-red');
+        icon.classList.remove('fa-stop');
+        icon.classList.add('fa-microphone');
+        status.textContent = 'GRAVAR VOZ (MIC)';
+        status.classList.remove('text-danger');
+        timer.style.display = 'none';
+        clearInterval(recordingInterval);
+    }
+}
+
+function updateTimer() {
+    const timer = document.getElementById('record-timer');
+    const now = Date.now();
+    const diff = now - startTime;
+    const mins = Math.floor(diff / 60000).toString().padStart(2, '0');
+    const secs = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+    timer.textContent = `${mins}:${secs}`;
+}
+
+// ============================================
+// VIDEO RECORDING
+// ============================================
+
+let videoStream;
+let videoRecorder;
+let videoChunks = [];
+let videoStartTime;
+let videoTimerInterval;
+
+async function startCamera() {
+    try {
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const videoElement = document.getElementById('video-preview-live');
+        if (videoElement) {
+            videoElement.srcObject = videoStream;
+        }
+        log('Câmera ativada.', 'info');
+    } catch (err) {
+        log('Erro ao acessar a câmera: ' + err.message, 'error');
+        alert('Não foi possível acessar a câmera. Verifique as permissões.');
+    }
+}
+
+function stopCamera() {
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+    }
+}
+
+function openVideoModal() {
+    const modal = document.getElementById('video-recorder-modal');
+    if (modal) {
+        modal.showModal();
+        startCamera();
+    }
+}
+
+function closeVideoModal() {
+    const modal = document.getElementById('video-recorder-modal');
+    if (modal) {
+        if (videoRecorder && videoRecorder.state === 'recording') {
+            if (!confirm('A gravação está em andamento. Deseja cancelar?')) return;
+            videoRecorder.stop();
+        }
+        modal.close();
+        stopCamera();
+    }
+}
+
+async function toggleVideoRecording() {
+    const btn = document.getElementById('btn-record-video');
+    const timerOverlay = document.getElementById('video-timer-overlay');
+
+    if (!videoRecorder || videoRecorder.state === 'inactive') {
+        // Start
+        if (!videoStream) await startCamera();
+
+        videoChunks = [];
+        videoRecorder = new MediaRecorder(videoStream);
+
+        videoRecorder.ondataavailable = (e) => videoChunks.push(e.data);
+
+        videoRecorder.onstop = () => {
+            const blob = new Blob(videoChunks, { type: 'video/mp4' });
+            const url = URL.createObjectURL(blob);
+            const file = new File([blob], `video_${Date.now()}.mp4`, { type: 'video/mp4' });
+
+            window.recordedVideoFile = file;
+
+            document.getElementById('video-result-container').style.display = 'block';
+            document.getElementById('video-file-info').textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB • Gravado com sucesso`;
+
+            const playback = document.getElementById('video-playback');
+            playback.src = url;
+
+            log('Vídeo gravado com sucesso. Você pode fechar o gravador agora.', 'success');
+        };
+
+        videoRecorder.start();
+        btn.classList.add('recording');
+        timerOverlay.style.display = 'flex';
+        videoStartTime = Date.now();
+        videoTimerInterval = setInterval(updateVideoTimer, 1000);
+        log('Gravando vídeo...', 'info');
+    } else {
+        // Stop
+        videoRecorder.stop();
+        btn.classList.remove('recording');
+        timerOverlay.style.display = 'none';
+        clearInterval(videoTimerInterval);
+    }
+}
+
+function updateVideoTimer() {
+    const timer = document.getElementById('video-timer');
+    if (!timer) return;
+    const now = Date.now();
+    const diff = now - videoStartTime;
+    const mins = Math.floor(diff / 60000).toString().padStart(2, '0');
+    const secs = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+    timer.textContent = `${mins}:${secs}`;
+}
+
+function clearVideoRecording() {
+    window.recordedVideoFile = null;
+    document.getElementById('video-result-container').style.display = 'none';
+    document.getElementById('video-playback').src = '';
+    log('Gravação removida.', 'info');
 }
 
 // ============================================
@@ -76,6 +352,9 @@ function setTab(tab) {
 function previewAudio(input) {
     const file = input.files[0];
     const container = document.getElementById('audio-preview-container');
+
+    // Clear any previous recording if a file is manually picked
+    window.recordedAudioFile = null;
 
     if (file) {
         document.getElementById('audio-file-name').textContent = file.name;
@@ -171,26 +450,42 @@ function updateCount() {
 }
 
 function extractJids(text) {
-    const found = [];
-    const jidRegex = /([0-9-]+@(g\.us|s\.whatsapp\.net|newsletter))/gi;
-    const phoneRegex = /\b55[0-9]{10,11}\b/g;
+    if (!text) return [];
+    const found = new Set();
 
+    // 1. Regex for full JIDs (case insensitive, replaces c.us with s.whatsapp.net)
+    const jidRegex = /([a-zA-Z0-9.\-_]+@(g\.us|s\.whatsapp\.net|newsletter|c\.us))/gi;
     let match;
     while ((match = jidRegex.exec(text)) !== null) {
-        if (!found.includes(match[0])) found.push(match[0]);
+        found.add(match[0].toLowerCase().replace('@c.us', '@s.whatsapp.net'));
     }
 
-    if (found.length === 0) {
-        while ((match = phoneRegex.exec(text)) !== null) {
-            const num = match[0] + '@s.whatsapp.net';
-            if (!found.includes(num)) found.push(num);
+    // 2. Extraction of phone numbers from messy text
+    // Split by common delimiters and clean up
+    const parts = text.split(/[\s,;:\n\r\t|]+/);
+    parts.forEach(part => {
+        const digits = part.replace(/[^0-9]/g, '');
+
+        // Potential Phone Number (8 to 15 digits)
+        if (digits.length >= 8 && digits.length <= 15) {
+            let processed = digits;
+            // Brazil auto-55
+            if ((digits.length === 10 || digits.length === 11) && !digits.startsWith('55')) {
+                processed = '55' + digits;
+            }
+            found.add(processed + '@s.whatsapp.net');
         }
-    }
+        // Potential Group ID (usually 18+ digits)
+        else if (digits.length > 15 && digits.length <= 25) {
+            found.add(digits + '@g.us');
+        }
+    });
 
-    return found;
+    return Array.from(found);
 }
 
 function cleanList() {
+    window.recordedAudioFile = null; // Clear recording cache
     const jids = extractJids(document.getElementById('target-list').value);
     if (jids.length > 0) {
         document.getElementById('target-list').value = jids.join('\n');
@@ -219,17 +514,31 @@ async function openGroupSelector() {
             container.innerHTML = '<div class="p-3 text-center text-muted">Nenhum grupo encontrado.</div>';
             return;
         }
+
+        // Select All Header
+        const selectAllDiv = document.createElement('div');
+        selectAllDiv.className = 'form-check p-3 border-bottom bg-light';
+        selectAllDiv.innerHTML = `
+            <input class="form-check-input" type="checkbox" id="select-all-groups">
+            <label class="form-check-label fw-bold" for="select-all-groups">Selecionar Todos os Grupos (${groups.length})</label>
+        `;
+        selectAllDiv.querySelector('#select-all-groups').onclick = (e) => {
+            const checked = e.target.checked;
+            container.querySelectorAll('.group-checkbox').forEach(cb => cb.checked = checked);
+        };
+        container.appendChild(selectAllDiv);
+
         groups.forEach(g => {
             const item = document.createElement('div');
             item.className = 'form-check p-3 border-bottom';
             const checkbox = document.createElement('input');
-            checkbox.className = 'form-check-input';
+            checkbox.className = 'form-check-input group-checkbox';
             checkbox.type = 'checkbox';
             checkbox.value = g.id;
             checkbox.id = `group-${g.id}`;
             checkbox.dataset.name = g.subject || 'Sem Nome';
             const label = document.createElement('label');
-            label.className = 'form-check-label';
+            label.className = 'form-check-label w-100';
             label.htmlFor = `group-${g.id}`;
             label.textContent = g.subject || 'Sem Nome';
             item.appendChild(checkbox);
@@ -239,15 +548,14 @@ async function openGroupSelector() {
     };
 
     try {
-        const response = await fetch('/api/group/list/minha-instancia');
+        const response = await fetch(`/api/group/list/${INSTANCE_NAME}`);
 
-        if (response.status === 429) {
-            throw new Error('Rate Limit (429)');
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Erro ${response.status}: ${errorText || 'Falha na resposta do servidor'}`);
         }
 
         const json = await response.json();
-
-        if (!json.success && !json.data) throw new Error(json.error || 'Erro ao carregar grupos');
 
         // Normalize data (some endpoints return array directly, some { data: [] })
         const groups = Array.isArray(json) ? json : (json.data || []);
@@ -325,7 +633,7 @@ async function handleFileUpload(input) {
         const worksheet = workbook.Sheets[firstSheetName];
 
         // Convert to text to extract JIDs
-        const textContent = XLSX.utils.sheet_to_txt(worksheet); // This handles CSV and Excel
+        const textContent = XLSX.utils.sheet_to_csv(worksheet); // sheet_to_csv is the standard SheetJS function
 
         const extracted = extractJids(textContent);
 
@@ -419,6 +727,15 @@ function stopDispatch() {
     }
 }
 
+function cleanBase64(base64) {
+    if (!base64) return null;
+    // Remove data:audio/mpeg;base64, prefix if exists
+    if (base64.includes(',')) {
+        return base64.split(',')[1];
+    }
+    return base64;
+}
+
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -449,7 +766,9 @@ async function startDispatch() {
     } else if (currentTab === 'audio') {
         const file = document.getElementById('audio-file').files[0];
         const url = document.getElementById('audio-url').value.trim();
-        if (!file && !url) return alert('Selecione um arquivo de áudio ou insira uma URL.');
+        if (!file && !url && !window.recordedAudioFile) return alert('Selecione um arquivo de áudio ou grave uma mensagem de voz.');
+    } else if (currentTab === 'video') {
+        if (!window.recordedVideoFile) return alert('Grave um vídeo para enviar.');
     } else if (currentTab === 'media') {
         const file = document.getElementById('media-file').files[0];
         const url = document.getElementById('media-url').value.trim();
@@ -476,12 +795,26 @@ async function startDispatch() {
         } else {
             log('Carregando áudio...', 'info');
             try {
-                const file = document.getElementById('audio-file').files[0];
+                // Priority: Recorded Audio > Uploaded File
+                const file = window.recordedAudioFile || document.getElementById('audio-file').files[0];
+                if (!file) return log('Erro: Nenhum áudio gravado ou selecionado.', 'error');
+
                 base64File = await fileToBase64(file);
                 log(`Áudio carregado: ${file.name} (${formatFileSize(file.size)})`, 'success');
             } catch (e) {
                 return log('Erro ao ler áudio: ' + e.message, 'error');
             }
+        }
+    } else if (currentTab === 'video') {
+        try {
+            const file = window.recordedVideoFile;
+            fileName = file.name;
+            mimeType = 'video/mp4';
+            base64File = await fileToBase64(file);
+            caption = document.getElementById('video-caption').value || '';
+            log(`Vídeo carregado: ${file.name} (${formatFileSize(file.size)})`, 'success');
+        } catch (e) {
+            return log('Erro ao preparar vídeo: ' + e.message, 'error');
         }
     } else if (currentTab === 'media') {
         const mediaUrlValue = document.getElementById('media-url').value.trim();
@@ -537,23 +870,38 @@ async function startDispatch() {
 
         try {
             let endpoint = '';
-            let body = { number: jid };
+            let body = { number: jid.includes('@') ? jid : `${jid}@s.whatsapp.net` };
 
             if (currentTab === 'text') {
-                endpoint = '/api/whatsmiau2/send-text';
-                body.text = document.getElementById('message-content').value;
+                endpoint = `/api/message/sendText/${INSTANCE_NAME}`;
+                body.textMessage = { text: document.getElementById('message-content').value };
             }
             else if (currentTab === 'audio') {
-                endpoint = '/api/whatsmiau2/send-audio';
-                body.audio = mediaUrl || base64File;
+                endpoint = `/api/message/sendWhatsAppAudio/${INSTANCE_NAME}`;
+                body.audioMessage = {
+                    audio: mediaUrl || cleanBase64(base64File),
+                    ptt: true
+                };
             }
             else if (currentTab === 'media') {
-                endpoint = '/api/whatsmiau2/send-media';
-                body.media = mediaUrl || base64File;
-                body.mediatype = mimeType.startsWith('image') ? 'image' : (mimeType.startsWith('video') ? 'video' : 'document');
-                body.mimetype = mimeType;
-                body.fileName = fileName;
-                body.caption = caption;
+                endpoint = `/api/message/sendMedia/${INSTANCE_NAME}`;
+                body.mediaMessage = {
+                    media: mediaUrl || cleanBase64(base64File),
+                    mediatype: mimeType.startsWith('image') ? 'image' : (mimeType.startsWith('video') ? 'video' : 'document'),
+                    mimetype: mimeType,
+                    fileName: fileName,
+                    caption: caption
+                };
+            }
+            else if (currentTab === 'video') {
+                endpoint = `/api/message/sendMedia/${INSTANCE_NAME}`;
+                body.mediaMessage = {
+                    media: cleanBase64(base64File),
+                    mediatype: 'video',
+                    mimetype: 'video/mp4',
+                    fileName: fileName,
+                    caption: caption
+                };
             }
 
             const timeoutMs = (currentTab === 'text') ? 30000 : 120000;
