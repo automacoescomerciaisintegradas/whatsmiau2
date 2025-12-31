@@ -1,269 +1,90 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎯 WhatsMiau2 CRM - Gestão Premium</title>
-    <link rel="manifest" href="/manifest.json">
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/service-worker.js').catch(e => console.error(e));
-        }
-    </script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap"
-        rel="stylesheet">
+    <title>CRM & Kanban - WhatsMiau2</title>
+
+    <!-- Standard Platform CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/assets/css/style.css" rel="stylesheet">
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            /* Colors - Dark Theme */
-            --bg-primary: #0f172a;
-            --bg-secondary: #000000;
-            --surface: rgba(30, 41, 59, 0.7);
-            --surface-hover: rgba(30, 41, 59, 0.9);
-            --accent-indigo: #6366f1;
-            --accent-green: #25d366;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --border: rgba(255, 255, 255, 0.1);
-            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            --gradient-success: linear-gradient(135deg, #10b981 0%, #25d366 100%);
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
-            font-size: 18px;
-            /* Aumentado de padrão */
-        }
-
-        /* Animated Background */
-        .bg-animated {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            opacity: 0.3;
-            background:
-                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(37, 211, 102, 0.05) 0%, transparent 50%);
-            animation: bgPulse 15s ease-in-out infinite;
-        }
-
-        @keyframes bgPulse {
-
-            0%,
-            100% {
-                opacity: 0.3;
-            }
-
-            50% {
-                opacity: 0.5;
-            }
-        }
-
-        /* Layout */
-        .app-container {
-            position: relative;
-            z-index: 1;
+        /* CRM Specific Styles - Adapted for Bootstrap & Dark Mode */
+        .kanban-board {
             display: flex;
-            min-height: 100vh;
+            gap: 24px;
+            overflow-x: auto;
+            padding-bottom: 24px;
+            height: calc(100vh - 140px);
         }
 
-        /* Sidebar */
-        .sidebar {
-            width: 280px;
-            background: var(--surface);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid var(--border);
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            overflow-y: auto;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 12px;
-            margin-bottom: 32px;
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .logo-image {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--primary);
-        }
-
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: var(--gradient-primary);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-
-        .nav-section {
-            margin-bottom: 32px;
-        }
-
-        .nav-label {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
-            padding-left: 12px;
-        }
-
-        .nav-item {
-            padding: 14px 16px;
-            border-radius: 12px;
-            margin-bottom: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: var(--text-secondary);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-weight: 500;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .nav-item::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 3px;
-            height: 100%;
-            background: var(--gradient-primary);
-            transform: scaleY(0);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .nav-item:hover {
-            background: rgba(99, 102, 241, 0.1);
-            color: var(--text-primary);
-            transform: translateX(4px);
-        }
-
-        .nav-item.active {
-            background: rgba(99, 102, 241, 0.15);
-            color: var(--accent-indigo);
-            font-weight: 600;
-        }
-
-        .nav-item.active::before {
-            transform: scaleY(1);
-        }
-
-        .nav-icon {
-            font-size: 20px;
-            width: 24px;
-            text-align: center;
-        }
-
-        /* Main Content */
-        .main-content {
+        .kanban-column {
             flex: 1;
+            min-width: 300px;
+            background: rgba(255, 255, 255, 0.5);
+            /* Light mode default */
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            max-width: calc(100% - 280px);
+            backdrop-filter: blur(10px);
         }
 
-        /* Header */
-        .header {
-            padding: 24px 40px;
-            background: var(--surface);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
+        [data-theme="dark"] .kanban-column {
+            background: rgba(30, 41, 59, 0.4);
+        }
+
+        .kanban-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 700;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 10;
+            border-radius: 16px 16px 0 0;
+            background: inherit;
         }
 
-        .header-title {
-            font-family: 'Outfit', sans-serif;
-            font-size: 28px;
-            font-weight: 700;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border-radius: 12px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-family: 'Inter', sans-serif;
-            font-size: 16px;
-        }
-
-        .btn-primary {
-            background: var(--gradient-primary);
-            color: white;
-            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        /* Content Area */
-        .content {
+        .kanban-body {
+            padding: 16px;
             flex: 1;
-            padding: 40px;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .kanban-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: grab;
+            transition: all 0.2s;
+            position: relative;
+            color: var(--text-color);
+        }
+
+        .kanban-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-color);
+        }
+
+        [data-theme="dark"] .kanban-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Stats Cards Override */
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
         }
 
         .view-section {
@@ -278,1445 +99,394 @@
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(10px);
             }
 
             to {
                 opacity: 1;
                 transform: translateY(0);
-            }
-        }
-
-        /* Stats Cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 24px;
-            margin-bottom: 40px;
-        }
-
-        .stat-card {
-            background: var(--surface);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: var(--gradient-primary);
-            transform: scaleX(0);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-            border-color: rgba(99, 102, 241, 0.3);
-        }
-
-        .stat-card:hover::before {
-            transform: scaleX(1);
-        }
-
-        .stat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 16px;
-        }
-
-        .stat-label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            background: rgba(99, 102, 241, 0.1);
-        }
-
-        .stat-value {
-            font-family: 'Outfit', sans-serif;
-            font-size: 36px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .stat-change {
-            font-size: 13px;
-            font-weight: 600;
-            color: #10b981;
-        }
-
-        .stat-change.negative {
-            color: #ef4444;
-        }
-
-        /* Leads Table */
-        .table-container {
-            background: var(--surface);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            overflow: hidden;
-        }
-
-        .table-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .table-title {
-            font-family: 'Outfit', sans-serif;
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        .search-box {
-            position: relative;
-            width: 300px;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 12px 16px 12px 44px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            transition: all 0.3s;
-        }
-
-        .search-box input:focus {
-            outline: none;
-            border-color: var(--accent-indigo);
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .search-box::before {
-            content: '🔍';
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 16px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        thead {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        th {
-            padding: 16px 24px;
-            text-align: left;
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        td {
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border);
-            color: var(--text-primary);
-        }
-
-        tr:hover {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .lead-name {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .lead-company {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .badge-novo {
-            background: rgba(59, 130, 246, 0.15);
-            color: #60a5fa;
-        }
-
-        .badge-contato {
-            background: rgba(168, 85, 247, 0.15);
-            color: #c084fc;
-        }
-
-        .badge-negociacao {
-            background: rgba(251, 191, 36, 0.15);
-            color: #fbbf24;
-        }
-
-        .badge-fechado {
-            background: rgba(16, 185, 129, 0.15);
-            color: #34d399;
-        }
-
-        .badge-quente {
-            background: rgba(239, 68, 68, 0.15);
-            color: #f87171;
-        }
-
-        .badge-morno {
-            background: rgba(251, 191, 36, 0.15);
-            color: #fbbf24;
-        }
-
-        .badge-frio {
-            background: rgba(59, 130, 246, 0.15);
-            color: #60a5fa;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            border: none;
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-icon:hover {
-            background: rgba(99, 102, 241, 0.15);
-            color: var(--accent-indigo);
-        }
-
-        /* Estilos do Kanban */
-        .kanban-board {
-            display: flex;
-            gap: 24px;
-            overflow-x: auto;
-            padding-bottom: 24px;
-            height: calc(100vh - 180px);
-        }
-
-        .kanban-column {
-            flex: 1;
-            min-width: 300px;
-            background: rgba(30, 41, 59, 0.4);
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            backdrop-filter: blur(10px);
-        }
-
-        .kanban-header {
-            padding: 16px;
-            border-bottom: 1px solid var(--border);
-            font-weight: 700;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            background: inherit;
-            border-radius: 16px 16px 0 0;
-            z-index: 2;
-        }
-
-        .kanban-title {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: 'Outfit', sans-serif;
-        }
-
-        .kanban-count {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-        }
-
-        .kanban-body {
-            padding: 16px;
-            flex: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .kanban-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            cursor: grab;
-            transition: all 0.2s;
-            position: relative;
-        }
-
-        .kanban-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-            border-color: rgba(99, 102, 241, 0.3);
-        }
-
-        .kanban-card:active {
-            cursor: grabbing;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-
-        .card-title {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .card-price {
-            font-weight: 700;
-            color: #10b981;
-            font-size: 14px;
-        }
-
-        .card-subtitle {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
-        }
-
-        .card-tags {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
-
-        .card-tag {
-            font-size: 11px;
-            padding: 4px 8px;
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-secondary);
-        }
-
-        .card-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 4px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            padding-top: 12px;
-            margin-top: 4px;
-        }
-
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.3s;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: var(--surface);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 32px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(40px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .modal-title {
-            font-family: 'Outfit', sans-serif;
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .close-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            border: none;
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-size: 20px;
-            transition: all 0.2s;
-        }
-
-        .close-btn:hover {
-            background: rgba(239, 68, 68, 0.15);
-            color: #ef4444;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            font-size: 13px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .form-input,
-        .form-select,
-        .form-textarea {
-            width: 100%;
-            padding: 14px 16px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-
-        .form-input:focus,
-        .form-select:focus,
-        .form-textarea:focus {
-            outline: none;
-            border-color: var(--accent-indigo);
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .form-textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-
-        /* Loading */
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 40px;
-        }
-
-        .loading.active {
-            display: block;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(99, 102, 241, 0.1);
-            border-top-color: var(--accent-indigo);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 16px;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 80px 40px;
-        }
-
-        .empty-icon {
-            font-size: 64px;
-            margin-bottom: 16px;
-            opacity: 0.3;
-        }
-
-        .empty-title {
-            font-family: 'Outfit', sans-serif;
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .empty-text {
-            color: var(--text-secondary);
-            margin-bottom: 24px;
-        }
-
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .sidebar {
-                width: 240px;
-            }
-
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                left: -280px;
-                transition: left 0.3s;
-                z-index: 100;
-            }
-
-            .sidebar.mobile-open {
-                left: 0;
-            }
-
-            .main-content {
-                max-width: 100%;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 
-<body>
-    <div class="bg-animated"></div>
+<body data-theme="dark">
 
-    <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="logo">
-                <img src="/assets/logo.jpg" alt="Logo" class="logo-image">
-                <span>WhatsMiau2</span>
+    <div class="d-flex" id="wrapper">
+
+        <!-- Sidebar (Standard) -->
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading text-center">
+                <i class="fas fa-robot"></i> WhatsMiau2
             </div>
+            <div class="list-group list-group-flush mt-3">
+                <a href="/dashboard" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                </a>
+                <a href="/connections" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-wifi me-2"></i> Conexões
+                </a>
+                <a href="/disparador" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-paper-plane me-2"></i> Disparador
+                </a>
+                <a href="/exportar-contatos" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-file-export me-2"></i> Exportar Contatos
+                </a>
+                <a href="/resumo-grupos" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-chart-bar me-2"></i> Resumo de Grupos
+                </a>
+                <a href="/contacts" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-address-book me-2"></i> Contatos
+                </a>
 
-            <nav>
-                <div class="nav-section">
-                    <div class="nav-label">Principal</div>
-                    <div class="nav-item active" data-view="dashboard">
-                        <span class="nav-icon">📊</span>
-                        <span>Dashboard</span>
-                    </div>
-                    <div class="nav-item" data-view="leads">
-                        <span class="nav-icon">👥</span>
-                        <span>Lista de Leads</span>
-                    </div>
-                    <div class="nav-item" data-view="kanban">
-                        <span class="nav-icon">📋</span>
-                        <span>Kanban CRM</span>
-                    </div>
-                    <div class="nav-item" data-view="conversas">
-                        <span class="nav-icon">💬</span>
-                        <span>Conversas</span>
-                    </div>
-                </div>
+                <!-- Active CRM Link -->
+                <a href="/crm-new.html" class="list-group-item list-group-item-action bg-transparent active">
+                    <i class="fas fa-columns me-2"></i> CRM & Kanban
+                </a>
 
-                <div class="nav-section">
-                    <div class="nav-label">Financeiro</div>
-                    <div class="nav-item" data-view="pagamentos">
-                        <span class="nav-icon">💳</span>
-                        <span>Pagamentos</span>
-                    </div>
-                </div>
+                <a href="/tickets" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-ticket-alt me-2"></i> Tickets
+                </a>
 
-                <div class="nav-section">
-                    <div class="nav-label">Marketing</div>
-                    <div class="nav-item" data-view="emails">
-                        <span class="nav-icon">📧</span>
-                        <span>Campanhas</span>
-                    </div>
-                </div>
+                <div class="border-top my-3"></div>
 
-                <div class="nav-section">
-                    <div class="nav-label">Sistema</div>
-                    <div class="nav-item" data-view="config">
-                        <span class="nav-icon">⚙️</span>
-                        <span>Configurações</span>
+                <a href="/settings" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-cog me-2"></i> Configurações
+                </a>
+                <a href="/logout" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
+                    <i class="fas fa-sign-out-alt me-2"></i> Sair
+                </a>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+
+            <!-- Navbar -->
+            <nav class="navbar navbar-expand-lg navbar-custom px-4">
+                <div class="d-flex align-items-center w-100 justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <button class="btn btn-outline-secondary me-3" id="menu-toggle">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h4 class="mb-0 fw-bold text-dark" id="pageTitle">Pipeline de Vendas</h4>
+                    </div>
+
+                    <!-- Filter / Actions in Navbar -->
+                    <div class="d-flex gap-2">
+                        <select class="form-select form-select-sm" id="viewSelector" style="width: auto;">
+                            <option value="kanban">Visualização Kanban</option>
+                            <option value="list">Visualização Lista</option>
+                            <option value="dashboard">Dashboard</option>
+                        </select>
+                        <button class="btn btn-primary btn-sm" onclick="openModal('modalAddLead')">
+                            <i class="fas fa-plus"></i> Novo Lead
+                        </button>
                     </div>
                 </div>
             </nav>
-        </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Header -->
-            <header class="header">
-                <h1 class="header-title" id="pageTitle">Dashboard</h1>
-                <div class="header-actions">
-                    <button class="btn btn-secondary">
-                        <span>📥</span>
-                        <span>Importar</span>
-                    </button>
-                    <button class="btn btn-primary" id="btnAddLead">
-                        <span>➕</span>
-                        <span>Novo Lead</span>
-                    </button>
-                </div>
-            </header>
+            <!-- Main Content Area -->
+            <div class="container-fluid content px-4 py-4">
 
-            <!-- Content -->
-            <div class="content">
                 <!-- Dashboard View -->
-                <section class="view-section active" id="view-dashboard">
-                    <!-- Hero Section with Background -->
-                    <div class="dashboard-hero" style="
-                        background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.8)), url('/assets/background.jpg');
-                        background-size: cover;
-                        background-position: center;
-                        padding: 40px;
-                        border-radius: 16px;
-                        margin-bottom: 30px;
-                        border: 1px solid rgba(255,255,255,0.1);
-                        display: flex;
-                        align-items: center;
-                        gap: 20px;
-                    ">
-                        <img src="/assets/logo.jpg"
-                            style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #10b981; box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);">
-                        <div>
-                            <h2
-                                style="font-size: 28px; font-weight: 800; margin-bottom: 8px; background: linear-gradient(to right, #fff, #a5b4fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                                Bem-vindo ao WhatsMiau2</h2>
-                            <p style="color: var(--text-secondary); font-size: 16px;">Sistema Premium de Gestão e
-                                Automação</p>
-                        </div>
-                    </div>
-
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div>
-                                    <div class="stat-label">Total de Leads</div>
-                                    <div class="stat-value" id="statTotal">0</div>
-                                    <div class="stat-change">+12% este mês</div>
-                                </div>
-                                <div class="stat-icon">👥</div>
+                <section id="view-dashboard" class="view-section">
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <small class="text-muted text-uppercase fw-bold">Total de Leads</small>
+                                <h2 class="display-6 fw-bold text-primary mb-0" id="statTotal">0</h2>
                             </div>
                         </div>
-
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div>
-                                    <div class="stat-label">Novos Leads</div>
-                                    <div class="stat-value" id="statNovos">0</div>
-                                    <div class="stat-change">+8% este mês</div>
-                                </div>
-                                <div class="stat-icon">🆕</div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <small class="text-muted text-uppercase fw-bold">Novos Leads</small>
+                                <h2 class="display-6 fw-bold text-info mb-0" id="statNovos">0</h2>
                             </div>
                         </div>
-
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div>
-                                    <div class="stat-label">Em Negociação</div>
-                                    <div class="stat-value" id="statNegociacao">0</div>
-                                    <div class="stat-change">+15% este mês</div>
-                                </div>
-                                <div class="stat-icon">💼</div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <small class="text-muted text-uppercase fw-bold">Em Negociação</small>
+                                <h2 class="display-6 fw-bold text-warning mb-0" id="statNegociacao">0</h2>
                             </div>
                         </div>
-
-                        <div class="stat-card">
-                            <div class="stat-header">
-                                <div>
-                                    <div class="stat-label">Fechados</div>
-                                    <div class="stat-value" id="statFechados">0</div>
-                                    <div class="stat-change">+25% este mês</div>
-                                </div>
-                                <div class="stat-icon">✅</div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <small class="text-muted text-uppercase fw-bold">Fechados</small>
+                                <h2 class="display-6 fw-bold text-success mb-0" id="statFechados">0</h2>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="table-container">
-                        <div class="table-header">
-                            <h2 class="table-title">Leads Recentes</h2>
-                            <div class="search-box">
-                                <input type="text" placeholder="Buscar leads..." id="searchInput">
-                            </div>
-                        </div>
-                        <div id="leadsTableContainer"></div>
-                    </div>
-                </section>
-
-                <!-- Leads View -->
-                <section class="view-section" id="view-leads">
-                    <div class="table-container">
-                        <div class="table-header">
-                            <h2 class="table-title">Todos os Leads</h2>
-                            <div class="search-box">
-                                <input type="text" placeholder="Buscar leads..." id="searchInputLeads">
-                            </div>
-                        </div>
-                        <div id="allLeadsTableContainer"></div>
                     </div>
                 </section>
 
                 <!-- Kanban View -->
-                <section class="view-section" id="view-kanban">
+                <section id="view-kanban" class="view-section active">
                     <div class="kanban-board">
                         <!-- Novo -->
                         <div class="kanban-column" data-status="novo">
                             <div class="kanban-header">
-                                <div class="kanban-title">
-                                    <span style="color: #60a5fa">●</span> Novo
-                                </div>
-                                <span class="kanban-count" id="count-novo">0</span>
+                                <div><i class="fas fa-circle text-info me-2"></i> Novo</div>
+                                <span class="badge bg-secondary rounded-pill" id="count-novo">0</span>
                             </div>
                             <div class="kanban-body" id="col-novo" ondrop="drop(event)" ondragover="allowDrop(event)">
-                                <!-- Cards injected via JS -->
                             </div>
                         </div>
 
                         <!-- Em Contato -->
                         <div class="kanban-column" data-status="contato">
                             <div class="kanban-header">
-                                <div class="kanban-title">
-                                    <span style="color: #c084fc">●</span> Em Contato
-                                </div>
-                                <span class="kanban-count" id="count-contato">0</span>
+                                <div><i class="fas fa-circle text-primary me-2"></i> Em Contato</div>
+                                <span class="badge bg-secondary rounded-pill" id="count-contato">0</span>
                             </div>
                             <div class="kanban-body" id="col-contato" ondrop="drop(event)"
-                                ondragover="allowDrop(event)">
-                            </div>
+                                ondragover="allowDrop(event)"></div>
                         </div>
 
                         <!-- Negociação -->
                         <div class="kanban-column" data-status="negociacao">
                             <div class="kanban-header">
-                                <div class="kanban-title">
-                                    <span style="color: #fbbf24">●</span> Negociação
-                                </div>
-                                <span class="kanban-count" id="count-negociacao">0</span>
+                                <div><i class="fas fa-circle text-warning me-2"></i> Negociação</div>
+                                <span class="badge bg-secondary rounded-pill" id="count-negociacao">0</span>
                             </div>
                             <div class="kanban-body" id="col-negociacao" ondrop="drop(event)"
-                                ondragover="allowDrop(event)">
-                            </div>
+                                ondragover="allowDrop(event)"></div>
                         </div>
 
                         <!-- Fechado -->
                         <div class="kanban-column" data-status="fechado">
                             <div class="kanban-header">
-                                <div class="kanban-title">
-                                    <span style="color: #34d399">●</span> Fechado
-                                </div>
-                                <span class="kanban-count" id="count-fechado">0</span>
+                                <div><i class="fas fa-circle text-success me-2"></i> Fechado</div>
+                                <span class="badge bg-secondary rounded-pill" id="count-fechado">0</span>
                             </div>
                             <div class="kanban-body" id="col-fechado" ondrop="drop(event)"
-                                ondragover="allowDrop(event)">
+                                ondragover="allowDrop(event)"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- List View -->
+                <section id="view-list" class="view-section">
+                    <div class="card">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <div id="leadsTableContainer"></div>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                <!-- Other Views (Placeholder) -->
-                <section class="view-section" id="view-conversas">
-                    <div class="empty-state">
-                        <div class="empty-icon">💬</div>
-                        <h2 class="empty-title">Conversas</h2>
-                        <p class="empty-text">Gerencie suas conversas com leads</p>
-                        <button class="btn btn-primary">Em Breve</button>
-                    </div>
-                </section>
-
-                <section class="view-section" id="view-pagamentos">
-                    <div class="empty-state">
-                        <div class="empty-icon">💳</div>
-                        <h2 class="empty-title">Pagamentos</h2>
-                        <p class="empty-text">Gerencie pagamentos PIX</p>
-                        <button class="btn btn-primary">Em Breve</button>
-                    </div>
-                </section>
-
-                <section class="view-section" id="view-emails">
-                    <div class="table-container">
-                        <div class="table-header">
-                            <div>
-                                <h2 class="table-title">Campanhas de Email</h2>
-                                <p style="color:var(--text-secondary); font-size:12px; margin-top:4px">Gerencie seus
-                                    disparos de email marketing</p>
-                            </div>
-                            <button class="btn btn-primary" onclick="openModal('modalNewCampaign')">
-                                <span>📧</span>
-                                <span>Nova Campanha</span>
-                            </button>
-                        </div>
-                        <div id="campaignsContainer" style="padding: 0;">
-                            <!-- Campaigns Table injected here -->
-                        </div>
-                    </div>
-                </section>
-
-                <section class="view-section" id="view-config">
-                    <div class="empty-state">
-                        <div class="empty-icon">⚙️</div>
-                        <h2 class="empty-title">Configurações</h2>
-                        <p class="empty-text">Configure seu CRM</p>
-                        <button class="btn btn-primary">Em Breve</button>
-                    </div>
-                </section>
             </div>
-        </main>
-    </div>
-
-    <!-- Modal Add Lead -->
-    <div class="modal" id="modalAddLead">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">➕ Novo Lead</h2>
-                <button class="close-btn" onclick="closeModal('modalAddLead')">✕</button>
-            </div>
-            <form id="formAddLead">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Nome *</label>
-                        <input type="text" class="form-input" name="nome" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">WhatsApp *</label>
-                        <input type="tel" class="form-input" name="whatsapp" required placeholder="5511999999999">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-input" name="email">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Empresa</label>
-                        <input type="text" class="form-input" name="empresa">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Valor (R$)</label>
-                        <input type="number" class="form-input" name="valor" step="0.01">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Fonte</label>
-                        <select class="form-select" name="fonte">
-                            <option value="instagram">Instagram</option>
-                            <option value="facebook">Facebook</option>
-                            <option value="google">Google</option>
-                            <option value="indicacao">Indicação</option>
-                            <option value="outro">Outro</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Status</label>
-                        <select class="form-select" name="status">
-                            <option value="novo">Novo</option>
-                            <option value="contato">Em Contato</option>
-                            <option value="negociacao">Negociação</option>
-                            <option value="fechado">Fechado</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Temperatura</label>
-                        <select class="form-select" name="temperatura">
-                            <option value="quente">🔥 Quente</option>
-                            <option value="morno">🌤️ Morno</option>
-                            <option value="frio">❄️ Frio</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Observações</label>
-                    <textarea class="form-textarea" name="observacoes"></textarea>
-                </div>
-
-                <div style="display: flex; gap: 12px; margin-top: 24px;">
-                    <button type="button" class="btn btn-secondary" style="flex: 1;"
-                        onclick="closeModal('modalAddLead')">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" style="flex: 1;">Salvar Lead</button>
-                </div>
-            </form>
         </div>
     </div>
 
-    <!-- Modal Nova Campanha -->
-    <div class="modal" id="modalNewCampaign">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">📧 Nova Campanha</h2>
-                <button class="close-btn" onclick="closeModal('modalNewCampaign')">✕</button>
+    <!-- Modal Layouts (Bootstrap) -->
+    <div class="modal fade" id="modalAddLead" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Novo Lead</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formAddLead">
+                        <div class="mb-3">
+                            <label class="form-label">Nome</label>
+                            <input type="text" class="form-control" name="nome" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">WhatsApp</label>
+                            <input type="text" class="form-control" name="whatsapp" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Empresa / Contexto</label>
+                            <input type="text" class="form-control" name="empresa">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Salvar</button>
+                    </form>
+                </div>
             </div>
-            <form id="formNewCampaign">
-                <div class="form-group">
-                    <label class="form-label">Para quem enviar?</label>
-                    <select class="form-select" name="audience">
-                        <option value="all">Todos os Leads</option>
-                        <option value="quente">🔥 Leads Quentes</option>
-                        <option value="novo">🆕 Novos Leads</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Assunto</label>
-                    <input type="text" class="form-input" name="subject" required
-                        placeholder="Ex: Promoção Imperdível!">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Mensagem</label>
-                    <textarea class="form-textarea" name="body" required placeholder="Escreva sua mensagem aqui..."
-                        style="min-height: 200px;"></textarea>
-                </div>
-
-                <div style="display: flex; gap: 12px; margin-top: 24px;">
-                    <button type="button" class="btn btn-secondary" style="flex: 1;"
-                        onclick="closeModal('modalNewCampaign')">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" style="flex: 1;">Enviar Campanha</button>
-                </div>
-            </form>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script>
-        // API Configuration
-        const API_BASE = '/api'; // Use relative path to avoid port issues
-        // const API_KEY = '2wtLvtb20wXePp8D9uRhm55aCjINiciO'; // Not needed for internal API routes if checked server-side or if using same-origin cookies, but keeping for compatibility
+        // Toggle Sidebar
+        var el = document.getElementById("wrapper");
+        var toggleButton = document.getElementById("menu-toggle");
+
+        toggleButton.onclick = function () {
+            el.classList.toggle("toggled");
+        };
+
+        // View Selector
+        document.getElementById('viewSelector').addEventListener('change', (e) => {
+            const view = e.target.value;
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+
+            if (view === 'dashboard') {
+                document.getElementById('view-dashboard').classList.add('active');
+            } else if (view === 'kanban') {
+                document.getElementById('view-kanban').classList.add('active');
+            } else if (view === 'list') {
+                document.getElementById('view-list').classList.add('active');
+            }
+        });
+
+        // --- CRM LOGIC (Adapted) ---
+        const API_BASE = '/api';
         const API_KEY = '2wtLvtb20wXePp8D9uRhm55aCjINiciO';
+        const socket = io();
 
-        // State
         let leads = [];
-        let stats = {};
 
-        // Navigation
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const view = item.dataset.view;
-                switchView(view);
+        socket.on('connect', () => console.log('🔌 CRM Real-time Active'));
+        socket.on('ticket-update', () => { loadLeads(); loadStats(); });
+        socket.on('kanban-move', () => { loadLeads(); loadStats(); });
 
-                // Update active state
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                item.classList.add('active');
-
-                // Update page title
-                const titles = {
-                    dashboard: 'Dashboard',
-                    leads: 'Lista de Leads',
-                    kanban: 'Pipeline de Vendas',
-                    conversas: 'Conversas',
-                    pagamentos: 'Pagamentos',
-                    emails: 'Campanhas de Email',
-                    config: 'Configurações'
-                };
-                document.getElementById('pageTitle').textContent = titles[view] || 'Dashboard';
-            });
-        });
-
-        function switchView(view) {
-            document.querySelectorAll('.view-section').forEach(section => {
-                section.classList.remove('active');
-            });
-            document.getElementById(`view-${view}`).classList.add('active');
-        }
-
-        // Modal
-        document.getElementById('btnAddLead').addEventListener('click', () => {
-            openModal('modalAddLead');
-        });
-
-        function openModal(modalId) {
-            document.getElementById(modalId).classList.add('active');
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
-        }
-
-        // Form Submit
-        document.getElementById('formAddLead').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData);
-
-            // Convert valor to number
-            if (data.valor) {
-                data.valor = parseFloat(data.valor);
-            }
-
-            try {
-                const response = await fetch(`${API_BASE}/leads`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': API_KEY
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    alert('✅ Lead criado com sucesso!');
-                    closeModal('modalAddLead');
-                    e.target.reset();
-                    loadLeads();
-                    loadStats();
-                } else {
-                    alert('❌ Erro: ' + result.error);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('❌ Erro ao criar lead');
-            }
-        });
-
-        // Load Stats
-        async function loadStats() {
-            try {
-                const response = await fetch(`${API_BASE}/leads/stats`, {
-                    headers: { 'apikey': API_KEY }
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    stats = result.stats;
-                    updateStatsUI();
-                }
-            } catch (error) {
-                console.error('Error loading stats:', error);
-            }
-        }
-
-        function updateStatsUI() {
-            document.getElementById('statTotal').textContent = stats.total || 0;
-            document.getElementById('statNovos').textContent = stats.novos || 0;
-            document.getElementById('statNegociacao').textContent = stats.negociacao || 0;
-            document.getElementById('statFechados').textContent = stats.fechados || 0;
-        }
-
-        // Load Leads
         async function loadLeads() {
             try {
-                const response = await fetch(`${API_BASE}/leads`, {
-                    headers: { 'apikey': API_KEY }
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    leads = result.leads || [];
-                    renderLeadsTable();
+                const res = await fetch(`${API_BASE}/tickets`, { headers: { 'apikey': API_KEY } });
+                const data = await res.json();
+                if (data.tickets) {
+                    leads = data.tickets.map(t => ({
+                        id: t.id,
+                        nome: t.customerName || 'Sem Nome',
+                        whatsapp: t.customerPhone,
+                        empresa: t.subject,
+                        status: mapBackendStatusToFrontend(t.status),
+                        temperatura: mapPriorityToTemp(t.priority)
+                    }));
+                    renderKanban();
+                    renderTable();
+                    calculateStats();
                 }
-            } catch (error) {
-                console.error('Error loading leads:', error);
-            }
+            } catch (e) { console.error(e); }
         }
 
-        function renderLeadsTable() {
+        function mapBackendStatusToFrontend(status) {
+            const map = { 'NOVO': 'novo', 'ABERTO': 'contato', 'PENDENTE': 'negociacao', 'FECHADO': 'fechado', 'RESOLVIDO': 'fechado' };
+            return map[status] || 'novo';
+        }
+        function mapFrontendStatusToBackend(status) {
+            const map = { 'novo': 'NOVO', 'contato': 'ABERTO', 'negociacao': 'PENDENTE', 'fechado': 'FECHADO' };
+            return map[status] || 'NOVO';
+        }
+        function mapPriorityToTemp(p) {
+            return p === 'ALTA' ? 'quente' : (p === 'BAIXA' ? 'frio' : 'morno');
+        }
+
+        function renderKanban() {
+            ['novo', 'contato', 'negociacao', 'fechado'].forEach(s => {
+                const col = document.getElementById(`col-${s}`);
+                const count = document.getElementById(`count-${s}`);
+                col.innerHTML = '';
+
+                const filtered = leads.filter(l => l.status === s);
+                count.innerText = filtered.length;
+
+                filtered.forEach(lead => {
+                    const card = document.createElement('div');
+                    card.className = 'kanban-card mb-3';
+                    card.draggable = true;
+                    card.ondragstart = (e) => e.dataTransfer.setData("text", lead.id);
+                    card.innerHTML = `
+                        <div class="d-flex justify-content-between">
+                            <strong>${lead.nome}</strong>
+                            <small class="text-muted"><i class="fab fa-whatsapp"></i></small>
+                        </div>
+                        <div class="small text-truncate text-muted mb-2">${lead.empresa || '-'}</div>
+                        <div class="d-flex justify-content-between align-items-center">
+                             <span class="badge bg-dark bg-opacity-25 text-body border">${lead.temperatura}</span>
+                             <button class="btn btn-sm btn-link p-0 text-muted" onclick="openLead(${lead.id})"><i class="fas fa-external-link-alt"></i></button>
+                        </div>
+                    `;
+                    col.appendChild(card);
+                });
+            });
+        }
+
+        function renderTable() {
             const container = document.getElementById('leadsTableContainer');
-            const allContainer = document.getElementById('allLeadsTableContainer');
-
-            if (leads.length === 0) {
-                const emptyHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">👥</div>
-                        <h2 class="empty-title">Nenhum lead encontrado</h2>
-                        <p class="empty-text">Comece adicionando seu primeiro lead</p>
-                        <button class="btn btn-primary" onclick="openModal('modalAddLead')">
-                            <span>➕</span>
-                            <span>Adicionar Lead</span>
-                        </button>
-                    </div>
-                `;
-                container.innerHTML = emptyHTML;
-                allContainer.innerHTML = emptyHTML;
-                return;
-            }
-
-            const tableHTML = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Lead</th>
-                            <th>WhatsApp</th>
-                            <th>Valor</th>
-                            <th>Status</th>
-                            <th>Temperatura</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
+            container.innerHTML = `
+                <table class="table table-hover mb-0">
+                    <thead class="table-light"><tr><th>Nome</th><th>WhatsApp</th><th>Status</th><th>Ações</th></tr></thead>
                     <tbody>
-                        ${leads.map(lead => `
+                        ${leads.map(l => `
                             <tr>
-                                <td>
-                                    <div class="lead-name">${lead.nome}</div>
-                                    ${lead.empresa ? `<div class="lead-company">${lead.empresa}</div>` : ''}
-                                </td>
-                                <td>${lead.whatsapp}</td>
-                                <td>R$ ${(lead.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-                                <td><span class="badge badge-${lead.status}">${lead.status}</span></td>
-                                <td><span class="badge badge-${lead.temperatura}">${lead.temperatura}</span></td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="btn-icon" title="Editar">✏️</button>
-                                        <button class="btn-icon" title="WhatsApp">💬</button>
-                                        <button class="btn-icon" title="Deletar" onclick="deleteLead(${lead.id})">🗑️</button>
-                                    </div>
-                                </td>
+                                <td>${l.nome}<br><small class="text-muted">${l.empresa || ''}</small></td>
+                                <td>${l.whatsapp}</td>
+                                <td><span class="badge bg-secondary">${l.status}</span></td>
+                                <td><button class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></button></td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
-            `;
-
-            container.innerHTML = tableHTML;
-            allContainer.innerHTML = tableHTML;
+             `;
         }
 
-        async function deleteLead(id) {
-            if (!confirm('Tem certeza que deseja deletar este lead?')) return;
-
-            try {
-                const response = await fetch(`${API_BASE}/leads/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'apikey': API_KEY }
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    alert('✅ Lead deletado com sucesso!');
-                    loadLeads();
-                    loadStats();
-                } else {
-                    alert('❌ Erro: ' + result.error);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('❌ Erro ao deletar lead');
-            }
+        function calculateStats() {
+            document.getElementById('statTotal').innerText = leads.length;
+            document.getElementById('statNovos').innerText = leads.filter(l => l.status === 'novo').length;
+            document.getElementById('statNegociacao').innerText = leads.filter(l => l.status === 'negociacao').length;
+            document.getElementById('statFechados').innerText = leads.filter(l => l.status === 'fechado').length;
         }
 
-        // Search
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            filterLeads(e.target.value);
-        });
-
-        document.getElementById('searchInputLeads').addEventListener('input', (e) => {
-            filterLeads(e.target.value);
-        });
-
-        function filterLeads(query) {
-            // TODO: Implement search filter
-            console.log('Searching for:', query);
-        }
-
-        // Initialize
-        loadStats();
-        loadLeads();
-        loadCampaigns();
-
-        // --- EMAIL CAMPAIGN LOGIC ---
-
-        async function loadCampaigns() {
-            const container = document.getElementById('campaignsContainer');
-            try {
-                const response = await fetch(`${API_BASE}/campaigns`, { headers: { 'apikey': API_KEY } });
-                const result = await response.json();
-
-                if (!result.success || !result.campaigns || result.campaigns.length === 0) {
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-icon">📧</div>
-                            <h2 class="empty-title">Nenhuma campanha enviada</h2>
-                            <p class="empty-text">Crie sua primeira campanha de email agora.</p>
-                        </div>`;
-                    return;
-                }
-
-                container.innerHTML = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Assunto</th>
-                            <th>Enviado em</th>
-                            <th>Destinatários</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${result.campaigns.map(c => `
-                            <tr>
-                                <td style="font-weight:600">${c.subject}</td>
-                                <td>${new Date(c.sentAt).toLocaleString()}</td>
-                                <td>${c.recipientsCount} leads</td>
-                                <td><span class="badge badge-fechado">${c.status}</span></td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>`;
-
-            } catch (e) {
-                console.error("Erro ao carregar campanhas", e);
-                container.innerHTML = `<p style="padding:20px;color:red">Erro ao carregar histórico.</p>`;
-            }
-        }
-
-        document.getElementById('formNewCampaign').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = e.submitter;
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner" style="width:20px;height:20px;border-width:2px;display:inline-block;margin:0 8px -4px 0"></span> Enviando...';
-
-            // Filter leads based on selection
-            const formData = new FormData(e.target);
-            const audience = formData.get('audience');
-
-            // Simulação de filtragem no front por enquanto, já que temos 'leads' em memória
-            let recipients = leads;
-            if (audience === 'quente') recipients = leads.filter(l => l.temperatura === 'quente');
-            if (audience === 'novo') recipients = leads.filter(l => l.status === 'novo');
-
-            // Extract emails (fake logic: if no email, mock one)
-            const recipientList = recipients.map(l => l.email || `${l.whatsapp}@email.com`);
-
-            if (recipientList.length === 0) {
-                alert('⚠️ Nenhum lead encontrado para o público selecionado. Adicione leads antes de enviar uma campanha.');
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-                return;
-            }
-
-            const payload = {
-                subject: formData.get('subject'),
-                body: formData.get('body'),
-                recipients: recipientList
-            };
-
-            try {
-                const response = await fetch(`${API_BASE}/campaigns`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'apikey': API_KEY },
-                    body: JSON.stringify(payload)
-                });
-                const res = await response.json();
-                if (res.success) {
-                    alert('✅ Campanha disparada com sucesso!');
-                    closeModal('modalNewCampaign');
-                    e.target.reset();
-                    loadCampaigns();
-                } else {
-                    alert('❌ Erro: ' + res.error);
-                }
-            } catch (error) {
-                alert('❌ Erro de conexão');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }
-        });
-
-
-        // Kanban Logic
-        function renderKanban() {
-            // Clear cols
-            ['novo', 'contato', 'negociacao', 'fechado'].forEach(status => {
-                document.getElementById(`col-${status}`).innerHTML = '';
-                document.getElementById(`count-${status}`).textContent = '0';
-            });
-
-            const counts = { novo: 0, contato: 0, negociacao: 0, fechado: 0 };
-
-            leads.forEach(lead => {
-                const status = lead.status || 'novo';
-                if (!document.getElementById(`col-${status}`)) return;
-
-                counts[status]++;
-
-                const card = document.createElement('div');
-                card.className = 'kanban-card';
-                card.draggable = true;
-                card.id = `card-${lead.id}`;
-                card.ondragstart = (e) => drag(e, lead.id);
-
-                card.innerHTML = `
-                    <div class="card-header">
-                        <span class="card-title">${lead.nome}</span>
-                        <span class="card-price">R$ ${(lead.valor || 0).toLocaleString('pt-BR')}</span>
-                    </div>
-                    <div class="card-subtitle">${lead.empresa || 'Sem empresa'}</div>
-                    <div class="card-tags">
-                        <span class="card-tag badge-${lead.temperatura}">${lead.temperatura}</span>
-                        <span class="card-tag">📱 ${lead.whatsapp}</span>
-                    </div>
-                    <div class="card-actions">
-                        <button class="btn-icon" style="width:28px;height:28px" onclick="openEditLead(${lead.id})">✏️</button>
-                    </div>
-                `;
-
-                document.getElementById(`col-${status}`).appendChild(card);
-            });
-
-            // Update counts
-            Object.keys(counts).forEach(key => {
-                document.getElementById(`count-${key}`).textContent = counts[key];
-            });
-        }
-
-        // Drag and Drop
-        function allowDrop(ev) {
-            ev.preventDefault();
-        }
-
-        function drag(ev, id) {
-            ev.dataTransfer.setData("text", id);
-        }
-
+        // Drag & Drop
+        function allowDrop(ev) { ev.preventDefault(); }
         async function drop(ev) {
             ev.preventDefault();
-            const leadId = ev.dataTransfer.getData("text");
-            // Find drop target column (handling drop on card vs drop on column body)
+            const id = ev.dataTransfer.getData("text");
             let target = ev.target;
-            while (!target.classList.contains('kanban-column') && target.parentElement) {
-                target = target.parentElement;
-            }
-
-            if (!target.dataset.status) return;
+            while (!target.classList.contains('kanban-column')) target = target.parentElement;
 
             const newStatus = target.dataset.status;
+            const lead = leads.find(l => l.id == id);
 
-            // Optimistic Update
-            const lead = leads.find(l => l.id == leadId);
             if (lead && lead.status !== newStatus) {
-                const oldStatus = lead.status;
+                const old = lead.status;
                 lead.status = newStatus;
-                renderKanban(); // Re-render instantly
+                renderKanban();
 
-                // API Call
                 try {
-                    const response = await fetch(`${API_BASE}/leads/${leadId}`, {
+                    await fetch(`${API_BASE}/tickets/${id}`, {
                         method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'apikey': API_KEY
-                        },
-                        body: JSON.stringify({ status: newStatus })
+                        headers: { 'Content-Type': 'application/json', 'apikey': API_KEY },
+                        body: JSON.stringify({ status: mapFrontendStatusToBackend(newStatus) })
                     });
-                    const res = await response.json();
-                    if (!res.success) throw new Error(res.error);
-                    loadStats(); // Update stats
                 } catch (e) {
-                    console.error('Falha ao atualizar status:', e);
-                    alert('Erro ao mover card. Revertendo...');
-                    lead.status = oldStatus;
-                    renderKanban();
+                    lead.status = old; renderKanban(); alert('Erro ao mover');
                 }
             }
         }
 
-        // Hook renderKanban into loadLeads
-        const originalLoadLeads = loadLeads;
-        loadLeads = async function () {
-            await originalLoadLeads();
-            renderKanban();
-        };
+        // Modal & Form
+        const modalAddLead = new bootstrap.Modal(document.getElementById('modalAddLead'));
+        window.openModal = (id) => modalAddLead.show();
+
+        document.getElementById('formAddLead').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            try {
+                await fetch(`${API_BASE}/tickets`, { // We use tickets as leads
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': API_KEY },
+                    body: JSON.stringify({
+                        customerPhone: fd.get('whatsapp'),
+                        customerName: fd.get('nome'),
+                        subject: fd.get('empresa') || 'Novo Lead Manual',
+                        status: 'NOVO',
+                        priority: 'MÉDIA'
+                    })
+                });
+                modalAddLead.hide();
+                e.target.reset();
+                loadLeads();
+            } catch (err) { alert('Erro ao salvar'); }
+        });
+
+        // Start
+        loadLeads();
 
     </script>
 </body>

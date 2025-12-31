@@ -1,10 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsMiau2 - Disparador de Mensagens</title>
+    <title>Disparador Pro - WhatsMiau2</title>
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -12,136 +13,107 @@
     <link href="/assets/css/style.css" rel="stylesheet">
 
     <style>
-        /* Additional Styles for Dispatcher */
-        .dispatcher-header {
-            background: var(--bg-paper);
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-            box-shadow: var(--shadow-card);
-        }
-
         .tab-button {
-            padding: 12px 24px;
-            border: 2px solid var(--border-color);
-            background: transparent;
-            border-radius: 8px;
+            padding: 10px 20px;
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
             cursor: pointer;
             transition: all 0.2s;
             font-weight: 600;
+            color: var(--text-secondary);
+            flex: 1;
+            text-align: center;
+        }
+
+        .tab-button:hover {
+            background: white;
+            border-color: var(--primary-color);
         }
 
         .tab-button.active {
-            background: var(--primary-main);
+            background: var(--primary-color);
             color: white;
-            border-color: var(--primary-main);
-        }
-
-        .preview-container {
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 16px;
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
         }
 
         .log-console {
-            background: #1e1e1e;
-            color: #d4d4d4;
+            background: #0f172a;
+            color: #94a3b8;
             font-family: 'Consolas', 'Monaco', monospace;
-            padding: 16px;
-            border-radius: 8px;
-            height: 400px;
+            padding: 20px;
+            border-radius: 16px;
+            height: 500px;
             overflow-y: auto;
             font-size: 13px;
-            line-height: 1.5;
+            line-height: 1.6;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .log-success {
-            color: #89d185;
+            color: #10b981;
         }
 
         .log-error {
-            color: #f44747;
+            color: #f43f5e;
         }
 
         .log-warning {
-            color: #cca700;
+            color: #fbbf24;
         }
 
         .log-info {
-            color: #4fc1ff;
-        }
-
-        /* Recording UI */
-        .recording-active {
-            border-color: #ff4444 !important;
-            box-shadow: 0 0 15px rgba(255, 68, 68, 0.4);
-        }
-
-        .pulse-red {
-            animation: pulse-red-animation 1.5s infinite;
-        }
-
-        @keyframes pulse-red-animation {
-            0% {
-                transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
-            }
-
-            70% {
-                transform: scale(1);
-                box-shadow: 0 0 0 10px rgba(255, 68, 68, 0);
-            }
-
-            100% {
-                transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
-            }
-        }
-
-        .record-btn-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
+            color: #38bdf8;
         }
 
         #btn-record {
-            width: 50px;
-            height: 50px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.3s;
             border: none;
-            background: var(--primary-main);
+            background: var(--primary-color);
             color: white;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
         }
 
         #btn-record.recording {
-            background: #ff4444;
+            background: #ef4444;
+            animation: pulse-red 1s infinite;
         }
 
-        .recording-timer {
-            font-family: monospace;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #ff4444;
+        @keyframes pulse-red {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+
+            70% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
         }
 
-        /* Video Recording UI */
         .video-capture-container {
             position: relative;
             width: 100%;
-            max-width: 400px;
-            margin: 0 auto 20px;
+            max-width: 480px;
+            margin: 0 auto;
             aspect-ratio: 4/3;
             background: #000;
-            border-radius: 12px;
+            border-radius: 20px;
             overflow: hidden;
-            border: 2px solid var(--border-color);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
 
         #video-preview-live {
@@ -149,27 +121,25 @@
             height: 100%;
             object-fit: cover;
             transform: scaleX(-1);
-            /* Mirror effect */
         }
 
         .video-controls {
             position: absolute;
-            bottom: 20px;
+            bottom: 24px;
             left: 0;
             right: 0;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 20px;
             z-index: 10;
         }
 
         #btn-record-video {
-            width: 60px;
-            height: 60px;
+            width: 72px;
+            height: 72px;
             border-radius: 50%;
-            background: #fff;
-            border: 5px solid rgba(255, 255, 255, 0.3);
+            background: white;
+            border: 6px solid rgba(255, 255, 255, 0.3);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -180,397 +150,431 @@
         #btn-record-video .inner-circle {
             width: 25px;
             height: 25px;
-            background: #ff4444;
+            background: #ef4444;
             border-radius: 50%;
             transition: all 0.2s;
         }
 
         #btn-record-video.recording .inner-circle {
             border-radius: 4px;
-            width: 20px;
-            height: 20px;
+            transform: scale(0.8);
         }
 
-        .video-timer-overlay {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.6);
-            color: #ff4444;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-family: monospace;
-            font-weight: bold;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .rec-dot {
-            width: 8px;
-            height: 8px;
-            background: #ff4444;
-            border-radius: 50%;
-        }
-
-        /* Native Dialog Modal Styles */
         dialog#video-recorder-modal {
             border: none;
-            border-radius: 20px;
+            border-radius: 24px;
             padding: 0;
-            background: var(--bg-paper);
+            background: white;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            max-width: 500px;
-            width: 90%;
+            max-width: 550px;
+            width: 95%;
             overflow: hidden;
             margin: auto;
         }
 
         dialog#video-recorder-modal::backdrop {
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
-        }
-
-        .modal-header-custom {
-            padding: 20px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-body-custom {
-            padding: 20px;
-            text-align: center;
-        }
-
-        .modal-footer-custom {
-            padding: 15px 20px;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            background: var(--bg-input);
-        }
-
-        .btn-close-modal {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 1.5rem;
-            cursor: pointer;
-            line-height: 1;
-            transition: color 0.2s;
-        }
-
-        .btn-close-modal:hover {
-            color: #ff4444;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
         }
 
         .progress-bar-custom {
-            height: 10px;
-            background-color: var(--bg-input);
-            border-radius: 999px;
+            height: 12px;
+            background: rgba(226, 232, 240, 0.5);
+            border-radius: 10px;
             overflow: hidden;
-            margin: 16px 0;
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .progress-fill {
             height: 100%;
-            background-color: var(--primary-main);
+            background: linear-gradient(90deg, var(--primary-color) 0%, #34d399 100%);
             width: 0%;
-            transition: width 0.3s ease;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
     </style>
 </head>
 
-<body>
+<body data-theme="light">
+
     <div class="d-flex" id="wrapper">
+
         <!-- Sidebar -->
         <div id="sidebar-wrapper">
-            <div class="sidebar-heading text-center py-4">
-                <img src="/assets/logo.jpg" alt="Logo" class="rounded-circle mb-2"
-                    style="width: 48px; height: 48px; border: 2px solid #10b981;">
-                <div class="small fw-bold letter-spacing-1">WHATSMIAU2</div>
+            <div class="sidebar-heading text-center">
+                <i class="fas fa-robot"></i> WhatsMiau2
             </div>
             <div class="list-group list-group-flush mt-3">
-                <a href="/" class="list-group-item list-group-item-action bg-transparent">
+                <a href="/dashboard" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                 </a>
+
                 <a href="/connections" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fab fa-whatsapp me-2"></i> Conexões
+                    <i class="fas fa-wifi me-2"></i> ConexÃµes
                 </a>
-                <a href="/disparador" class="list-group-item list-group-item-action bg-transparent active">
+
+                <a href="/disparador" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-paper-plane me-2"></i> Disparador
                 </a>
-                <a href="/resumo-grupos" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fas fa-users-rectangle me-2"></i> Grupos
+
+                <a href="/exportar-contatos" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-file-export me-2"></i> Exportar Contatos
                 </a>
+
+                <a href="/resumo-grupos" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-chart-bar me-2"></i> Resumo de Grupos
+                </a>
+
+                <a href="/contacts" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-address-book me-2"></i> Contatos
+                </a>
+
+                <a href="/tickets" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-ticket-alt me-2"></i> Tickets
+                </a>
+
+                <a href="/kanban" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-columns me-2"></i> Kanban
+                </a>
+
                 <a href="/internal-chat" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-comments me-2"></i> Chat Interno
                 </a>
-                <a href="/kanban" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fas fa-columns me-2"></i> CRM Kanban
+
+                <div class="border-top my-3"></div>
+
+                <a href="/settings" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-cog me-2"></i> Configurações
                 </a>
+
             </div>
 
-            <div class="p-3 mt-auto">
-                <div class="form-check form-switch card p-2 border-0 shadow-sm glass-box">
-                    <input class="form-check-input" type="checkbox" id="darkModeSwitch">
-                    <label class="form-check-label small fw-bold" for="darkModeSwitch">🌙 Dark Mode</label>
-                </div>
-            </div>
+            <a href="/logout" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
+                <i class="fas fa-sign-out-alt me-2"></i> Sair
+            </a>
         </div>
+    </div>
 
-        <!-- Page Content -->
-        <div id="page-content-wrapper">
-            <nav class="navbar navbar-expand-lg navbar-custom px-4">
-                <div class="d-flex align-items-center w-100 justify-content-between">
-                    <div class="d-flex align-items-center">
-                        <button class="btn btn-outline-secondary me-3" id="menu-toggle">
-                            <i class="fas fa-bars"></i>
-                        </button>
-                        <h5 class="mb-0 fw-bold">🚀 Disparador Pro</h5>
-                    </div>
-                    <div class="d-flex align-items-center gap-3">
-                        <div
-                            class="d-flex align-items-center bg-dark bg-opacity-10 rounded-pill px-2 py-1 border border-secondary border-opacity-25">
-                            <i class="fas fa-robot text-primary me-2 ms-1" style="font-size: 0.8rem;"></i>
-                            <select id="instance-selector"
-                                class="form-select form-select-sm border-0 bg-transparent text-white fw-bold py-0"
-                                style="font-size: 0.75rem; min-width: 120px; cursor: pointer;">
-                                <option value="minha-instancia">Carregando...</option>
-                            </select>
-                        </div>
-                        <div
-                            class="d-flex align-items-center bg-dark bg-opacity-10 rounded-pill px-3 py-1 border border-secondary border-opacity-25">
-                            <i class="fab fa-whatsapp text-success me-2"></i>
-                            <span id="instance-status-dot" class="badge rounded-circle p-1 bg-secondary"
-                                style="width: 8px; height: 8px;" title="Status"></span>
-                        </div>
+    <!-- Page Content -->
+    <div id="page-content-wrapper">
+
+        <nav class="navbar navbar-expand-lg navbar-custom px-4">
+            <div class="d-flex align-items-center w-100 justify-content-between">
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-outline-secondary me-3" id="menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h5 class="mb-0 fw-bold">🚀 Disparador de Mensagens</h5>
+                </div>
+
+                <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center bg-light rounded-pill px-3 py-1 border shadow-sm">
+                        <i class="fas fa-server text-primary me-2 ms-0" style="font-size: 0.8rem;"></i>
+                        <select id="instance-selector"
+                            class="form-select form-select-sm border-0 bg-transparent fw-bold p-0"
+                            style="font-size: 0.8rem; min-width: 140px; border:none; outline:none; box-shadow:none;">
+                            <option value="">Iniciando...</option>
+                        </select>
+                        <span id="instance-status-dot" class="badge rounded-circle p-1 ms-2 bg-secondary"
+                            style="width: 10px; height: 10px;"></span>
                     </div>
                 </div>
-            </nav>
+            </div>
+        </nav>
 
-            <div class="responsive-container p-resp">
-                <div class="responsive-grid grid-cols-2">
-                    <!-- Left Column: Configuration -->
-                    <div class="dispatch-config">
-                        <!-- Message Card -->
-                        <div class="card p-4 mb-4">
-                            <h5 class="fw-bold mb-3">1. Configurar Envio</h5>
+        <div class="responsive-container">
+            <div class="row g-4">
+                <!-- Config Section -->
+                <div class="col-xl-7">
+                    <div class="card p-4 shadow-sm border-0 mb-4">
+                        <h5 class="fw-bold mb-4 d-flex align-items-center">
+                            <span
+                                class="bg-primary bg-opacity-10 text-primary rounded-circle w-32 h-32 d-flex align-items-center justify-content-center me-2"
+                                style="width:32px; height:32px;">1</span>
+                            Configurar Conteúdo
+                        </h5>
 
-                            <!-- Tabs -->
-                            <div class="d-flex gap-2 mb-4">
-                                <button class="tab-button active" id="tab-text" onclick="setTab('text')">
-                                    💬 Texto
-                                </button>
-                                <button class="tab-button" id="tab-audio" onclick="setTab('audio')">
-                                    🎤 Áudio (PTT)
-                                </button>
-                                <button class="tab-button" id="tab-media" onclick="setTab('media')">
-                                    📷 Mídia
-                                </button>
-                                <button class="tab-button" id="tab-video" onclick="setTab('video')">
-                                    🎥 Gravar Vídeo
-                                </button>
-                            </div>
+                        <div class="d-flex gap-2 mb-4 flex-wrap">
+                            <button class="tab-button active" id="tab-text" onclick="setTab('text')">💬
+                                Texto</button>
+                            <button class="tab-button" id="tab-audio" onclick="setTab('audio')">🎤 Áudio
+                                (PTT)</button>
+                            <button class="tab-button" id="tab-media" onclick="setTab('media')">📷 Mídia</button>
+                            <button class="tab-button" id="tab-video" onclick="setTab('video')">🎥 Vídeo</button>
+                        </div>
 
+                        <div id="content-sections">
                             <!-- TEXT SECTION -->
                             <div id="section-text">
-                                <label class="form-label fw-bold">Conteúdo da Mensagem</label>
-                                <textarea id="message-content" class="form-control" rows="6"
-                                    placeholder="Digite sua mensagem aqui... Use *negrito*, _itálico_, etc."></textarea>
+                                <label class="form-label small fw-bold text-uppercase opacity-75">Sua
+                                    Mensagem</label>
+                                <textarea id="message-content" class="form-control" rows="8"
+                                    placeholder="Digite aqui sua mensagem... Use *negrito*, _itálico_ e emojis."></textarea>
                             </div>
 
                             <!-- AUDIO SECTION -->
                             <div id="section-audio" style="display: none;">
-                                <div
-                                    class="record-btn-container justify-content-center border rounded-3 p-3 mb-4 bg-light bg-opacity-10">
-                                    <div class="text-center">
-                                        <button id="btn-record" class="shadow-lg mb-2" onclick="toggleRecording()"
-                                            title="Gravar Áudio">
-                                            <i class="fas fa-microphone fa-lg" id="record-icon"></i>
+                                <div class="text-center py-5 border rounded-3 bg-light bg-opacity-50 mb-4">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <button id="btn-record" class="mb-3" onclick="toggleRecording()">
+                                            <i class="fas fa-microphone" id="record-icon"></i>
                                         </button>
-                                        <div id="record-timer" class="recording-timer mb-1" style="display: none;">00:00
-                                        </div>
-                                        <div id="record-status" class="small fw-bold text-muted mt-1">GRAVAR VOZ (MIC)
-                                        </div>
+                                        <div id="record-timer" class="fw-bold text-danger h4 mb-2"
+                                            style="display: none;">00:00</div>
+                                        <div id="record-status" class="small fw-bold opacity-75">CLIQUE PARA GRAVAR
+                                            VOZ</div>
                                     </div>
                                 </div>
-
-                                <label class="form-label fw-bold">🎤 Ou selecione um arquivo pronto</label>
-                                <input type="file" id="audio-file" class="form-control mb-3" accept="audio/*"
-                                    onchange="previewAudio(this)">
-
-                                <div id="audio-preview-container" class="preview-container" style="display: none;">
-                                    <div class="d-flex align-items-center gap-3 mb-3">
-                                        <span style="font-size: 32px;">🎵</span>
-                                        <div>
-                                            <div id="audio-file-name" class="fw-bold"></div>
-                                            <div id="audio-file-info" class="small text-muted"></div>
-                                        </div>
-                                    </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">OU SELECIONE UM ARQUIVO</label>
+                                    <input type="file" id="audio-file" class="form-control" accept="audio/*"
+                                        onchange="previewAudio(this)">
+                                </div>
+                                <div id="audio-preview-container" class="preview-box p-3 border rounded mb-3 bg-light"
+                                    style="display: none;">
                                     <audio id="audio-preview" controls class="w-100"></audio>
                                 </div>
-
-                                <div class="mt-3 pt-3 border-top">
-                                    <label class="form-label fw-bold">📎 Ou insira uma URL de áudio</label>
-                                    <input type="text" id="audio-url" class="form-control"
-                                        placeholder="https://exemplo.com/audio.mp3" oninput="toggleAudioSource()">
-                                    <small class="text-muted">A URL tem prioridade se ambos forem preenchidos.</small>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">OU INSIRA UMA URL</label>
+                                    <input type="text" id="audio-url" class="form-control" placeholder="https://..."
+                                        oninput="toggleAudioSource()">
                                 </div>
                             </div>
 
                             <!-- MEDIA SECTION -->
                             <div id="section-media" style="display: none;">
-                                <label class="form-label fw-bold">📷 Arquivo de Mídia (Imagem/Vídeo/Documento)</label>
-                                <input type="file" id="media-file" class="form-control mb-3"
-                                    onchange="previewMedia(this)">
-
-                                <div id="media-preview-container" class="preview-container" style="display: none;">
-                                    <div class="d-flex align-items-center gap-3 mb-3">
-                                        <span id="media-type-icon" style="font-size: 32px;">📷</span>
-                                        <div class="flex-grow-1">
-                                            <div id="media-file-name" class="fw-bold"></div>
-                                            <div id="media-file-info" class="small text-muted"></div>
-                                        </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">ARQUIVO DE MÍDIA</label>
+                                    <input type="file" id="media-file" class="form-control mb-3"
+                                        onchange="previewMedia(this)">
+                                    <div id="media-preview-container" class="preview-box p-3 border rounded text-center"
+                                        style="display: none;">
+                                        <div id="media-preview-content"></div>
                                     </div>
-                                    <div id="media-preview-content" class="text-center"></div>
                                 </div>
-
-                                <label class="form-label fw-bold mt-3">💬 Legenda (Opcional)</label>
-                                <input type="text" id="media-caption" class="form-control"
-                                    placeholder="Legenda da foto/vídeo...">
-
-                                <div class="mt-3 pt-3 border-top">
-                                    <label class="form-label fw-bold">📎 Ou insira uma URL de mídia</label>
-                                    <input type="text" id="media-url" class="form-control"
-                                        placeholder="https://exemplo.com/imagem.jpg" oninput="toggleMediaSource()">
-                                    <small class="text-muted">A URL tem prioridade se ambos forem preenchidos.</small>
-                                </div>
+                                <label class="form-label small fw-bold">LEGENDA</label>
+                                <input type="text" id="media-caption" class="form-control mb-3"
+                                    placeholder="Sua legenda aqui...">
+                                <label class="form-label small fw-bold">OU URL DA MÍDIA</label>
+                                <input type="text" id="media-url" class="form-control" placeholder="https://..."
+                                    oninput="toggleMediaSource()">
                             </div>
 
                             <!-- VIDEO SECTION -->
                             <div id="section-video" style="display: none;">
-                                <div class="text-center p-5 border rounded-3 bg-light bg-opacity-10 mb-4">
-                                    <div class="mb-3">
-                                        <i class="fas fa-video fa-3x text-primary opacity-50"></i>
-                                    </div>
-                                    <h6 class="fw-bold">Gravação de Vídeo Ao Vivo</h6>
-                                    <p class="small text-muted">Use sua webcam para gravar uma mensagem personalizada.
-                                    </p>
+                                <div class="text-center py-5 border rounded-3 bg-light bg-opacity-50 mb-3">
+                                    <i class="fas fa-camera fa-3x text-primary opacity-25 mb-3"></i>
+                                    <h6 class="fw-bold">Gravação Ao Vivo</h6>
                                     <button class="btn btn-primary px-4 shadow-sm" onclick="openVideoModal()">
-                                        <i class="fas fa-camera me-2"></i>Abrir Gravador
+                                        <i class="fas fa-video me-2"></i>Abrir Gravador
                                     </button>
                                 </div>
-
-                                <div id="video-result-container" class="preview-container mb-4" style="display: none;">
-                                    <div class="d-flex align-items-center gap-3 mb-3">
-                                        <span style="font-size: 32px;">🎬</span>
-                                        <div>
-                                            <div class="fw-bold">Vídeo Gravado</div>
-                                            <div id="video-file-info" class="small text-muted">Pronto para envio</div>
-                                        </div>
-                                        <button class="btn btn-sm btn-outline-danger ms-auto"
-                                            onclick="clearVideoRecording()">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                    <video id="video-playback" controls class="w-100 rounded"></video>
+                                <div id="video-result-container" class="p-3 border rounded mb-3" style="display: none;">
+                                    <video id="video-playback" controls class="w-100 rounded mb-2"></video>
+                                    <button class="btn btn-sm btn-outline-danger w-100"
+                                        onclick="clearVideoRecording()">Limpar Gravação</button>
                                 </div>
-
-                                <div class="alert alert-info py-2 small">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    <strong>Limite:</strong> Recomendamos até <strong>2 minutos</strong> (aprox. 16MB)
-                                    para garantir que todos recebam.
-                                </div>
-
-                                <label class="form-label fw-bold">💬 Legenda do Vídeo (Opcional)</label>
-                                <input type="text" id="video-caption" class="form-control"
-                                    placeholder="Legenda do vídeo...">
-                            </div>
-
-                            <div class="mt-4">
-                                <label class="form-label fw-bold">⏱️ Delay entre envios (segundos)</label>
-                                <input type="number" id="delay-seconds" class="form-control" value="10" min="1">
-                                <small class="text-muted">Recomendado: 10+ segundos para mídias pesadas.</small>
+                                <label class="form-label small fw-bold">LEGENDA DO VÍDEO</label>
+                                <input type="text" id="video-caption" class="form-control mb-3"
+                                    placeholder="Sua legenda aqui...">
                             </div>
                         </div>
 
-                        <!-- Recipients Card -->
-                        <div class="card p-4 mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="fw-bold mb-0">2. Destinatários</h5>
-                                <div class="d-flex gap-2">
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm btn-outline-success dropdown-toggle" type="button"
-                                            data-bs-toggle="dropdown">
-                                            📁 Importar
-                                        </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item" href="#"
-                                                    onclick="document.getElementById('file-upload').click()">📂 Arquivo
-                                                    (Excel/CSV/Txt)</a></li>
-                                            <li><a class="dropdown-item" href="#" onclick="importFromGoogle()">📊 Google
-                                                    Sheets (Link)</a></li>
-                                        </ul>
-                                    </div>
-                                    <input type="file" id="file-upload" style="display: none;"
-                                        accept=".csv,.txt,.xlsx,.xls,.json" onchange="handleFileUpload(this)">
-
-                                    <button class="btn btn-sm btn-outline-primary" onclick="openGroupSelector()">
-                                        👥 Grupos
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="cleanList()">
-                                        ✨ Limpar
-                                    </button>
-                                </div>
+                        <div class="mt-4 pt-4 border-top">
+                            <label class="form-label small fw-bold">INTERVALO ENTRE ENVIOS (SEGUNDOS)</label>
+                            <div class="d-flex align-items-center gap-3">
+                                <input type="number" id="delay-seconds" class="form-control w-25" value="10" min="2">
+                                <span class="text-muted small"><i class="fas fa-info-circle me-1"></i> Recomendamos
+                                    ao menos 10s para evitar bloqueios.</span>
                             </div>
-
-                            <label class="form-label fw-bold">Cole a lista de JIDs ou IDs (Um por linha)</label>
-                            <textarea id="target-list" class="form-control" rows="8" placeholder="120363303402879775@g.us
-5511999999999@s.whatsapp.net
-..."></textarea>
-                            <small class="text-muted">
-                                Aceita texto com "Nome: ... JID: ..." (O sistema extrairá os IDs automaticamente).
-                            </small>
-
-                            <div class="mt-3">
-                                <span id="target-count" class="badge bg-info">0 destinatários identificados</span>
-                            </div>
-                        </div>
-
-                        <!-- Action Button -->
-                        <div class="card p-4">
-                            <button id="btn-start" class="btn btn-primary w-100 fw-bold" onclick="startDispatch()">
-                                🚀 Iniciar Disparo
-                            </button>
-                            <button id="btn-stop" class="btn btn-danger w-100 fw-bold mt-2" style="display: none;"
-                                onclick="stopDispatch()">
-                                ⛔ Parar
-                            </button>
                         </div>
                     </div>
 
-                    <!-- Right Column: Status & Logs -->
-                    <div class="dispatch-status">
-                        <div class="card p-4 h-100">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="fw-bold mb-0">3. Status do Disparo</h5>
-                                <div id="status-text" class="fw-bold text-muted">Aguardando...</div>
+                    <div class="card p-4 shadow-sm border-0">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="fw-bold mb-0 d-flex align-items-center">
+                                <span
+                                    class="bg-primary bg-opacity-10 text-primary rounded-circle w-32 h-32 d-flex align-items-center justify-content-center me-2"
+                                    style="width:32px; height:32px;">2</span>
+                                Destinatários
+                            </h5>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                    data-bs-toggle="dropdown">Importar</button>
+                                <ul class="dropdown-menu shadow border-0">
+                                    <li><a class="dropdown-item" href="#"
+                                            onclick="document.getElementById('file-upload').click()"><i
+                                                class="fas fa-file-excel me-2"></i> Excel / CSV</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="openGroupSelector()"><i
+                                                class="fas fa-users me-2"></i> Meus Grupos</a></li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="cleanList()"><i
+                                                class="fas fa-trash me-2"></i> Limpar Lista</a></li>
+                                </ul>
+                                <input type="file" id="file-upload" class="d-none" accept=".xlsx,.xls,.csv,.txt"
+                                    onchange="handleFileUpload(this)">
                             </div>
+                        </div>
 
-                            <div class="progress-bar-custom">
+                        <textarea id="target-list" class="form-control" rows="8"
+                            placeholder="5511999999999 (um por linha)"></textarea>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <span id="target-count"
+                                class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">0
+                                destinatários</span>
+                            <div class="text-muted small">Suporta JIDs e números simples.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Column -->
+                <div class="col-xl-5">
+                    <div class="card p-4 shadow-sm border-0 mb-4 h-100 d-flex flex-column">
+                        <h5 class="fw-bold mb-4 d-flex align-items-center">
+                            <span
+                                class="bg-primary bg-opacity-10 text-primary rounded-circle w-32 h-32 d-flex align-items-center justify-content-center me-2"
+                                style="width:32px; height:32px;">3</span>
+                            Painel de Controle
+                        </h5>
+
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-end mb-2">
+                                <span class="small fw-bold text-uppercase opacity-75">Progresso</span>
+                                <span id="progress-text" class="fw-bold h4 mb-0 text-primary">0/0</span>
+                            </div>
+                            <div class="progress-bar-custom mb-2">
                                 <div id="progress-bar" class="progress-fill"></div>
                             </div>
-                            <div class="text-end small text-muted">
-                                <span id="progress-text">0/0</span>
+                            <div id="status-text" class="text-center small fw-medium text-muted">Aguardando
+                                início...</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <button id="btn-start" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow"
+                                onclick="startDispatch()">
+                                <i class="fas fa-paper-plane me-2"></i> INICIAR DISPARO
+                            </button>
+                            <button id="btn-stop" class="btn btn-danger btn-lg w-100 py-3 fw-bold shadow"
+                                style="display: none;" onclick="stopDispatch()">
+                                <i class="fas fa-stop me-2"></i> PARAR AGORA
+                            </button>
+                        </div>
+
+                        <div class="flex-grow-1 overflow-hidden d-flex flex-column">
+                            <label class="form-label small fw-bold opacity-75">LOG DE ATIVIDADES</label>
+                            <div class="log-console flex-grow-1" id="log-console">
+                                <div class="log-info">[Sistema] Aguardando configuração do disparo...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instagram OSINT Section -->
+            <div class="row g-4 mt-2">
+                <div class="col-12">
+                    <div class="card p-4 shadow-sm border-0">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="fw-bold mb-0 d-flex align-items-center">
+                                <span
+                                    class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex align-items-center justify-content-center me-2"
+                                    style="width:32px; height:32px;"><i class="fab fa-instagram"></i></span>
+                                Investigação Instagram (OSINT)
+                            </h5>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                    data-bs-target="#searchIgModal"><i class="fas fa-search me-1"></i> Buscar
+                                    IDs</button>
+                                <button class="btn btn-sm btn-outline-success" onclick="exportOsint('csv')"
+                                    id="btn-export-csv" disabled><i class="fas fa-file-csv me-1"></i> CSV</button>
+                                <button class="btn btn-sm btn-outline-success" onclick="exportOsint('excel')"
+                                    id="btn-export-excel" disabled><i class="fas fa-file-excel me-1"></i> Excel</button>
+                            </div>
+                        </div>
+
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">SEU SESSION ID <i
+                                            class="fas fa-info-circle text-muted ms-1"
+                                            title="Sua chave de acesso"></i></label>
+                                    <div class="input-group">
+                                        <input type="password" id="ig-session-id" class="form-control"
+                                            placeholder="Cole seu sessionid aqui...">
+                                        <button class="btn btn-outline-secondary" type="button"
+                                            onclick="togglePasswordVisible('ig-session-id')"><i
+                                                class="fas fa-eye"></i></button>
+                                        <button class="btn btn-primary" type="button" data-bs-toggle="modal"
+                                            data-bs-target="#tutorialModal">
+                                            <i class="fas fa-question text-white"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text small"><a href="#" data-bs-toggle="modal"
+                                            data-bs-target="#tutorialModal" class="text-decoration-none fw-bold">Não
+                                            sabe o que é isso? Clique aqui.</a></div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <label class="form-label small fw-bold mb-0">LISTA DE IDs / USERNAMES</label>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                                type="button" data-bs-toggle="dropdown">
+                                                <i class="fas fa-upload me-1"></i> Importar
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="#"
+                                                        onclick="document.getElementById('ig-file-upload').click()"><i
+                                                            class="fas fa-file-excel me-2"></i> Excel / CSV / TXT</a>
+                                                </li>
+                                            </ul>
+                                            <input type="file" id="ig-file-upload" class="d-none"
+                                                accept=".xlsx,.xls,.csv,.txt" onchange="handleIgFileUpload(this)">
+                                        </div>
+                                    </div>
+                                    <textarea id="ig-input-list" class="form-control" rows="8"
+                                        placeholder="719586564&#10;61707223925&#10;username_exemplo&#10;@usuario"></textarea>
+                                    <div class="d-flex justify-content-between mt-1">
+                                        <small id="ig-count" class="text-muted">0 itens</small>
+                                        <button class="btn btn-sm btn-primary fw-bold" id="btn-ig-start"
+                                            onclick="startOsint()">
+                                            <i class="fas fa-search me-1"></i> INVESTIGAR
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="ig-progress-container" class="mt-3" style="display:none;">
+                                    <label class="small fw-bold mb-1">Progresso</label>
+                                    <div class="progress" style="height: 10px;">
+                                        <div id="ig-progress-bar" class="progress-bar bg-warning" style="width: 0%">
+                                        </div>
+                                    </div>
+                                    <div class="text-center small mt-1 text-muted" id="ig-status-text">0/0</div>
+                                </div>
                             </div>
 
-                            <div class="log-console mt-3" id="log-console">
-                                <div class="log-info">[Sistema] Pronto para iniciar.</div>
+                            <div class="col-md-8">
+                                <label class="form-label small fw-bold">RESULTADOS</label>
+                                <div class="table-responsive border rounded"
+                                    style="max-height: 400px; overflow-y: auto;">
+                                    <table class="table table-sm table-hover mb-0" style="font-size: 0.85rem;">
+                                        <thead class="table-light sticky-top">
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>User</th>
+                                                <th>Nome</th>
+                                                <th>Whatsapp/Tel</th>
+                                                <th>Email</th>
+                                                <th>Seguidores</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="ig-results-body">
+                                            <!-- items -->
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -578,60 +582,414 @@
             </div>
         </div>
     </div>
+    </div>
 
-    <!-- Group Selector Modal -->
+    <!-- Modal: Group Selector -->
     <div class="modal fade" id="groupModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Selecionar Grupos</h5>
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Selecionar Meus Grupos</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="group-list-container" style="max-height: 400px; overflow-y: auto;">
-                        <div class="text-center py-4">Carregando grupos...</div>
+                    <div id="group-list-container" class="list-group list-group-flush overflow-auto"
+                        style="max-height: 400px;">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-2 text-muted">Carregando seus grupos...</p>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" onclick="addSelectedGroups()">Adicionar
+                <div class="modal-footer border-0">
+                    <button class="btn btn-light px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-primary px-4 fw-bold" onclick="addSelectedGroups()">Adicionar
                         Selecionados</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Video Recorder Native Modal -->
-    <dialog id="video-recorder-modal">
-        <div class="modal-header-custom">
-            <h5 class="fw-bold mb-0">🎥 Gravador de Vídeo Ao Vivo</h5>
-            <button class="btn-close-modal" onclick="closeVideoModal()">&times;</button>
-        </div>
-        <div class="modal-body-custom">
-            <div class="video-capture-container shadow-sm">
-                <video id="video-preview-live" autoplay muted></video>
-
-                <div id="video-timer-overlay" class="video-timer-overlay" style="display: none;">
-                    <div class="rec-dot pulse-red"></div>
-                    <span id="video-timer">00:00</span>
+    <!-- Modal: Instagram Search -->
+    <div class="modal fade" id="searchIgModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">🔍 Buscar IDs Válidos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
+                <div class="modal-body">
+                    <div class="input-group mb-3">
+                        <input type="text" id="ig-search-query" class="form-control"
+                            placeholder="Digite nome, username ou palavra-chave...">
+                        <button class="btn btn-primary" onclick="searchIgUsers()">Buscar</button>
+                    </div>
 
+                    <div class="table-responsive border rounded" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Perfil</th>
+                                    <th>Username</th>
+                                    <th>ID</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ig-search-results">
+                                <!-- results -->
+                                <tr id="ig-search-placeholder">
+                                    <td colspan="4" class="text-center text-muted py-5">Faça uma busca para encontrar
+                                        IDs válidos.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button class="btn btn-light px-4" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Tutorial Session ID -->
+    <div class="modal fade" id="tutorialModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-header border-0 bg-primary text-white" style="border-radius: 20px 20px 0 0;">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-key me-2"></i>Como pegar o Session ID?</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted mb-4">O <b>Session ID</b> é a chave que autoriza a ferramenta a realizar buscas
+                        em seu nome. Sem ele, o Instagram bloqueia o acesso.</p>
+
+                    <div class="d-flex align-items-start mb-3">
+                        <span class="badge bg-primary rounded-circle p-2 me-3"
+                            style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;">1</span>
+                        <div>
+                            <strong>Abra o Instagram Web</strong><br>
+                            Acesse <a href="https://instagram.com" target="_blank">instagram.com</a> no seu computador
+                            (Chrome/Edge) e faça login.
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-start mb-3">
+                        <span class="badge bg-primary rounded-circle p-2 me-3"
+                            style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;">2</span>
+                        <div>
+                            <strong>Abra o Inspecionar Elemento</strong><br>
+                            Aperte a tecla <kbd>F12</kbd> do seu teclado ou clique com botão direito na página e vá em
+                            "Inspecionar".
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-start mb-3">
+                        <span class="badge bg-primary rounded-circle p-2 me-3"
+                            style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;">3</span>
+                        <div>
+                            <strong>Localize o Cookie</strong><br>
+                            Na janela que abriu, vá na aba <b>Application</b> (ou Aplicativo).<br>
+                            No menu esquerdo: <b>Cookies</b> > <b>https://www.instagram.com</b>.
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-start mb-3">
+                        <span class="badge bg-primary rounded-circle p-2 me-3"
+                            style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;">4</span>
+                        <div>
+                            <strong>Copie o valor</strong><br>
+                            Procure na lista o nome <code>sessionid</code>. Copie todo o código que está na coluna
+                            "Value" (Valor).
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning small mt-3">
+                        <i class="fas fa-exclamation-triangle me-1"></i> <b>Atenção:</b> Nunca compartilhe seu Session
+                        ID com estranhos. Ele dá acesso à sua conta. Esta ferramenta roda localmente no seu PC, então é
+                        seguro.
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button class="btn btn-primary w-100 fw-bold" data-bs-dismiss="modal">Entendi, vou pegar!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Recorder Modal -->
+    <dialog id="video-recorder-modal">
+        <div class="p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0">🎥 Gravador Instantâneo</h5>
+                <button class="btn-close" onclick="closeVideoModal()"></button>
+            </div>
+
+            <div class="video-capture-container mb-4">
+                <video id="video-preview-live" autoplay muted></video>
                 <div class="video-controls">
                     <button id="btn-record-video" onclick="toggleVideoRecording()">
                         <div class="inner-circle"></div>
                     </button>
                 </div>
             </div>
-            <p class="small text-muted mb-0">Posicione-se e clique no botão para gravar.</p>
-        </div>
-        <div class="modal-footer-custom">
-            <button class="btn btn-outline-secondary btn-sm" onclick="closeVideoModal()">Cancelar</button>
-            <button class="btn btn-primary btn-sm" onclick="closeVideoModal()">Pronto</button>
+
+            <div class="text-center">
+                <p class="small text-muted mb-4">O vídeo será gravado no formato compatível para WhatsApp.</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <button class="btn btn-light px-4" onclick="closeVideoModal()">Cancelar</button>
+                    <button class="btn btn-primary px-4 fw-bold" onclick="closeVideoModal()">Confirmar Vídeo</button>
+                </div>
+            </div>
         </div>
     </dialog>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script>
+        // Theme Toggle
+        const toggleSwitch = document.querySelector('#darkModeSwitch');
+        const body = document.body;
+        const wrapper = document.getElementById("wrapper");
+
+        if (localStorage.getItem('theme') === 'dark') {
+            body.setAttribute('data-theme', 'dark');
+            toggleSwitch.checked = true;
+        }
+
+        function toggleTheme() {
+            const theme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            toggleSwitch.checked = (theme === 'dark');
+        }
+
+        document.getElementById("menu-toggle").onclick = () => wrapper.classList.toggle("sb-sidenav-toggled");
+
+        // Active Link
+        const currentPath = window.location.pathname;
+        document.querySelectorAll('.list-group-item').forEach(link => {
+            if (link.getAttribute('href') === currentPath) link.classList.add('active');
+        });
+    </script>
+
+    <!-- Original business logic -->
     <script src="/assets/js/disparador.js"></script>
+
+    <script>
+        function togglePasswordVisible(id) {
+            const el = document.getElementById(id);
+            el.type = el.type === 'password' ? 'text' : 'password';
+        }
+
+        document.getElementById('ig-input-list').addEventListener('input', function () {
+            const lines = this.value.split('\n').filter(l => l.trim());
+            document.getElementById('ig-count').innerText = lines.length + ' itens';
+        });
+
+        let osintResults = [];
+
+        async function startOsint() {
+            const sessionId = document.getElementById('ig-session-id').value.trim();
+            const input = document.getElementById('ig-input-list').value;
+            const targets = input.split('\n').map(l => l.trim()).filter(l => l);
+
+            if (!sessionId) return alert('Informe o Session ID');
+            if (targets.length === 0) return alert('Informe os IDs ou Usernames');
+
+            document.getElementById('btn-ig-start').disabled = true;
+            document.getElementById('ig-progress-container').style.display = 'block';
+            document.getElementById('ig-results-body').innerHTML = '';
+            osintResults = [];
+
+            const total = targets.length;
+            let success = 0;
+
+            for (let i = 0; i < total; i++) {
+                const target = targets[i];
+                updateIgProgress(i, total, `Investigando: ${target}...`);
+
+                try {
+                    // Add delay to avoid aggressive rate limiting
+                    if (i > 0) await new Promise(r => setTimeout(r, 2000));
+
+                    const res = await fetch('/api/instagram/investigate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ target, sessionId })
+                    });
+
+                    const json = await res.json();
+
+                    if (json.success) {
+                        addIgRow(json.data);
+                        osintResults.push(json.data);
+                        success++;
+                    } else {
+                        addIgErrorRow(target, json.error);
+                    }
+
+                } catch (e) {
+                    addIgErrorRow(target, e.message);
+                }
+            }
+
+            updateIgProgress(total, total, 'Concluído!');
+            document.getElementById('btn-ig-start').disabled = false;
+            if (osintResults.length > 0) {
+                document.getElementById('btn-export-csv').disabled = false;
+                document.getElementById('btn-export-excel').disabled = false;
+            }
+        }
+
+        function updateIgProgress(current, total, text) {
+            const pct = Math.round((current / total) * 100);
+            document.getElementById('ig-progress-bar').style.width = pct + '%';
+            document.getElementById('ig-status-text').innerText = `${current}/${total} - ${text}`;
+        }
+
+        function addIgRow(data) {
+            const tbody = document.getElementById('ig-results-body');
+            const tr = document.createElement('tr');
+
+            // Extract best phone/email
+            const phone = data.public_phone_number || data.contact_phone_number || data.obfuscated_phone || '-';
+            const email = data.public_email || data.obfuscated_email || '-';
+            const wpp = data.is_whatsapp_linked ? '<span class="badge bg-success">Sim</span>' : '<span class="badge bg-secondary">Não</span>';
+
+            tr.innerHTML = `
+                <td>${data.id}</td>
+                <td><a href="https://instagram.com/${data.username}" target="_blank" class="text-decoration-none fw-bold" style="color:var(--text-primary)">${data.username}</a></td>
+                <td>${data.full_name || ''}</td>
+                <td>
+                    <div class="fw-bold">${phone}</div>
+                    <small>${wpp}</small>
+                </td>
+                <td>${email}</td>
+                <td>${(data.follower_count || 0).toLocaleString()}</td>
+                <td><span class="text-success"><i class="fas fa-check"></i></span></td>
+            `;
+            tbody.insertBefore(tr, tbody.firstChild);
+        }
+
+        function addIgErrorRow(target, error) {
+            const tbody = document.getElementById('ig-results-body');
+            const tr = document.createElement('tr');
+            tr.className = 'table-danger';
+            tr.innerHTML = `
+                <td>${target}</td>
+                <td colspan="5" class="small text-danger">${error}</td>
+                <td><span class="text-danger"><i class="fas fa-times"></i></span></td>
+            `;
+            tbody.insertBefore(tr, tbody.firstChild);
+        }
+
+        function exportOsint(type) {
+            if (osintResults.length === 0) return alert('Sem dados para exportar');
+
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const filename = `instagram_osint_${timestamp}`;
+
+            if (type === 'excel') {
+                const ws = XLSX.utils.json_to_sheet(osintResults);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Resultados");
+                XLSX.writeFile(wb, filename + '.xlsx');
+            } else {
+                const ws = XLSX.utils.json_to_sheet(osintResults);
+                const csv = XLSX.utils.sheet_to_csv(ws);
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                if (link.download !== undefined) {
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute("href", url);
+                    link.setAttribute("download", filename + '.csv');
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            }
+        }
+
+        async function searchIgUsers() {
+            const query = document.getElementById('ig-search-query').value.trim();
+            const sessionId = document.getElementById('ig-session-id').value.trim();
+
+            if (!query) return alert('Digite algo para buscar');
+            if (!sessionId) return alert('Insira o Session ID na tela principal antes de buscar.');
+
+            const tbody = document.getElementById('ig-search-results');
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr>';
+
+            try {
+                const res = await fetch('/api/instagram/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, sessionId })
+                });
+
+                const json = await res.json();
+
+                if (json.success) {
+                    tbody.innerHTML = '';
+                    if (json.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4">Nenhum resultado encontrado.</td></tr>';
+                        return;
+                    }
+
+                    json.data.forEach(u => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>
+                                <img src="${u.profile_pic_url}" class="rounded-circle" width="32" height="32" onerror="this.src='https://via.placeholder.com/32'">
+                            </td>
+                            <td>
+                                <div class="fw-bold">${u.username}</div>
+                                <div class="small text-muted">${u.full_name || ''}</div>
+                            </td>
+                            <td class="font-monospace">${u.id}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="addIgIdToInvestigate('${u.id}', '${u.username}')">
+                                    <i class="fas fa-plus"></i> Usar
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">${json.error}</td></tr>`;
+                }
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">Erro: ${e.message}</td></tr>`;
+            }
+        }
+
+        function addIgIdToInvestigate(id, username) {
+            const textarea = document.getElementById('ig-input-list');
+            const current = textarea.value.trim();
+            textarea.value = current ? (current + '\n' + id) : id;
+
+            // Trigger input event to update count
+            const event = new Event('input');
+            textarea.dispatchEvent(event);
+
+            // Optional: Close modal or show feedback
+            const btn = event.target || document.activeElement;
+            if (btn) {
+                const icon = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                btn.classList.add('btn-success');
+                btn.classList.remove('btn-outline-primary');
+                setTimeout(() => {
+                    btn.innerHTML = icon;
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-outline-primary');
+                }, 1000);
+            }
+        }
+    </script>
 </body>
 
 </html>

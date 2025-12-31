@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webhooks - ACI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #0D6EFD;
+            --bg-body: #F3F4F6;
+            --border-color: #E5E7EB;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: transparent;
+            color: #212529;
+            padding: 0;
+            margin: 0;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .card-custom {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .webhook-log {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            background: #1E293B;
+            color: #F8FAFC;
+            border-radius: 8px;
+            padding: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 4px;
+        }
+
+        .log-time {
+            color: #94A3B8;
+            margin-right: 8px;
+        }
+
+        .log-method {
+            color: #22C55E;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .log-url {
+            color: #38BDF8;
+        }
+    </style>
+</head>
+
+<body class="p-3">
+    <div class="page-header mt-2">
+        <div>
+            <h2 class="fw-bold mb-1">Webhooks</h2>
+            <p class="text-secondary small mb-0">Integre o WhatsMiau com outros sistemas</p>
+        </div>
+        <button class="btn btn-primary d-flex align-items-center gap-2" onclick="testWebhook()">
+            <i class="fas fa-vial"></i> Testar Webhook
+        </button>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card-custom">
+                <h5 class="fw-bold mb-4">Configuração Global</h5>
+                <form id="webhook-form">
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">URL de Destino</label>
+                        <input type="url" class="form-control" placeholder="https://seu-sistema.com/webhook"
+                            value="https://hook.n8n.cloud/xxxx">
+                        <div class="form-text small">Onde nosso servidor enviará os eventos do WhatsApp.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Eventos Monitorados</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" checked id="ev1">
+                                    <label class="form-check-label small" for="ev1">Mensagens Recebidas</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" checked id="ev2">
+                                    <label class="form-check-label small" for="ev2">Status de Conexão</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="ev3">
+                                    <label class="form-check-label small" for="ev3">Status de Leitura</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="ev4">
+                                    <label class="form-check-label small" for="ev4">Alteração em Grupos</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 fw-bold py-2">Salvar Configurações</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card-custom">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">Logs de Atividade</h5>
+                    <button class="btn btn-sm btn-light border" onclick="clearLogs()"><i
+                            class="fas fa-trash-alt me-1"></i> Limpar</button>
+                </div>
+                <div class="webhook-log" id="webhook-logs">
+                    <div class="log-entry">
+                        <span class="log-time">[14:52:10]</span>
+                        <span class="log-method">POST</span>
+                        <span class="log-url">/webhook -> 200 OK</span>
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-time">[14:51:05]</span>
+                        <span class="log-method">POST</span>
+                        <span class="log-url">/webhook -> 200 OK</span>
+                    </div>
+                    <div class="text-center text-muted small mt-3 py-4 opacity-50">
+                        Aguardando novos eventos...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function testWebhook() {
+            alert('Enviando evento de teste para a URL configurada...');
+        }
+        function clearLogs() {
+            document.getElementById('webhook-logs').innerHTML = '<div class="text-center text-muted small mt-3 py-4 opacity-50">Logs limpos.</div>';
+        }
+    </script>
+</body>
+
+</html>

@@ -31,3 +31,8 @@ data/
 # Temporary
 tmp/
 temp/
+deploy_temp/
+deploy_package.zip
+backup_html_*/
+.env
+

@@ -1,0 +1,516 @@
+{
+    "name": "Armazena no CRM",
+    "nodes": [
+        {
+            "parameters": {
+                "public": true,
+                "initialMessages": "Este Agente de IA pode ser integrado a qualquer canal de atendimento, seja ele:\n\nWhatsApp\nTelegram\nInstagram\nSite\nE-mail\nEntre muitos outros.\nAlém disso, ele é compatível com qualquer CRM, garantindo flexibilidade e eficiência para sua operação.",
+                "options": {
+                    "subtitle": "Já acessou nosso Notion com os templates exclusivos? 🎁\nNão se esqueça de se inscrever no canal e de entrar na nossa comunidade gratuita no WhatsApp!",
+                    "title": "Seja bem-vindo ao canal da MGTInc! 👋"
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+            "typeVersion": 1.1,
+            "position": [
+                -240,
+                0
+            ],
+            "id": "81c1cecf-040c-48cf-bcfa-5a205b538d7b",
+            "name": "When chat message received",
+            "webhookId": "a95f5209-9ef6-4dc6-a39f-cda6b4b77853"
+        },
+        {
+            "parameters": {
+                "databaseId": 176547,
+                "tableId": 433438,
+                "limit": 1,
+                "additionalOptions": {
+                    "search": "={{ $json.sessionId }}"
+                }
+            },
+            "type": "n8n-nodes-base.baserow",
+            "typeVersion": 1,
+            "position": [
+                -20,
+                0
+            ],
+            "id": "5b4225e8-b48a-4d39-acb0-dc1de470fafc",
+            "name": "Baserow",
+            "alwaysOutputData": true,
+            "credentials": {
+                "baserowApi": {
+                    "id": "T8h1f6SleZ9YkNZN",
+                    "name": "Baserow account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "amount": 2
+            },
+            "type": "n8n-nodes-base.wait",
+            "typeVersion": 1.1,
+            "position": [
+                660,
+                220
+            ],
+            "id": "95437b06-71a1-45a3-8976-3ef02ac4711d",
+            "name": "Wait",
+            "webhookId": "656eb620-10a2-42b7-b3ff-e0c3d8d3b8db"
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "cfaf42d1-cc18-473f-a4df-1b33a704dd0a",
+                            "name": "chatInput",
+                            "value": "={{ $('When chat message received').item.json.chatInput }}",
+                            "type": "string"
+                        },
+                        {
+                            "id": "e6080bd9-13a2-4146-a019-6dabc4a464d8",
+                            "name": "sessionid",
+                            "value": "={{ $('When chat message received').item.json.sessionId }}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                500,
+                -180
+            ],
+            "id": "2d163f39-8f9c-48f2-8497-3fd699881966",
+            "name": "ChatInput / ChatID"
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Chame essa função para armazenar o nome do lead no CRM",
+                "operation": "update",
+                "databaseId": 176547,
+                "tableId": 433438,
+                "rowId": "={{ $('Baserow').item.json.id }}",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": 3351651,
+                            "fieldValue": "={{ $fromAI('placeholder_name') }}"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.baserowTool",
+            "typeVersion": 1,
+            "position": [
+                660,
+                40
+            ],
+            "id": "e3e15c3b-ab5a-4f94-8004-94333d6975d9",
+            "name": "Armazena Nome",
+            "credentials": {
+                "baserowApi": {
+                    "id": "T8h1f6SleZ9YkNZN",
+                    "name": "Baserow account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Chame essa função para armazenar o email do lead no CRM",
+                "operation": "update",
+                "databaseId": 176547,
+                "tableId": 433438,
+                "rowId": "={{ $('Baserow').item.json.id }}",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": 3351660,
+                            "fieldValue": "={{ $fromAI('placeholder_email') }}"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.baserowTool",
+            "typeVersion": 1,
+            "position": [
+                800,
+                40
+            ],
+            "id": "55e3b30f-96fd-45be-b105-2db8e4e525e4",
+            "name": "Armazena email",
+            "credentials": {
+                "baserowApi": {
+                    "id": "T8h1f6SleZ9YkNZN",
+                    "name": "Baserow account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "a0e9f97e-754f-4075-980e-85cbe7888b7e",
+                            "leftValue": "={{ $json.id }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "number",
+                                "operation": "exists",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [
+                200,
+                0
+            ],
+            "id": "824ba216-1951-4786-83cf-f750b31256d9",
+            "name": "Verifica cadastro"
+        },
+        {
+            "parameters": {
+                "operation": "create",
+                "databaseId": 176547,
+                "tableId": 433438,
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": 3351652,
+                            "fieldValue": "={{ $('When chat message received').item.json.sessionId }}"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.baserow",
+            "typeVersion": 1,
+            "position": [
+                440,
+                180
+            ],
+            "id": "0acd36b3-e556-48fa-952d-8ec66f6d9f7a",
+            "name": "Cria cadastro",
+            "alwaysOutputData": true,
+            "credentials": {
+                "baserowApi": {
+                    "id": "T8h1f6SleZ9YkNZN",
+                    "name": "Baserow account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "assistant",
+                "assistantId": {
+                    "__rl": true,
+                    "value": "asst_SsWCHGpBn6x1qETinQIBNGOM",
+                    "mode": "list",
+                    "cachedResultName": "RH Nutri"
+                },
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.openAi",
+            "typeVersion": 1.8,
+            "position": [
+                740,
+                -180
+            ],
+            "id": "d0201914-2c9a-425f-9191-1f36f211b365",
+            "name": "Agente DE CRM",
+            "credentials": {
+                "openAiApi": {
+                    "id": "9dJRyMU5Wh8vTOvU",
+                    "name": "BEHAMP"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "sessionIdType": "customKey",
+                "sessionKey": "={{ $('ChatInput / ChatID').item.json.sessionid }}"
+            },
+            "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+            "typeVersion": 1.3,
+            "position": [
+                1040,
+                40
+            ],
+            "id": "78f9846b-03de-47de-afdb-a5867712f7b9",
+            "name": "Memória da IA"
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Chame essa função para armazenar onde o lead conheceu a empresa no CRM",
+                "operation": "update",
+                "databaseId": 176547,
+                "tableId": 433438,
+                "rowId": "={{ $('Baserow').item.json.id }}",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": 3351663,
+                            "fieldValue": "={{ $fromAI('placeholder_canaldeconhecimento') }}"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.baserowTool",
+            "typeVersion": 1,
+            "position": [
+                940,
+                160
+            ],
+            "id": "61f556c1-50d6-40cc-8e3d-50ed78d806de",
+            "name": "Canal de conhecimento",
+            "credentials": {
+                "baserowApi": {
+                    "id": "T8h1f6SleZ9YkNZN",
+                    "name": "Baserow account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Chame essa função para armazenar se o lead esta trabalhando ou nao CRM\npreencha com true ou false\ntrue para trabalha\nfalse para nao trabalha",
+                "operation": "update",
+                "databaseId": 176547,
+                "tableId": 433438,
+                "rowId": "={{ $('Baserow').item.json.id }}",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": 3351653,
+                            "fieldValue": "={{ $fromAI('placeholder_trueoufalse') }}"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.baserowTool",
+            "typeVersion": 1,
+            "position": [
+                1120,
+                240
+            ],
+            "id": "1167e03f-a0f2-4f3c-bc8c-0fa2a8a277b8",
+            "name": "Se trabalha ou nao",
+            "credentials": {
+                "baserowApi": {
+                    "id": "T8h1f6SleZ9YkNZN",
+                    "name": "Baserow account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Chame essa função para armazenar qual vaga o lead esta interessado no CRM",
+                "operation": "update",
+                "databaseId": 176547,
+                "tableId": 433438,
+                "rowId": "={{ $('Baserow').item.json.id }}",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": 3351665,
+                            "fieldValue": "={{ $fromAI('placeholder_vagadeinteresse') }}"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.baserowTool",
+            "typeVersion": 1,
+            "position": [
+                1320,
+                60
+            ],
+            "id": "8c6866bf-fc06-4079-9100-4f7703ea14db",
+            "name": "Qual vaga esta buscando",
+            "credentials": {
+                "baserowApi": {
+                    "id": "T8h1f6SleZ9YkNZN",
+                    "name": "Baserow account"
+                }
+            }
+        }
+    ],
+    "pinData": {},
+    "connections": {
+        "When chat message received": {
+            "main": [
+                [
+                    {
+                        "node": "Baserow",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Baserow": {
+            "main": [
+                [
+                    {
+                        "node": "Verifica cadastro",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Wait": {
+            "main": [
+                [
+                    {
+                        "node": "Baserow",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "ChatInput / ChatID": {
+            "main": [
+                [
+                    {
+                        "node": "Agente DE CRM",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Armazena Nome": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Agente DE CRM",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Armazena email": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Agente DE CRM",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Verifica cadastro": {
+            "main": [
+                [
+                    {
+                        "node": "ChatInput / ChatID",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Cria cadastro",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Cria cadastro": {
+            "main": [
+                [
+                    {
+                        "node": "Wait",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Memória da IA": {
+            "ai_memory": [
+                [
+                    {
+                        "node": "Agente DE CRM",
+                        "type": "ai_memory",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Canal de conhecimento": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Agente DE CRM",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Se trabalha ou nao": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Agente DE CRM",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Qual vaga esta buscando": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "Agente DE CRM",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": true,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "versionId": "ba7d4c4d-c86d-4cc3-9022-ec4dc2696a65",
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "33738330930e3881dd5571eca013f36ddf8aab20e4ea5c1f2ebaf4a2b4668ac6"
+    },
+    "id": "oo1730RtHMtpfu9P",
+    "tags": [
+        {
+            "createdAt": "2024-10-15T22:06:57.752Z",
+            "updatedAt": "2024-10-15T22:06:57.752Z",
+            "id": "cyONXIqo81pbOIyM",
+            "name": "Aula youtube"
+        }
+    ]
+}

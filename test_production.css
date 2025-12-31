@@ -1,0 +1,503 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+    /* --- TEMA CLARO (Padrão) --- */
+    --bg-gradient: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdfa 100%);
+    --sidebar-bg: rgba(255, 255, 255, 0.75);
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --border-color: #e5e7eb;
+    --hover-bg: #ecfdf5;
+    --shadow-color: rgba(0, 0, 0, 0.05);
+    --primary-color: #10b981;
+    --header-height: 60px;
+    --sidebar-width: 260px;
+}
+
+[data-theme="dark"] {
+    /* --- TEMA ESCURO (Dark Mode) --- */
+    --bg-gradient: linear-gradient(135deg, #111827 0%, #1f2937 50%, #111827 100%);
+    --sidebar-bg: rgba(17, 24, 39, 0.85);
+    /* Vidro escuro */
+    --card-bg: rgba(31, 41, 55, 0.9);
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --border-color: #374151;
+    --hover-bg: #374151;
+    --shadow-color: rgba(0, 0, 0, 0.4);
+    --bg-card: rgba(31, 41, 55, 0.7);
+    --bg-paper: rgba(17, 24, 39, 0.9);
+}
+
+:root {
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 1.5rem;
+    --spacing-lg: 2rem;
+    --spacing-xl: 3rem;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+}
+
+/* Responsive Utilities */
+.responsive-container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.p-resp {
+    padding: var(--spacing-sm) !important;
+}
+
+@media (min-width: 768px) {
+    .p-resp {
+        padding: var(--spacing-md) !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    .p-resp {
+        padding: var(--spacing-lg) !important;
+    }
+}
+
+.responsive-grid {
+    display: grid;
+    gap: var(--spacing-sm);
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+    .responsive-grid.grid-cols-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .responsive-grid.grid-cols-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .responsive-grid.grid-cols-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    color: var(--text-primary);
+    background: var(--bg-gradient);
+    background-attachment: fixed;
+    transition: background 0.5s ease, color 0.3s ease;
+    overflow-x: hidden;
+    margin: 0;
+    min-height: 100vh;
+}
+
+/* Scrollbar Moderna */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: rgba(16, 185, 129, 0.3);
+    border-radius: 10px;
+}
+
+/* Sidebar Glassmorphism */
+#sidebar-wrapper {
+    min-height: 100vh;
+    width: var(--sidebar-width);
+    position: fixed;
+    z-index: 1000;
+    background-color: var(--sidebar-bg);
+    backdrop-filter: blur(12px);
+    border-right: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    margin-left: calc(-1 * var(--sidebar-width));
+}
+
+#sidebar-wrapper .sidebar-heading {
+    padding: 1.5rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    font-weight: bold;
+    font-size: 1.25rem;
+}
+
+/* Itens do Menu */
+#sidebar-wrapper .list-group-item {
+    color: var(--text-secondary);
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 0 25px 25px 0;
+    margin-right: 10px;
+    margin-bottom: 4px;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+#sidebar-wrapper .list-group-item:hover {
+    background-color: var(--hover-bg);
+    color: var(--text-primary);
+    padding-left: 1.8rem;
+}
+
+#sidebar-wrapper .list-group-item.active {
+    background-color: rgba(16, 185, 129, 0.15);
+    /* Verde Transparente */
+    color: #10b981;
+    /* Verde Principal */
+    font-weight: 600;
+}
+
+/* Page Content Wrapper */
+#page-content-wrapper {
+    min-width: 100vw;
+    padding-left: 0;
+    transition: all 0.3s ease;
+}
+
+/* Toggled State */
+body.sb-sidenav-toggled #sidebar-wrapper {
+    margin-left: 0;
+}
+
+@media (min-width: 768px) {
+    #sidebar-wrapper {
+        margin-left: 0;
+    }
+
+    #page-content-wrapper {
+        padding-left: var(--sidebar-width);
+    }
+
+    body.sb-sidenav-toggled #sidebar-wrapper {
+        margin-left: calc(-1 * var(--sidebar-width));
+    }
+
+    body.sb-sidenav-toggled #page-content-wrapper {
+        padding-left: 0;
+    }
+}
+
+/* Navbar Customization */
+.navbar-custom {
+    background-color: var(--card-bg);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-color);
+    height: var(--header-height);
+    transition: all 0.3s ease;
+}
+
+/* Cards e Paineis */
+.card,
+.modal-content,
+.glass-panel {
+    background-color: var(--card-bg) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary);
+    box-shadow: 0 4px 20px var(--shadow-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 8px 30px var(--shadow-color);
+}
+
+.responsive-container {
+    width: 100%;
+    padding-right: var(--spacing-md);
+    padding-left: var(--spacing-md);
+    margin-right: auto;
+    margin-left: auto;
+}
+
+@media (min-width: 576px) {
+    .responsive-container {
+        max-width: 540px;
+    }
+}
+
+@media (min-width: 768px) {
+    .responsive-container {
+        max-width: 720px;
+    }
+}
+
+@media (min-width: 992px) {
+    .responsive-container {
+        max-width: 960px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .responsive-container {
+        max-width: 1140px;
+    }
+}
+
+@media (min-width: 1400px) {
+    .responsive-container {
+        max-width: 1320px;
+    }
+}
+
+/* Grid System Improvement */
+.responsive-grid {
+    display: grid;
+    gap: var(--spacing-md);
+}
+
+@media (min-width: 768px) {
+    .grid-cols-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid-cols-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1200px) {
+    .grid-cols-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Margin and Padding Utilities */
+.p-resp {
+    padding: var(--spacing-sm);
+}
+
+@media (min-width: 768px) {
+    .p-resp {
+        padding: var(--spacing-md);
+    }
+}
+
+@media (min-width: 1200px) {
+    .p-resp {
+        padding: var(--spacing-lg);
+    }
+}
+
+.m-resp {
+    margin: var(--spacing-sm);
+}
+
+@media (min-width: 768px) {
+    .m-resp {
+        margin: var(--spacing-md);
+    }
+}
+
+@media (min-width: 1200px) {
+    .m-resp {
+        margin: var(--spacing-lg);
+    }
+}
+
+.table {
+    color: var(--text-primary);
+}
+
+.text-muted {
+    color: var(--text-secondary) !important;
+}
+
+/* Ícones Específicos coloridos */
+.icon-whatsapp {
+    color: #10b981;
+}
+
+.icon-dash {
+    color: #6366f1;
+}
+
+.icon-kanban {
+    color: #f59e0b;
+}
+
+.icon-chat {
+    color: #ec4899;
+}
+
+.icon-settings {
+    color: #64748b;
+}
+
+.icon-paper-plane {
+    color: #3b82f6;
+}
+
+/* =========================================
+   ESTILOS DO CHAT INTERNO
+   ========================================= */
+.chat-layout {
+    height: calc(100vh - 120px);
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    display: flex;
+}
+
+.chat-sidebar {
+    width: 320px;
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.chat-list {
+    overflow-y: auto;
+    flex: 1;
+}
+
+.chat-item {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.chat-item:hover {
+    background-color: var(--hover-bg);
+}
+
+.chat-item.active {
+    background-color: rgba(16, 185, 129, 0.1);
+    border-left: 4px solid var(--primary-color);
+}
+
+.chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+    background-repeat: repeat;
+    background-blend-mode: overlay;
+    background-color: var(--card-bg);
+}
+
+[data-theme="dark"] .chat-main {
+    background-blend-mode: soft-light;
+    background-color: #0b141a;
+}
+
+.messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.message-bubble {
+    max-width: 70%;
+    padding: 10px 15px;
+    border-radius: 10px;
+    position: relative;
+    font-size: 0.95rem;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.message-received {
+    align-self: flex-start;
+    background-color: #ffffff;
+    border-radius: 0 10px 10px 10px;
+    color: #1f2937;
+}
+
+[data-theme="dark"] .message-received {
+    background-color: #202c33;
+    color: #e9edef;
+}
+
+.message-sent {
+    align-self: flex-end;
+    background-color: #dcf8c6;
+    border-radius: 10px 0 10px 10px;
+    color: #1f2937;
+}
+
+[data-theme="dark"] .message-sent {
+    background-color: #005c4b;
+    color: #e9edef;
+}
+
+.message-time {
+    font-size: 0.7rem;
+    color: #999;
+    display: block;
+    text-align: right;
+    margin-top: 4px;
+}
+
+/* Glass Helper Classes */
+.glass-box {
+    background-color: var(--card-bg);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-color);
+}
+
+.bg-element {
+    background-color: var(--hover-bg);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .alert-success {
+    background-color: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #34d399;
+}
+
+[data-theme="dark"] .alert-danger {
+    background-color: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+
+[data-theme="dark"] .alert-info {
+    background-color: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #60a5fa;
+}
+
+[data-theme="dark"] .alert-warning {
+    background-color: rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: #fbbf24;
+}
+
+/* Quick Connection Cards Hover Effects */
+.glass-box[onclick]:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+    border-color: currentColor !important;
+}
+
+.glass-box[onclick]:hover .btn {
+    transform: scale(1.02);
+}
+
+.glass-box[onclick]:active {
+    transform: translateY(-2px);
+}

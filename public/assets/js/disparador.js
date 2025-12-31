@@ -592,6 +592,185 @@ async function openGroupSelector() {
     }
 }
 
+// ============================================
+// FILE UPLOAD HANDLERS
+// ============================================
+
+// Include SheetJS via CDN dynamically if not present
+if (!document.querySelector('script[src*="xlsx"]')) {
+    const script = document.createElement('script');
+    script.src = "https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js";
+    document.head.appendChild(script);
+}
+
+function handleFileUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const fileType = file.name.split('.').pop().toLowerCase();
+
+    if (fileType === 'xlsx' || fileType === 'xls' || fileType === 'csv') {
+        readSpreadsheet(file, 'target-list');
+    } else if (fileType === 'txt') {
+        readTextFile(file, 'target-list');
+    } else {
+        alert('Formato não suportado. Use .txt, .csv, .xls ou .xlsx');
+    }
+    // Reset input
+    input.value = '';
+}
+
+function handleIgFileUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const fileType = file.name.split('.').pop().toLowerCase();
+
+    if (fileType === 'xlsx' || fileType === 'xls' || fileType === 'csv') {
+        readSpreadsheet(file, 'ig-input-list');
+    } else if (fileType === 'txt') {
+        readTextFile(file, 'ig-input-list');
+    } else {
+        alert('Formato não suportado. Use .txt, .csv, .xls ou .xlsx');
+    }
+    // Reset input
+    input.value = '';
+}
+
+function readTextFile(file, targetElementId) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const text = e.target.result;
+        appendToList(targetElementId, text);
+    };
+    reader.readAsText(file);
+}
+
+function readSpreadsheet(file, targetElementId) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+
+        // Assume first sheet
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+
+        // Convert to JSON with headers to detect columns
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" }); // defval ensures empty cells don't break row structure
+
+        let extractedValues = [];
+        const isIgImport = targetElementId === 'ig-input-list';
+        const isDisparador = targetElementId === 'target-list';
+
+        if (jsonData.length > 0) {
+            const firstRow = jsonData[0];
+            const keys = Object.keys(firstRow);
+
+            if (isIgImport) {
+                // --- OSINT IMPORT LOGIC (IDs, Usernames) ---
+                // Priorities: "Instagram ID", "pk", "id", "Username", "user"
+                const idKey = keys.find(k => ['instagram id', 'pk', 'id', 'user id', 'user_id', 'pk_id'].includes(k.toLowerCase().trim()));
+                const userKey = keys.find(k => ['username', 'usuario', 'user', 'login'].includes(k.toLowerCase().trim()));
+
+                if (idKey || userKey) {
+                    jsonData.forEach(row => {
+                        let val = row[idKey];
+                        if (!val && userKey) val = row[userKey];
+                        if (val) extractedValues.push(val.toString().trim());
+                    });
+                    log(`Importando OSINT: Coluna detectada [${idKey || userKey}]`, 'info');
+                } else {
+                    // Fallback: First column
+                    jsonData.forEach(row => {
+                        const vals = Object.values(row);
+                        if (vals.length > 0) extractedValues.push(vals[0].toString().trim());
+                    });
+                }
+            } else if (isDisparador) {
+                // --- DISPARADOR IMPORT LOGIC (Phones, Whatsapp) ---
+                // Priorities: "Phone", "Whatsapp", "Mobile", "Tel", "Celular"
+                const phoneKey = keys.find(k =>
+                    ['phone', 'phone number', 'whatsapp', 'mobile', 'celular', 'telefone', 'tel', 'contato', 'numero'].includes(k.toLowerCase().trim())
+                );
+
+                if (phoneKey) {
+                    jsonData.forEach(row => {
+                        let val = row[phoneKey];
+                        if (val) {
+                            // Clean number: remove non-digits
+                            const cleaned = val.toString().replace(/\D/g, '');
+                            if (cleaned.length >= 8) extractedValues.push(cleaned);
+                        }
+                    });
+                    log(`Importando Disparador: Coluna detectada [${phoneKey}]`, 'info');
+                } else {
+                    // Fallback: search for any column that looks like phone numbers
+                    // or just take the first one and clean it
+                    jsonData.forEach(row => {
+                        const vals = Object.values(row);
+                        // Try to find a value that looks like a phone in the row
+                        const phoneVal = vals.find(v => v && v.toString().replace(/\D/g, '').length >= 10);
+                        if (phoneVal) {
+                            extractedValues.push(phoneVal.toString().replace(/\D/g, ''));
+                        } else if (vals.length > 0) {
+                            // Last resort: first column, clean it
+                            const v = vals[0];
+                            if (v) extractedValues.push(v.toString().replace(/\D/g, ''));
+                        }
+                    });
+                }
+            }
+        }
+
+        // Fallback for empty JSON or weird formats (plain array)
+        if (extractedValues.length === 0) {
+            const jsonArray = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            jsonArray.forEach(row => {
+                row.forEach(cell => {
+                    if (cell) {
+                        const val = cell.toString().trim();
+                        // Minimal cleaning based on target
+                        if (isDisparador) {
+                            const nums = val.replace(/\D/g, '');
+                            if (nums.length > 5) extractedValues.push(nums);
+                        } else {
+                            if (!val.includes('http')) extractedValues.push(val);
+                        }
+                    }
+                });
+            });
+        }
+
+        // Final cleanup & dedup
+        extractedValues = [...new Set(extractedValues)]; // Remove duplicates
+        extractedValues = extractedValues.filter(v => v.length > 0);
+
+        if (extractedValues.length > 0) {
+            appendToList(targetElementId, extractedValues.join('\n'));
+        } else {
+            alert('Nenhum dado válido encontrado para importação.\nVerifique se a planilha tem cabeçalhos como "Phone", "ID" ou "Username".');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function appendToList(elementId, newText) {
+    const textarea = document.getElementById(elementId);
+    const existing = textarea.value.trim();
+    const separator = existing.length > 0 ? '\n' : '';
+    textarea.value = existing + separator + newText.trim();
+
+    // Trigger update events
+    if (elementId === 'target-list') updateCount();
+    if (elementId === 'ig-input-list') {
+        const count = textarea.value.split('\n').filter(l => l.trim()).length;
+        document.getElementById('ig-count').innerText = `${count} itens`;
+    }
+
+    log(`Importação concluída para ${elementId}.`, 'success');
+}
+
 function addSelectedGroups() {
     const container = document.getElementById('group-list-container');
     const checkboxes = container.querySelectorAll('input[type="checkbox"]:checked');

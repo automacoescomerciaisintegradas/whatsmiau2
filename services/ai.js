@@ -33,7 +33,68 @@ function cleanTextForAudio(text) {
         .trim();
 }
 
+// ... existing imports ...
+// ... existing code ...
+
+export async function generateChatResponse(userMessage, systemPrompt) {
+    // ... existing implementation ...
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) throw new Error("GEMINI_API_KEY não configurada no .env");
+
+    const genAI = new GoogleGenerativeAI(key);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+    const fullPrompt = `${systemPrompt}\n\nMensagem do Usuário: ${userMessage}\nResposta:`;
+
+    try {
+        const result = await model.generateContent(fullPrompt);
+        const response = await result.response;
+        return response.text();
+    } catch (err) {
+        console.error("Erro na IA:", err);
+        return "Desculpe, não consegui processar sua mensagem no momento.";
+    }
+}
+
+export async function analyzeLeadMessage(userMessage, history = "") {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) return null; // Fail silently if no key
+
+    const genAI = new GoogleGenerativeAI(key);
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+    const prompt = `
+    Analise a mensagem do cliente abaixo no contexto de um CRM de vendas.
+    Histórico recente: ${history}
+    Mensagem Atual: "${userMessage}"
+
+    Extraia as seguintes informações em formato JSON estrito (sem markdown):
+    {
+        "sentiment": "positive" | "neutral" | "negative",
+        "intention": "buy" | "support" | "info" | "complaint" | "other",
+        "urgency": "low" | "medium" | "high",
+        "suggestedStatus": "NOVO" | "ABERTO" | "PENDENTE" | "FECHADO" | null,
+        "suggestedPriority": "BAIXA" | "MÉDIA" | "ALTA" | null,
+        "extractedName": "Nome se encontrado ou null",
+        "summary": "Resumo de 1 frase"
+    }
+    `;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        // Clean markdown if present
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(jsonStr);
+    } catch (err) {
+        console.error("Erro na análise de lead:", err.message);
+        return null; // Return null on failure
+    }
+}
+
 export async function generateSummaryWithGemini(context) {
+    // ... existing code ...
+    // ... existing code ...
     const key = process.env.GEMINI_API_KEY;
     if (!key) throw new Error("GEMINI_API_KEY não configurada no .env");
 

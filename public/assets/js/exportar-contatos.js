@@ -13,7 +13,8 @@ const state = {
         groups: 0,
         channels: 0,
         contacts: 0
-    }
+    },
+    currentInstance: null
 };
 
 // Initialize
@@ -22,7 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setupSidebar();
 
     // Initial Load
-    carregarEstatisticas();
+    loadInstances().then(() => {
+        carregarEstatisticas();
+    });
 
     console.log('[Export] Sistema pronto');
 });
@@ -54,6 +57,83 @@ function setupSidebar() {
     }
 }
 
+// --- Instance Management ---
+async function loadInstances() {
+    try {
+        const response = await fetch('/api/instance/fetchInstances');
+        const instances = await response.json();
+
+        const listEl = document.getElementById('instance-list');
+        listEl.innerHTML = '<li><h6 class="dropdown-header">Selecione a Instância</h6></li><li><hr class="dropdown-divider"></li>';
+
+        if (Array.isArray(instances) && instances.length > 0) {
+            const savedInstance = localStorage.getItem('whatsmiau_instance');
+
+            // Helper to get name from item
+            const getName = (item) => (item.instance && item.instance.instanceName) || item.instanceName || item.name;
+            const getStatus = (item) => (item.instance && item.instance.status) || item.status;
+            const getOwner = (item) => (item.instance && item.instance.owner) || item.owner;
+
+            // Determine active instance
+            let activeInstance = savedInstance || getName(instances[0]);
+
+            // Verify if saved instance still exists
+            if (!instances.some(i => getName(i) === activeInstance)) {
+                activeInstance = getName(instances[0]);
+            }
+
+            state.currentInstance = activeInstance;
+            updateInstanceUI(activeInstance, instances);
+
+            instances.forEach(item => {
+                const name = getName(item);
+                const status = getStatus(item);
+                const owner = getOwner(item);
+
+                const statusColor = status === 'connected' ? 'text-success' : 'text-danger';
+                const icon = status === 'connected' ? 'fa-check-circle' : 'fa-times-circle';
+
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <a class="dropdown-item d-flex justify-content-between align-items-center ${name === activeInstance ? 'active' : ''}" 
+                       href="#" onclick="selectInstance('${name}')">
+                        <span>${name} <small class="text-muted ms-1">(${owner || '---'})</small></span>
+                        <i class="fas ${icon} ${statusColor}"></i>
+                    </a>
+                `;
+                listEl.appendChild(li);
+            });
+        } else {
+            listEl.innerHTML += '<li><a class="dropdown-item disabled" href="#">Nenhuma instância</a></li>';
+            document.getElementById('current-instance-name').textContent = "Sem Instâncias";
+        }
+    } catch (error) {
+        console.error("Erro ao carregar instâncias:", error);
+        document.getElementById('current-instance-name').textContent = "Erro Conexão";
+    }
+}
+
+function selectInstance(name) {
+    state.currentInstance = name;
+    localStorage.setItem('whatsmiau_instance', name);
+    location.reload();
+}
+
+window.selectInstance = selectInstance; // Global for onclick
+
+function updateInstanceUI(name, instances) {
+    const getName = (item) => (item.instance && item.instance.instanceName) || item.instanceName || item.name;
+    const getStatus = (item) => (item.instance && item.instance.status) || item.status;
+
+    const item = instances.find(i => getName(i) === name);
+    const status = item ? getStatus(item) : 'unknown';
+    const statusColor = status === 'connected' ? 'text-success' : 'text-danger';
+
+    document.getElementById('current-instance-name').innerHTML = `
+        ${name} <i class="fas fa-circle ${statusColor} ms-2" style="font-size: 0.6rem;"></i>
+    `;
+}
+
 // Logic Functions
 async function carregarEstatisticas() {
     const statGroups = document.getElementById('stat-groups');
@@ -65,9 +145,13 @@ async function carregarEstatisticas() {
 
     try {
         // Fetch groups and newsletters concurrently
+        // Fetch groups and newsletters concurrently
+        const instanceQuery = state.currentInstance ? `&instance=${state.currentInstance}` : '';
+        const instanceQuery2 = state.currentInstance ? `?instance=${state.currentInstance}` : '';
+
         const [groupsResponse, channelsResponse] = await Promise.all([
-            fetch('/api/whatsmiau2/groups?getParticipants=false'),
-            fetch('/api/whatsmiau2/newsletters')
+            fetch(`/api/whatsmiau2/groups?getParticipants=false${instanceQuery}`),
+            fetch(`/api/whatsmiau2/newsletters${instanceQuery2}`)
         ]);
 
         const groupsData = await groupsResponse.json();
@@ -170,7 +254,8 @@ async function exportarContatos() {
 
                 try {
                     // Try to fetch participants detail
-                    const resp = await fetch(`/api/whatsmiau2/groups/${encodeURIComponent(item.jid)}`);
+                    const instanceQuery = state.currentInstance ? `?instance=${state.currentInstance}` : '';
+                    const resp = await fetch(`/api/whatsmiau2/groups/${encodeURIComponent(item.jid)}${instanceQuery}`);
                     const json = await resp.json();
 
                     if (json.success && json.data) {

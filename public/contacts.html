@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
@@ -27,23 +27,35 @@
                 </a>
 
                 <a href="/connections" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fas fa-wifi me-2"></i> Conexões
+                    <i class="fas fa-wifi me-2"></i> ConexÃµes
                 </a>
 
                 <a href="/disparador" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-paper-plane me-2"></i> Disparador
                 </a>
+
+                <a href="/exportar-contatos" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-file-export me-2"></i> Exportar Contatos
+                </a>
+
                 <a href="/resumo-grupos" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fas fa-chart-pie me-2"></i> Resumo Grupos
+                    <i class="fas fa-chart-bar me-2"></i> Resumo de Grupos
                 </a>
-                <a href="/internal-chat" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fas fa-comments me-2"></i> Chat Interno
+
+                <a href="/contacts" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-address-book me-2"></i> Contatos
                 </a>
+
+                <a href="/tickets" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-ticket-alt me-2"></i> Tickets
+                </a>
+
                 <a href="/kanban" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-columns me-2"></i> Kanban
                 </a>
-                <a href="/tickets" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fas fa-ticket-alt me-2"></i> Tickets
+
+                <a href="/internal-chat" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-comments me-2"></i> Chat Interno
                 </a>
 
                 <div class="border-top my-3"></div>
@@ -341,57 +353,34 @@
         function sanitizeName(name) {
             if (!name) return "Sem Nome";
             return name
+                .toString()
                 .trim()
-                .toLowerCase()
-                .replace(/["']/g, "")
+                .toLowerCase() // Start clean
+                .replace(/\s+/g, ' ') // Remove double spaces
+                .replace(/["']/g, "") // Remove quotes
                 .split(' ')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Title Case
                 .join(' ');
         }
 
         function sanitizePhone(phone) {
+            if (!phone) return "";
+            // Keep only numbers
             let cleaned = phone.toString().replace(/[^0-9]/g, "");
-            // Basic Brazilian Logic: If 10 or 11 digits and no country code, add 55
+
+            // Remove leading zero if exists (e.g., 0119999...)
+            if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
+
+            // Basic Brazilian Logic:
+            // If length is 10 (Landline w/ DDD) or 11 (Mobile w/ DDD) -> Add 55
+            // Ex: 11999998888 -> 5511999998888
             if ((cleaned.length === 10 || cleaned.length === 11) && !cleaned.startsWith('55')) {
                 cleaned = '55' + cleaned;
             }
+            // If length is 8 or 9 (Local number) -> Invalid without DDD, but we return as is or could ask for DDD
+            // For now, we assume valid BR numbers or International full numbers
+
             return cleaned;
-        }
-
-        async function createContact() {
-            const rawName = document.getElementById('new-contact-name').value;
-            const rawPhone = document.getElementById('new-contact-phone').value;
-            const tags = document.getElementById('new-contact-tags').value.split(',').map(t => t.trim()).filter(t => t);
-
-            const name = sanitizeName(rawName);
-            const phone = sanitizePhone(rawPhone);
-
-            if (!name || !phone || phone.length < 10) {
-                return alert("Nome e WhatsApp válidos são obrigatórios");
-            }
-
-            try {
-                await fetch('/api/contacts', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, phone, tags })
-                });
-                bootstrap.Modal.getInstance(document.getElementById('modalNewContact')).hide();
-                loadContacts();
-
-                // Clear fields
-                document.getElementById('new-contact-name').value = '';
-                document.getElementById('new-contact-phone').value = '';
-                document.getElementById('new-contact-tags').value = '';
-            } catch (err) {
-                alert("Erro ao criar contato");
-            }
-        }
-
-        async function deleteContact(id) {
-            if (!confirm("Excluir contato?")) return;
-            await fetch(`/api/contacts/${id}`, { method: 'DELETE' });
-            loadContacts();
         }
 
         // CSV Import Logic
@@ -400,16 +389,19 @@
             const file = fileInput.files[0];
 
             if (!file) {
-                console.log("No file selected, using recovery mode...");
+                // ... same fallback logic ...
                 const dummy = [
-                    { name: 'Importação Recuperada 1', phone: '5511911111111', tags: ['RECUPERADO'] },
-                    { name: 'Importação Recuperada 2', phone: '5511922222222', tags: ['RECUPERADO'] }
-                ];
+                    { name: 'Importação Recup 1', phone: '5511 importou', tags: ['TESTE'] },
+                    { name: 'Importação Recup 2', phone: '55 11 92222-2222', tags: ['TESTE'] }
+                ].map(c => ({
+                    name: sanitizeName(c.name),
+                    phone: sanitizePhone(c.phone),
+                    tags: c.tags
+                }));
                 processImport(dummy);
                 return;
             }
 
-            console.log("Processing file:", file.name);
             const reader = new FileReader();
             reader.onload = function (e) {
                 try {
@@ -417,24 +409,56 @@
                     const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
 
                     if (lines.length <= 1) {
-                        alert("O arquivo parece estar vazio ou tem apenas o cabeçalho.");
+                        alert("O arquivo parece vazio.");
                         return;
                     }
 
-                    // Detect separator (, or ;)
+                    // Detect separator
                     const header = lines[0];
                     const separator = header.includes(';') ? ';' : ',';
-                    console.log("Detected separator:", separator);
 
+                    // Process lines
                     const contacts = lines.slice(1).map((line, index) => {
-                        const cols = line.split(separator);
-                        const name = sanitizeName(cols[0]);
-                        const phone = sanitizePhone(cols[1]);
+                        // Regex to handle quoted values containing separator
+                        // This regex splits by separator but ignores if inside quotes
+                        // Fallback to simple split if complexity is too high for client JS
+                        let cols;
+                        if (line.includes('"')) {
+                            // Simple CSV parser for quoted fields
+                            const regex = new RegExp(`(?:^|${separator})(\"(?:[^\"]+|\"\")*\"|[^${separator}]*)`, 'g');
+                            cols = [];
+                            let match;
+                            while (match = regex.exec(line)) {
+                                let val = match[1];
+                                if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1); // Remove quotes
+                                if (match[0].startsWith(separator) && cols.length === 0 && match.index > 0) {
+                                    // Should not happen with this regex logic usually
+                                }
+                                cols.push(val);
+                            }
+                            // If regex fails to match columns correctly, fallback
+                            if (cols.length < 2) cols = line.split(separator);
+                        } else {
+                            cols = line.split(separator);
+                        }
 
-                        return { name, phone, tags: ['CSV'] };
-                    }).filter(c => c.name !== "Sem Nome" && c.phone.length >= 10);
+                        // Get Raw Data
+                        const rawName = cols[0] || "";
+                        const rawPhone = cols[1] || "";
 
-                    // De-duplicate in this batch
+                        // Sanitize
+                        const name = sanitizeName(rawName);
+                        const phone = sanitizePhone(rawPhone);
+
+                        return { name, phone, tags: ['CSV', 'IMPORTADO'] };
+                    }).filter(c => {
+                        // Validations
+                        const isNameValid = c.name.length > 1 && c.name !== "Sem Nome";
+                        const isPhoneValid = c.phone.length >= 10; // Min valid length for BR (DD+Num) + 55 = 12, but we accept 10+
+                        return isNameValid && isPhoneValid;
+                    });
+
+                    // Remove Duplicates (by Phone)
                     const uniqueContacts = [];
                     const seen = new Set();
                     contacts.forEach(c => {
@@ -444,17 +468,19 @@
                         }
                     });
 
-                    console.log("Unique contacts to import:", uniqueContacts.length);
+                    console.log(`[Import] Encontrados: ${contacts.length}, Únicos: ${uniqueContacts.length}`);
 
                     if (uniqueContacts.length === 0) {
-                        alert("Nenhum contato válido encontrado. Certifique-se que o formato é: Nome,Número");
+                        alert("Nenhum contato válido encontrado. Verifique o formato Nome,Numero.");
                         return;
                     }
 
-                    processImport(uniqueContacts);
+                    if (confirm(`Foram encontrados ${uniqueContacts.length} contatos válidos (já tratados). Deseja importar?`)) {
+                        processImport(uniqueContacts);
+                    }
                 } catch (err) {
-                    console.error("Erro ao ler CSV:", err);
-                    alert("Erro técnico ao processar o arquivo.");
+                    console.error("Erro CSV:", err);
+                    alert("Erro ao processar arquivo: " + err.message);
                 }
             };
             reader.readAsText(file);

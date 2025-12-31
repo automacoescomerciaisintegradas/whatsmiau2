@@ -1,0 +1,354 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Interno - WhatsMiau2</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/assets/css/style.css" rel="stylesheet">
+
+    <style>
+        .chat-container-main {
+            height: calc(100vh - var(--header-height) - 40px);
+            margin: 20px;
+        }
+
+        .avatar-chat {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-input-wrapper {
+            background: white;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        [data-theme="dark"] .chat-input-wrapper {
+            background: #1e293b;
+        }
+
+        .chat-input-wrapper input {
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1.25rem;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .chat-input-wrapper input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+            outline: none;
+        }
+
+        .btn-send {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            transition: all 0.2s;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-send:hover {
+            transform: scale(1.05);
+            background: var(--primary-hover);
+        }
+
+        .status-badge {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #10b981;
+            display: inline-block;
+            margin-right: 5px;
+            border: 2px solid white;
+        }
+    </style>
+</head>
+
+<body data-theme="light">
+
+    <div class="d-flex" id="wrapper">
+
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading text-center">
+                <i class="fas fa-robot"></i> WhatsMiau2
+            </div>
+            <div class="list-group list-group-flush mt-3">
+                <a href="/dashboard" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                </a>
+
+                <a href="/connections" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-wifi me-2"></i> ConexÃµes
+                </a>
+
+                <a href="/disparador" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-paper-plane me-2"></i> Disparador
+                </a>
+
+                <a href="/exportar-contatos" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-file-export me-2"></i> Exportar Contatos
+                </a>
+
+                <a href="/resumo-grupos" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-chart-bar me-2"></i> Resumo de Grupos
+                </a>
+
+                <a href="/contacts" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-address-book me-2"></i> Contatos
+                </a>
+
+                <a href="/tickets" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-ticket-alt me-2"></i> Tickets
+                </a>
+
+                <a href="/kanban" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-columns me-2"></i> Kanban
+                </a>
+
+                <a href="/internal-chat" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-comments me-2"></i> Chat Interno
+                </a>
+
+                <div class="border-top my-3"></div>
+
+                <a href="/settings" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-cog me-2"></i> Configurações
+                </a>
+
+                </div>
+
+                <a href="/logout" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
+                    <i class="fas fa-sign-out-alt me-2"></i> Sair
+                </a>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+
+            <nav class="navbar navbar-expand-lg navbar-custom px-4">
+                <div class="d-flex align-items-center w-100 justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <button class="btn btn-outline-secondary me-3" id="menu-toggle">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h5 class="mb-0 fw-bold">Chat de Atendimento</h5>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="text-end me-3 d-none d-sm-block">
+                            <div class="fw-bold small">Operador Master</div>
+                            <div class="text-success small"><i class="fas fa-circle fa-xs me-1"></i>online</div>
+                        </div>
+                        <img src="https://ui-avatars.com/api/?name=Admin&background=10b981&color=fff"
+                            class="rounded-circle" width="38">
+                    </div>
+                </div>
+            </nav>
+
+            <div class="chat-container-main">
+                <div class="chat-layout shadow-lg h-100">
+                    <!-- Chat Sidebar -->
+                    <div class="chat-sidebar">
+                        <div class="p-3 border-bottom">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i
+                                        class="fas fa-search text-muted"></i></span>
+                                <input type="text" class="form-control bg-light border-0 small"
+                                    placeholder="Buscar conversas...">
+                            </div>
+                        </div>
+
+                        <div class="chat-list" id="conversations-list">
+                            <div class="chat-item active">
+                                <img src="https://ui-avatars.com/api/?name=Joao+Silva&background=3b82f6&color=fff"
+                                    class="avatar-chat">
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0 text-truncate fw-bold">João Silva</h6>
+                                        <small class="text-muted">14:30</small>
+                                    </div>
+                                    <p class="text-muted mb-0 text-truncate small">Queria saber sobre o plano Premium...
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="chat-item">
+                                <img src="https://ui-avatars.com/api/?name=Maria+Loja&background=10b981&color=fff"
+                                    class="avatar-chat">
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0 text-truncate fw-bold">Maria Loja (Suporte)</h6>
+                                        <span class="badge bg-success rounded-pill ms-auto"
+                                            style="font-size: 0.6rem;">2</span>
+                                    </div>
+                                    <p class="text-muted mb-0 text-truncate small">Obrigado pelo atendimento!</p>
+                                </div>
+                            </div>
+
+                            <div class="chat-item">
+                                <img src="https://ui-avatars.com/api/?name=Carlos+Tech&background=6366f1&color=fff"
+                                    class="avatar-chat">
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0 text-truncate fw-bold">Carlos Tech</h6>
+                                        <small class="text-muted">Ontem</small>
+                                    </div>
+                                    <p class="text-muted mb-0 text-truncate small">A integração via webhook...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Main -->
+                    <div class="chat-main">
+                        <div
+                            class="p-3 border-bottom d-flex align-items-center justify-content-between bg-white bg-opacity-50">
+                            <div class="d-flex align-items-center">
+                                <img src="https://ui-avatars.com/api/?name=Joao+Silva&background=3b82f6&color=fff"
+                                    class="avatar-chat me-3">
+                                <div>
+                                    <h6 class="mb-0 fw-bold">João Silva</h6>
+                                    <small class="text-success fw-medium"><span class="status-badge"></span>Em
+                                        atendimento</small>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-light btn-sm rounded-pill px-3 shadow-sm border"><i
+                                        class="fas fa-check me-2 text-success"></i>Resolver</button>
+                                <button class="btn btn-light btn-sm rounded-circle border shadow-sm"
+                                    style="width:34px; height:34px;"><i class="fas fa-ellipsis-v"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="messages-area" id="msgArea">
+                            <div class="text-center my-3">
+                                <span
+                                    class="badge bg-light text-dark px-3 py-2 rounded-pill shadow-sm border small fw-normal">Conversa
+                                    iniciada às 14:15</span>
+                            </div>
+
+                            <div class="message-bubble message-received shadow-sm">
+                                Olá, boa tarde! Gostaria de saber mais sobre as automações do WhatsMiau.
+                                <div class="message-time">14:30</div>
+                            </div>
+
+                            <div class="message-bubble message-sent shadow-sm">
+                                Olá João! Claro, posso te ajudar com isso. Qual é a sua principal necessidade hoje?
+                                <div class="message-time">14:31 <i class="fas fa-check-double ms-1"></i></div>
+                            </div>
+
+                            <div class="message-bubble message-received shadow-sm">
+                                Eu precisava de um CRM integrado que movesse as mensagens para colunas automaticamente.
+                                <div class="message-time">14:32</div>
+                            </div>
+                        </div>
+
+                        <div class="chat-input-wrapper">
+                            <div class="input-group gap-3 align-items-center">
+                                <button class="btn p-0 text-muted d-none d-md-block"><i
+                                        class="far fa-smile fa-lg"></i></button>
+                                <button class="btn p-0 text-muted"><i class="fas fa-paperclip fa-lg"></i></button>
+                                <input type="text" class="form-control" placeholder="Escreva sua mensagem aqui..."
+                                    id="msgInput">
+                                <button class="btn-send" onclick="sendMessage()">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Theme Toggle
+        const toggleSwitch = document.querySelector('#darkModeSwitch');
+        const body = document.body;
+        const wrapper = document.getElementById("wrapper");
+
+        if (localStorage.getItem('theme') === 'dark') {
+            body.setAttribute('data-theme', 'dark');
+            toggleSwitch.checked = true;
+        }
+
+        function toggleTheme() {
+            const theme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            toggleSwitch.checked = (theme === 'dark');
+        }
+
+        document.getElementById("menu-toggle").onclick = () => wrapper.classList.toggle("sb-sidenav-toggled");
+
+        // Active Link
+        const currentPath = window.location.pathname;
+        document.querySelectorAll('.list-group-item').forEach(link => {
+            if (link.getAttribute('href') === currentPath) link.classList.add('active');
+        });
+
+        // Chat Logic
+        const msgArea = document.getElementById('msgArea');
+        const msgInput = document.getElementById('msgInput');
+
+        function sendMessage() {
+            const text = msgInput.value.trim();
+            if (!text) return;
+
+            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const msgHtml = `
+                <div class="message-bubble message-sent shadow-sm">
+                    ${text}
+                    <div class="message-time">${now} <i class="fas fa-check ms-1"></i></div>
+                </div>
+            `;
+
+            msgArea.insertAdjacentHTML('beforeend', msgHtml);
+            msgInput.value = '';
+            msgArea.scrollTop = msgArea.scrollHeight;
+
+            // Auto-reply mock
+            setTimeout(() => {
+                const replies = ["Entendido!", "Vou verificar para você.", "Só um momento, por favor.", "Opa! Já estamos processando."];
+                const reply = replies[Math.floor(Math.random() * replies.length)];
+                const replyHtml = `
+                    <div class="message-bubble message-received shadow-sm">
+                        ${reply}
+                        <div class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    </div>
+                `;
+                msgArea.insertAdjacentHTML('beforeend', replyHtml);
+                msgArea.scrollTop = msgArea.scrollHeight;
+            }, 1000);
+        }
+
+        msgInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // Auto scroll to bottom
+        msgArea.scrollTop = msgArea.scrollHeight;
+    </script>
+</body>
+
+</html>
