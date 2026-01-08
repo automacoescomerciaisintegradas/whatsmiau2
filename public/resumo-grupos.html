@@ -427,7 +427,7 @@
                                     </div>
                                     <div class="card-body p-0">
                                         <div class="bg-light p-4"
-                                            style="background-image: url('/assets/img/whatsapp-bg.png');">
+                                            style="background: #e5ddd5; background-image: linear-gradient(rgba(229, 221, 213, 0.9), rgba(229, 221, 213, 0.9)), radial-gradient(#dcf8c6 10%, transparent 10%); background-size: 20px 20px;">
                                             <div class="bg-white rounded p-3 shadow-sm"
                                                 style="max-width: 100%; white-space: pre-wrap; font-family: sans-serif;"
                                                 id="preview-texto" contenteditable="true">
@@ -730,6 +730,9 @@ _Resumo gerado automaticamente_ 🤖</textarea>
                     renderizarListaGrupos();
                     mostrarStatus('config', 'success', `✅ ${data.data.length} grupos carregados.`);
                 } else {
+                    if (response.status === 400) {
+                        throw new Error("Instância desconectada. Por favor, conecte o WhatsApp primeiro.");
+                    }
                     throw new Error(data.error || 'Erro ao carregar grupos');
                 }
             } catch (error) {
@@ -816,6 +819,9 @@ _Resumo gerado automaticamente_ 🤖</textarea>
                     renderizarListaCanais();
                     mostrarStatus('config', 'success', `✅ ${data.data.length} canais carregados.`);
                 } else {
+                    if (response.status === 400) {
+                        throw new Error("Instância desconectada. Por favor, conecte o WhatsApp primeiro.");
+                    }
                     throw new Error(data.error || 'Erro ao carregar canais');
                 }
             } catch (error) {

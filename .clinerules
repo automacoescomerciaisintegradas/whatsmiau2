@@ -1,0 +1,120 @@
+# Regras de Comportamento da IA - WhatsmiAU2
+
+## Comunicação e Estilo
+
+### Idioma
+- Sempre responda em Português Brasileiro (pt-BR)
+- Use linguagem profissional, mas acessível
+- Evite jargões técnicos desnecessários, a menos que solicitado
+
+### Formatação de Respostas
+- Use Markdown para formatar respostas
+- Destaque código com blocos de código apropriados
+- Use listas e headers para organizar informações
+- Forneça exemplos práticos quando relevante
+
+### Tom e Abordagem
+- Seja proativo, mas não invasivo
+- Explique o raciocínio por trás das decisões técnicas
+- Admita erros e corrija quando necessário
+- Peça esclarecimentos quando houver ambiguidade
+
+## Desenvolvimento de Código
+
+### Padrões de Código
+- Siga as convenções do TypeScript/JavaScript moderno
+- Use ESNext features quando apropriado
+- Prefira código limpo e legível sobre "clever code"
+- Adicione comentários apenas quando necessário para clareza
+
+### Estrutura de Projeto
+- Mantenha a organização de pastas existente
+- Siga o padrão de arquitetura já estabelecido no projeto
+- Não refatore código sem solicitação explícita
+- Preserve a compatibilidade com código existente
+
+### Boas Práticas
+- Sempre valide inputs do usuário
+- Implemente tratamento de erros adequado
+- Use TypeScript types/interfaces apropriadamente
+- Escreva código testável e modular
+
+## Segurança
+
+### Dados Sensíveis
+- Nunca exponha API keys ou credenciais no código
+- Use variáveis de ambiente para dados sensíveis
+- Valide e sanitize todos os inputs externos
+- Implemente autenticação/autorização quando necessário
+
+### WhatsApp/Integração
+- Respeite limites de rate da API do WhatsApp
+- Implemente retry logic para falhas de rede
+- Valide números de telefone antes de enviar mensagens
+- Trate erros de API gracefully
+
+## Workflow e Processo
+
+### Antes de Implementar
+- Entenda completamente o requisito
+- Verifique se há código existente que pode ser reutilizado
+- Considere impactos em outras partes do sistema
+- Planeje a implementação antes de começar
+
+### Durante Implementação
+- Faça mudanças incrementais
+- Teste cada mudança antes de prosseguir
+- Mantenha commits organizados e descritivos
+- Documente decisões importantes
+
+### Após Implementação
+- Verifique se o código compila sem erros
+- Teste a funcionalidade implementada
+- Atualize documentação se necessário
+- Sugira próximos passos ou melhorias
+
+## Específico do Projeto WhatsmiAU2
+
+### Automação Comercial
+- Priorize confiabilidade sobre features complexas
+- Implemente logs detalhados para debugging
+- Considere casos de uso de negócios reais
+- Mantenha mensagens profissionais e personalizáveis
+
+### Integração WhatsApp
+- Use a biblioteca oficial do WhatsApp Web.js
+- Implemente reconexão automática
+- Gerencie sessões adequadamente
+- Trate diferentes tipos de mensagens (texto, mídia, etc.)
+
+### Performance
+- Otimize para múltiplas conversas simultâneas
+- Implemente cache quando apropriado
+- Monitore uso de memória
+- Evite operações bloqueantes
+
+## Restrições e Limitações
+
+### O que NÃO fazer
+- Não fazer operações Git sem solicitação explícita
+- Não deletar código sem confirmar com o usuário
+- Não fazer mudanças breaking sem avisar
+- Não assumir requisitos - sempre pergunte se houver dúvida
+
+### Quando Pedir Ajuda
+- Se a solicitação for ambígua ou incompleta
+- Se houver múltiplas formas de implementar algo
+- Se a mudança pode ter impactos significativos
+- Se faltarem informações de configuração/credenciais
+
+## Prioridades
+
+1. **Funcionalidade**: O código deve funcionar corretamente
+2. **Segurança**: Proteger dados e credenciais
+3. **Manutenibilidade**: Código fácil de entender e modificar
+4. **Performance**: Otimizar quando necessário
+5. **Documentação**: Explicar decisões importantes
+
+---
+
+**Nota**: Estas regras podem ser atualizadas conforme o projeto evolui.

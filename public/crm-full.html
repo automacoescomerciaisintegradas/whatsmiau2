@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM & Pagamentos - WhatsMiau2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="/assets/css/style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading text-center">
+                <i class="fas fa-robot"></i> WhatsMiau2
+            </div>
+            <div class="list-group list-group-flush mt-3">
+                <a href="/dashboard" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                </a>
+                <a href="/connections" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-wifi me-2"></i> Conexões
+                </a>
+                <a href="/disparador" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-paper-plane me-2"></i> Disparador
+                </a>
+                <a href="/exportar-contatos" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-file-export me-2"></i> Exportar Contatos
+                </a>
+                <a href="/resumo-grupos" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-chart-bar me-2"></i> Resumo de Grupos
+                </a>
+                <a href="/contacts" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-address-book me-2"></i> Contatos
+                </a>
+                <a href="/instagram" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fab fa-instagram me-2"></i> Instagram
+                </a>
+                <a href="/tickets" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-ticket-alt me-2"></i> Tickets
+                </a>
+                <a href="/kanban" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-columns me-2"></i> Kanban
+                </a>
+                <a href="/crm-full" class="list-group-item list-group-item-action bg-transparent active">
+                    <i class="fas fa-hand-holding-usd me-2"></i> CRM & Pagamentos
+                </a>
+                <a href="/internal-chat" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-comments me-2"></i> Chat Interno
+                </a>
+                <div class="border-top my-3"></div>
+                <a href="/settings" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-cog me-2"></i> Configurações
+                </a>
+                <a href="/logout" class="list-group-item list-group-item-action bg-transparent text-danger">
+                    <i class="fas fa-sign-out-alt me-2"></i> Sair
+                </a>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <nav class="navbar navbar-expand-lg navbar-custom px-4">
+                <div class="d-flex align-items-center w-100 justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <button class="btn btn-outline-secondary me-3" id="menu-toggle">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <div class="d-flex align-items-center d-none d-md-flex">
+                            <div class="status-dot status-online"></div>
+                            <span class="small fw-medium">Sistema Online</span>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark"
+                            id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="/assets/img/avatar-support.png" alt="user" width="32" height="32"
+                                class="rounded-circle me-2 bg-light p-1">
+                            <strong class="d-none d-md-inline">Admin</strong>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Perfil</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-credit-card me-2"></i> Assinatura</a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="/logout"><i
+                                        class="fas fa-sign-out-alt me-2"></i> Sair</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="responsive-container">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="fw-bold text-dark mb-1">CRM & Cobranças PIX</h2>
+                        <p class="text-muted mb-0">Gerencie leads e envie cobranças via Mercado Pago</p>
+                    </div>
+                    <button class="btn btn-primary shadow-sm" onclick="openModal('lead')">
+                        <i class="fas fa-plus me-2"></i> Novo Lead
+                    </button>
+                </div>
+
+                <!-- Cards de Métricas -->
+                <div class="responsive-grid grid-cols-2 grid-cols-4 mb-4">
+                    <div class="card stat-card p-3 border-0 shadow-sm mb-0"
+                        style="background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); color: white;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="text-white-50 small text-uppercase fw-bold">Total de Leads</h6>
+                                <h2 class="fw-bold mb-0" id="stat-leads">0</h2>
+                            </div>
+                            <div class="bg-white bg-opacity-20 p-2 rounded">
+                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card stat-card p-3 border-0 shadow-sm mb-0"
+                        style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="text-white-50 small text-uppercase fw-bold">Conversões</h6>
+                                <h2 class="fw-bold mb-0" id="stat-conversoes">0</h2>
+                            </div>
+                            <div class="bg-white bg-opacity-20 p-2 rounded">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card stat-card p-3 border-0 shadow-sm mb-0"
+                        style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="text-white-50 small text-uppercase fw-bold">Cobranças PIX</h6>
+                                <h2 class="fw-bold mb-0" id="stat-cobrancas">0</h2>
+                            </div>
+                            <div class="bg-white bg-opacity-20 p-2 rounded">
+                                <i class="fas fa-qrcode"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card stat-card p-3 border-0 shadow-sm mb-0"
+                        style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="text-white-50 small text-uppercase fw-bold">Receita Total</h6>
+                                <h2 class="fw-bold mb-0" id="stat-receita">R$ 0</h2>
+                            </div>
+                            <div class="bg-white bg-opacity-20 p-2 rounded">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabela de Leads -->
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="card p-4 shadow-sm border-0">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold mb-0">Pipeline de Vendas</h5>
+                                <div class="d-flex gap-2">
+                                    <select class="form-select form-select-sm" id="filter-status"
+                                        onchange="renderLeads()" style="width: auto;">
+                                        <option value="">Todos Status</option>
+                                        <option value="novo">Novo</option>
+                                        <option value="contato">Em Contato</option>
+                                        <option value="negociacao">Negociação</option>
+                                        <option value="fechado">Fechado</option>
+                                    </select>
+                                    <input type="text" class="form-control form-control-sm" id="filter-search"
+                                        placeholder="Buscar..." onkeyup="renderLeads()" style="width: 200px;">
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Nome</th>
+                                            <th>Empresa</th>
+                                            <th>WhatsApp</th>
+                                            <th>Status</th>
+                                            <th>Valor</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="leads-tbody">
+                                        <tr>
+                                            <td colspan="6" class="text-center py-5 text-muted">
+                                                <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                                Nenhum lead cadastrado. Clique em "Novo Lead" para começar.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Novo Lead -->
+    <div class="modal fade" id="modal-lead" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Novo Lead</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="form-lead" onsubmit="saveLead(event)">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nome Completo *</label>
+                            <input type="text" class="form-control" id="lead-nome" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">WhatsApp *</label>
+                                <input type="text" class="form-control" id="lead-whatsapp" placeholder="5511999999999"
+                                    required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" id="lead-email">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Empresa</label>
+                            <input type="text" class="form-control" id="lead-empresa">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Valor Potencial (R$)</label>
+                                <input type="number" step="0.01" class="form-control" id="lead-valor"
+                                    placeholder="0.00">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" id="lead-status">
+                                    <option value="novo">Novo</option>
+                                    <option value="contato">Em Contato</option>
+                                    <option value="negociacao">Negociação</option>
+                                    <option value="fechado">Fechado</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar Lead</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal PIX -->
+    <div class="modal fade" id="modal-pix" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Gerar Cobrança PIX</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="form-pix" onsubmit="generatePix(event)">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Lead: <strong id="pix-lead-name"></strong></label>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Valor (R$) *</label>
+                            <input type="number" step="0.01" class="form-control" id="pix-valor" required
+                                placeholder="0.00">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descrição</label>
+                            <input type="text" class="form-control" id="pix-desc" placeholder="Pagamento do serviço">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Expira em (minutos)</label>
+                            <input type="number" class="form-control" id="pix-expira" value="30">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Gerar PIX</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // State
+        let leads = JSON.parse(localStorage.getItem('crm_leads') || '[]');
+        let selectedLead = null;
+        const socket = io();
+        let modalLead, modalPix;
+
+        // Menu toggle
+        document.getElementById("menu-toggle")?.addEventListener("click", function () {
+            document.getElementById("wrapper").classList.toggle("sb-sidenav-toggled");
+        });
+
+        // Init modals
+        document.addEventListener('DOMContentLoaded', function () {
+            modalLead = new bootstrap.Modal(document.getElementById('modal-lead'));
+            modalPix = new bootstrap.Modal(document.getElementById('modal-pix'));
+            updateStats();
+            renderLeads();
+        });
+
+        function openModal(type) {
+            if (type === 'lead') modalLead.show();
+            if (type === 'pix') modalPix.show();
+        }
+
+        // Toast usando Bootstrap
+        function showToast(msg, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            toast.innerHTML = `
+                ${msg}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        // Salvar Lead
+        function saveLead(e) {
+            e.preventDefault();
+            const lead = {
+                id: Date.now(),
+                nome: document.getElementById('lead-nome').value,
+                whatsapp: document.getElementById('lead-whatsapp').value.replace(/\D/g, ''),
+                email: document.getElementById('lead-email').value,
+                empresa: document.getElementById('lead-empresa').value,
+                valor: parseFloat(document.getElementById('lead-valor').value) || 0,
+                status: document.getElementById('lead-status').value,
+                createdAt: new Date().toISOString()
+            };
+            leads.push(lead);
+            localStorage.setItem('crm_leads', JSON.stringify(leads));
+            modalLead.hide();
+            document.getElementById('form-lead').reset();
+            showToast('Lead cadastrado com sucesso!');
+            updateStats();
+            renderLeads();
+        }
+
+        // Render Leads
+        function renderLeads() {
+            const tbody = document.getElementById('leads-tbody');
+            const filterStatus = document.getElementById('filter-status').value;
+            const filterSearch = document.getElementById('filter-search').value.toLowerCase();
+
+            let filtered = leads.filter(l => {
+                if (filterStatus && l.status !== filterStatus) return false;
+                if (filterSearch) {
+                    const searchStr = `${l.nome} ${l.empresa} ${l.whatsapp}`.toLowerCase();
+                    if (!searchStr.includes(filterSearch)) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                            Nenhum lead encontrado
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const statusBadges = {
+                novo: '<span class="badge bg-primary">Novo</span>',
+                contato: '<span class="badge bg-warning">Em Contato</span>',
+                negociacao: '<span class="badge bg-info">Negociação</span>',
+                fechado: '<span class="badge bg-success">Fechado</span>'
+            };
+
+            tbody.innerHTML = filtered.map(l => `
+                <tr>
+                    <td><strong>${l.nome}</strong></td>
+                    <td>${l.empresa || '-'}</td>
+                    <td><i class="fab fa-whatsapp text-success me-1"></i> ${l.whatsapp}</td>
+                    <td>${statusBadges[l.status]}</td>
+                    <td><strong class="text-primary">R$ ${l.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="openPixModal('${l.id}')" title="Gerar PIX">
+                            <i class="fas fa-qrcode"></i>
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="sendMessage('${l.id}')" title="Enviar mensagem">
+                            <i class="fab fa-whatsapp"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteLead('${l.id}')" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Estatísticas
+        function updateStats() {
+            document.getElementById('stat-leads').textContent = leads.length;
+            document.getElementById('stat-conversoes').textContent = leads.filter(l => l.status === 'fechado').length;
+            document.getElementById('stat-cobrancas').textContent = '0'; // TODO: integrar com cobranças
+            const receita = leads.filter(l => l.status === 'fechado').reduce((sum, l) => sum + l.valor, 0);
+            document.getElementById('stat-receita').textContent = `R$ ${receita.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        }
+
+        // Abrir modal PIX
+        function openPixModal(id) {
+            selectedLead = leads.find(l => l.id == id);
+            if (selectedLead) {
+                document.getElementById('pix-lead-name').textContent = selectedLead.nome;
+                modalPix.show();
+            }
+        }
+
+        // Gerar PIX
+        async function generatePix(e) {
+            e.preventDefault();
+            const config = JSON.parse(localStorage.getItem('crm_config') || '{}');
+
+            if (!config.mpToken) {
+                showToast('Configure o token do MercadoPago em Configurações', 'error');
+                return;
+            }
+
+            const valor = parseFloat(document.getElementById('pix-valor').value);
+            const descricao = document.getElementById('pix-desc').value;
+            const expiracao = parseInt(document.getElementById('pix-expira').value);
+
+            try {
+                const res = await fetch('/api/mercadopago/pix', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        valor,
+                        descricao,
+                        leadName: selectedLead.nome,
+                        leadEmail: selectedLead.email,
+                        expiracao,
+                        token: config.mpToken
+                    })
+                });
+
+                const json = await res.json();
+
+                if (json.success) {
+                    showToast('PIX gerado! Enviando para o lead...');
+
+                    // Enviar código PIX via WhatsApp
+                    await fetch('/api/evolution/send-text', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            number: selectedLead.whatsapp,
+                            text: `💳 *Cobrança PIX*\n\nValor: R$ ${valor.toFixed(2)}\n\nCopie o código abaixo:\n\n${json.data.pixCode}`
+                        })
+                    });
+
+                    modalPix.hide();
+                    document.getElementById('form-pix').reset();
+                } else {
+                    throw new Error(json.error);
+                }
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        // Enviar mensagem
+        function sendMessage(id) {
+            const lead = leads.find(l => l.id == id);
+            if (lead) {
+                const msg = prompt(`Mensagem para ${lead.nome}:`);
+                if (msg) {
+                    fetch('/api/evolution/send-text', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ number: lead.whatsapp, text: msg })
+                    }).then(() => showToast('Mensagem enviada!'));
+                }
+            }
+        }
+
+        // Deletar lead
+        function deleteLead(id) {
+            if (confirm('Tem certeza que deseja excluir este lead?')) {
+                leads = leads.filter(l => l.id != id);
+                localStorage.setItem('crm_leads', JSON.stringify(leads));
+                showToast('Lead excluído!');
+                updateStats();
+                renderLeads();
+            }
+        }
+    </script>
+</body>
+
+</html>

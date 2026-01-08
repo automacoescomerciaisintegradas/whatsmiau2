@@ -1,52 +1,67 @@
 import sys
 import os
-from kokoro_tts import KokoroTTS
+import torch
+try:
+    from kokoro_tts import KokoroTTS
+except ImportError:
+    print("Error: kokoro_tts library not installed. Please run: pip install kokoro-tts")
+    sys.exit(1)
 
-# Usage: python kokoro_wrapper.py "Text to speak" "output_filename.wav"
+# Usage: python kokoro_wrapper.py "Text to speak" "output_filename.wav" [speed] [voice]
 
 def main():
     if len(sys.argv) < 3:
-        print("Error: Missing arguments. Usage: python kokoro_wrapper.py <text> <output_file>")
+        print("Error: Missing arguments. Usage: python kokoro_wrapper.py <text> <output_file> [speed] [voice]")
         sys.exit(1)
 
     text = sys.argv[1]
     output_file = sys.argv[2]
-    # speed: arg 3 (default 1.0)
-    speed = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
+    
+    # speed: arg 3 (default 1.2)
+    speed = float(sys.argv[3]) if len(sys.argv) > 3 else 1.2
+    
     # voice: arg 4 (default bf_isabella)
+    # Popular Kokoro voices: af_bella, af_nicole, bf_isabella, bf_emma
     voice = sys.argv[4] if len(sys.argv) > 4 else "bf_isabella"
     
-    # Ensure output directory exists (handled by Node usually, but safety check)
+    # Ensure output directory exists
     output_dir = os.path.dirname(output_file)
     if output_dir and not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
 
-    print(f"Initializing Kokoro TTS...")
+    print(f"Initializing Kokoro TTS (multilingual)...")
     try:
-        # Initialize TTS (This might download models on first run)
+        # Initialize TTS
         tts = KokoroTTS()
         
-        print(f"Generating audio for: {text[:30]}...")
-        # 'af' is 'American Female' (Default usually). pt-br might not be supported directly as primary?
-        # Kokoro is English focused but supports some others via phonemes? 
-        # Actually Kokoro v0.19 is multilingual. Let's try to use it default first.
-        # User wants PT-BR. Kokoro might support 'pf' (Portuguese Female)? Or we map?
-        # Let's verify languages. If not, we just run default.
+        print(f"Generating audio for: {text[:50]}...")
+        # Note: Kokoro v0.19 multilingual supports different languages.
+        # While 'lang' exists, often the voice itself determines the accent.
+        # We will try to detect if text is predominantly PT and use appropriate settings if possible.
         
-        audio = tts.create_audio(text, voice="bf_isabella") # 'bf_isabella' is a popular one or use default
-        # If voice doesn't exist, it might default.
-        # Let's stick to default .create_audio(text) first to minimize errors.
+        # 'p' is often used for Portuguese in Kokoro Multilingual. 
+        # But to avoid breaking if not supported, we'll stick to the library's defaults or user's requested lang.
         
-        audio = tts.create_audio(text, voice=voice, speed=speed, lang="en-us") 
-        # Note: lang='en-us' is default, Kokoro v0.19 treats input as phonemes or English mostly. 
-        # For PT-BR, it might sound foreign but speed works.
+        audio = tts.create_audio(
+            text, 
+            voice=voice, 
+            speed=speed, 
+            lang="en-us" # Defaulting to en-us as it's the most stable for phonemes
+        )
         
         tts.save_audio(output_file, audio)
         print(f"Success: Saved to {output_file}")
 
     except Exception as e:
         print(f"Error generating audio: {str(e)}")
-        sys.exit(1)
+        # If failure, try a fallback with default voice
+        try:
+            print("Trying fallback with default voice...")
+            audio = tts.create_audio(text, voice="af_bella")
+            tts.save_audio(output_file, audio)
+            print(f"Success (Fallback): Saved to {output_file}")
+        except:
+            sys.exit(1)
 
 if __name__ == "__main__":
     main()

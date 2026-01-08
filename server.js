@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import { generateAudioWithOpenAI, generateSummaryWithGemini } from "./services/ai.js";
 import http from 'http';
 import { Server } from 'socket.io';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,6 +23,33 @@ const API_KEY = process.env.API_KEY || "2wtLvtb20wXePp8D9uRhm55aCjINiciO";
 const DEFAULT_INSTANCE = process.env.DEFAULT_INSTANCE || "minha-instancia";
 const DEVELOPER_NUMBER = "558894227586";
 const ALERT_GROUP_JID = "120363306948488101@g.us";
+
+// Instagram Automation Config
+const INSTAGRAM_CONFIG_PATH = path.join(__dirname, "data", "instagram_automation.json");
+let instagramConfig = {
+  enabled: false,
+  welcomeMessage: "Olá! Obrigado por me seguir. Como posso te ajudar hoje?",
+  sessionId: "",
+  lastCheck: 0,
+  sentTo: []
+};
+
+// Carregar config se existir
+if (fs.existsSync(INSTAGRAM_CONFIG_PATH)) {
+  try {
+    const data = JSON.parse(fs.readFileSync(INSTAGRAM_CONFIG_PATH, "utf8"));
+    instagramConfig = { ...instagramConfig, ...data };
+  } catch (e) {
+    console.error("Erro ao carregar instagram_automation.json", e.message);
+  }
+}
+
+function saveInstagramConfig() {
+  if (!fs.existsSync(path.join(__dirname, "data"))) {
+    fs.mkdirSync(path.join(__dirname, "data"), { recursive: true });
+  }
+  fs.writeFileSync(INSTAGRAM_CONFIG_PATH, JSON.stringify(instagramConfig, null, 2));
+}
 
 // Configurações do Agente de IA (Atendimento)
 let AI_AGENT_ENABLED = true;
@@ -84,6 +112,7 @@ app.get("/webhooks", (req, res) => res.sendFile(path.join(__dirname, "public", "
 
 // CRM & Chat
 app.get("/crm", (req, res) => res.sendFile(path.join(__dirname, "public", "crm-new.html")));
+app.get("/crm-full", (req, res) => res.sendFile(path.join(__dirname, "public", "crm-full.html"))); // CRM Completo com PIX/Email
 app.get("/kanban", (req, res) => res.sendFile(path.join(__dirname, "public", "kanban.html")));
 app.get("/tickets", (req, res) => res.sendFile(path.join(__dirname, "public", "tickets.html")));
 app.get("/internal-chat", (req, res) => res.sendFile(path.join(__dirname, "public", "internal-chat.html")));
@@ -92,6 +121,7 @@ app.get("/internal-chat", (req, res) => res.sendFile(path.join(__dirname, "publi
 app.get("/settings", (req, res) => res.sendFile(path.join(__dirname, "public", "settings.html")));
 app.get("/debug-connections", (req, res) => res.sendFile(path.join(__dirname, "public", "debug-connections.html")));
 app.get("/test-qr", (req, res) => res.sendFile(path.join(__dirname, "public", "test-qr.html")));
+app.get("/instagram", (req, res) => res.sendFile(path.join(__dirname, "public", "instagram.html")));
 app.get("/logout", (req, res) => res.redirect("/"));
 
 /* -------------------------------------------------
@@ -254,7 +284,7 @@ app.get("/api/whatsmiau2/groups", async (req, res) => {
     // Return in the format expected by frontend
     res.json({
       success: true,
-      data: response.data // Changed from 'groups' to 'data'
+      data: response.data.groups || []
     });
   } catch (err) {
     const statusCode = err.response?.status || 500;
@@ -554,6 +584,137 @@ app.post("/api/whatsmiau2/send-audio", async (req, res) => {
   }
 });
 
+/* -------------------------------------------------
+   Evolution API Compatibility Layer
+   These endpoints provide backwards compatibility with
+   Evolution API calls used in legacy frontend code
+   ------------------------------------------------- */
+
+// Evolution API: Send Text (alias for whatsmiau2/send-text)
+app.post("/api/evolution/send-text", async (req, res) => {
+  const { number, text, instance } = req.body;
+  const instanceName = instance || DEFAULT_INSTANCE;
+
+  if (!number || !text) {
+    return res.status(400).json({ success: false, error: "Number and text are required" });
+  }
+
+  try {
+    const jid = normalizeInputToJid(number);
+    if (!jid) return res.status(400).json({ success: false, error: "Invalid phone number" });
+
+    const payload = {
+      number: jid,
+      textMessage: { text: text }
+    };
+
+    const response = await axios.post(`${API_URL}/v1/message/sendText/${instanceName}`, payload, {
+      headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' }
+    });
+
+    res.json({ success: true, ...response.data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message, details: err.response?.data });
+  }
+});
+
+// Evolution API: Send Audio (alias for whatsmiau2/send-audio)
+app.post("/api/evolution/send-audio", async (req, res) => {
+  const { number, audio, ptt = true, instance } = req.body;
+  const instanceName = instance || DEFAULT_INSTANCE;
+
+  if (!number || !audio) {
+    return res.status(400).json({ success: false, error: "Number and audio are required" });
+  }
+
+  try {
+    const jid = normalizeInputToJid(number);
+    if (!jid) return res.status(400).json({ success: false, error: "Invalid phone number" });
+
+    // For newsletters, audio is not supported
+    if (jid.includes('@newsletter')) {
+      return res.status(400).json({
+        success: false,
+        error: "Audio sending to newsletters is not supported."
+      });
+    }
+
+    const targetNumber = jid.includes('@g.us') ? jid : jidToFriendly(jid);
+
+    const response = await axios.post(
+      `${API_URL}/v1/message/sendWhatsAppAudio/${instanceName}`,
+      {
+        number: targetNumber,
+        audioMessage: {
+          audio: audio,
+          ptt: ptt !== false
+        }
+      },
+      { headers: { 'Content-Type': 'application/json', 'apikey': API_KEY } }
+    );
+
+    res.json({ success: true, ...response.data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message, details: err.response?.data });
+  }
+});
+
+// Evolution API: Send Media (alias for whatsmiau2/send-media)
+app.post("/api/evolution/send-media", async (req, res) => {
+  const { number, mediatype, media, caption, fileName, mimetype, instance } = req.body;
+  const instanceName = instance || DEFAULT_INSTANCE;
+
+  if (!number || !media) {
+    return res.status(400).json({ success: false, error: "Number and media are required" });
+  }
+
+  try {
+    const jid = normalizeInputToJid(number);
+    if (!jid) return res.status(400).json({ success: false, error: "Invalid phone number" });
+
+    // For newsletters, media is not supported
+    if (jid.includes('@newsletter')) {
+      return res.status(400).json({
+        success: false,
+        error: "Media sending to newsletters is not supported."
+      });
+    }
+
+    const targetNumber = jid.includes('@g.us') ? jid : jidToFriendly(jid);
+
+    // Determine mimetype from mediatype if not provided
+    let mimeType = mimetype || '';
+    if (!mimeType && mediatype) {
+      const mimetypeMap = {
+        'image': 'image/jpeg',
+        'video': 'video/mp4',
+        'document': 'application/octet-stream',
+        'audio': 'audio/mpeg'
+      };
+      mimeType = mimetypeMap[mediatype] || '';
+    }
+
+    const response = await axios.post(
+      `${API_URL}/v1/message/sendMedia/${instanceName}`,
+      {
+        number: targetNumber,
+        mediaMessage: {
+          mediatype: mediatype || 'image',
+          media: media,
+          mimetype: mimeType,
+          caption: caption || '',
+          fileName: fileName
+        }
+      },
+      { headers: { 'Content-Type': 'application/json', 'apikey': API_KEY } }
+    );
+
+    res.json({ success: true, ...response.data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message, details: err.response?.data });
+  }
+});
+
 
 /* -------------------------------------------------
    Instagram OSINT Tool API
@@ -841,6 +1002,164 @@ app.post("/api/instagram/search", async (req, res) => {
     const friendlyError = code === 302 ? "Instagram pediu login (302). Session ID inválido." :
       code === 403 ? "Acesso negado (403). Session ID expirado." :
         code === 401 ? "Session ID Inválido/Expirado (401). Gere um novo." : err.message;
+
+    res.status(500).json({ success: false, error: friendlyError });
+  }
+});
+
+/* -------------------------------------------------
+   Instagram Automation Config API
+   ------------------------------------------------- */
+
+// Get Instagram Config
+app.get("/api/instagram/config", (req, res) => {
+  res.json({
+    success: true,
+    config: {
+      enabled: instagramConfig.enabled,
+      welcomeMessage: instagramConfig.welcomeMessage,
+      sessionId: instagramConfig.sessionId ? "***" + instagramConfig.sessionId.slice(-8) : "",
+      hasSession: !!instagramConfig.sessionId,
+      lastCheck: instagramConfig.lastCheck,
+      sentCount: instagramConfig.sentTo?.length || 0
+    }
+  });
+});
+
+// Update Instagram Config
+app.post("/api/instagram/config", (req, res) => {
+  try {
+    const { enabled, welcomeMessage, sessionId } = req.body;
+
+    if (typeof enabled !== 'undefined') {
+      instagramConfig.enabled = enabled;
+    }
+
+    if (welcomeMessage !== undefined) {
+      instagramConfig.welcomeMessage = welcomeMessage;
+    }
+
+    if (sessionId !== undefined) {
+      // Clean session ID if user pasted URL-encoded value
+      let cleanSessionId = sessionId.trim();
+      if (cleanSessionId.includes('%3A')) {
+        cleanSessionId = decodeURIComponent(cleanSessionId);
+      }
+      instagramConfig.sessionId = cleanSessionId;
+    }
+
+    saveInstagramConfig();
+    console.log(`[INSTAGRAM] Config updated: enabled=${instagramConfig.enabled}`);
+
+    res.json({
+      success: true,
+      message: "Configuração do Instagram atualizada com sucesso",
+      config: {
+        enabled: instagramConfig.enabled,
+        welcomeMessage: instagramConfig.welcomeMessage,
+        hasSession: !!instagramConfig.sessionId
+      }
+    });
+  } catch (error) {
+    console.error("[INSTAGRAM CONFIG ERROR]", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Send Test DM via Instagram
+app.post("/api/instagram/send-test-dm", async (req, res) => {
+  const { username, message } = req.body;
+
+  if (!username) {
+    return res.status(400).json({ success: false, error: "Username é obrigatório" });
+  }
+
+  if (!instagramConfig.sessionId) {
+    return res.status(400).json({ success: false, error: "Session ID não configurado. Configure primeiro em /api/instagram/config" });
+  }
+
+  const testMessage = message || instagramConfig.welcomeMessage || "Olá! Esta é uma mensagem de teste do WhatsMiau2 🚀";
+
+  try {
+    let cleanSessionId = instagramConfig.sessionId.trim();
+    if (cleanSessionId.includes('%3A')) {
+      cleanSessionId = decodeURIComponent(cleanSessionId);
+    }
+
+    // Extract ds_user_id from session
+    const match = cleanSessionId.match(/^(\d+)%3A|^(\d+):/);
+    const ds_user_id = match ? (match[1] || match[2]) : "";
+
+    // Clean username
+    let targetUsername = username.trim();
+    if (targetUsername.startsWith('@')) targetUsername = targetUsername.substring(1);
+
+    console.log(`[INSTAGRAM DM] Tentando enviar DM para @${targetUsername}`);
+
+    // Step 1: Resolve username to user ID
+    const searchUrl = `https://i.instagram.com/api/v1/users/search/?q=${encodeURIComponent(targetUsername)}&timezone_offset=0&count=5`;
+    const headers = {
+      "User-Agent": "Instagram 269.0.0.18.75 Android (26/8.0.0; 480dpi; 1080x1920; Samsung; SM-G960F; starlte; samsungexynos9810; en_US; 443493138)",
+      "Cookie": `sessionid=${cleanSessionId}; ds_user_id=${ds_user_id};`,
+      "X-IG-Connection-Type": "WIFI"
+    };
+
+    const searchRes = await axios.get(searchUrl, {
+      headers,
+      maxRedirects: 0,
+      validateStatus: s => s < 400
+    });
+
+    const foundUser = searchRes.data.users?.find(u => u.username.toLowerCase() === targetUsername.toLowerCase());
+
+    if (!foundUser) {
+      return res.status(404).json({ success: false, error: `Usuário @${targetUsername} não encontrado` });
+    }
+
+    const userId = foundUser.pk;
+    console.log(`[INSTAGRAM DM] Usuário encontrado: ID ${userId}`);
+
+    // Step 2: Send DM via Instagram Direct API
+    // Note: This is a simplified version. Instagram DM API requires proper threading.
+    const dmUrl = `https://i.instagram.com/api/v1/direct_v2/threads/broadcast/text/`;
+    const dmHeaders = {
+      ...headers,
+      "Content-Type": "application/x-www-form-urlencoded"
+    };
+
+    const dmPayload = `recipient_users=[[${userId}]]&text=${encodeURIComponent(testMessage)}`;
+
+    const dmRes = await axios.post(dmUrl, dmPayload, {
+      headers: dmHeaders,
+      maxRedirects: 0,
+      validateStatus: s => s < 400
+    });
+
+    console.log(`[INSTAGRAM DM] DM enviada com sucesso para @${targetUsername}`);
+
+    res.json({
+      success: true,
+      message: `DM enviada com sucesso para @${targetUsername}`,
+      data: {
+        userId: userId,
+        username: targetUsername,
+        messageSent: testMessage
+      }
+    });
+
+  } catch (err) {
+    console.error("[INSTAGRAM DM ERROR]", err.response?.data || err.message);
+
+    const code = err.response?.status;
+    let friendlyError = err.message;
+
+    if (code === 401) {
+      friendlyError = "Session ID inválido ou expirado. Gere um novo.";
+    } else if (code === 403) {
+      friendlyError = "Acesso negado. O Instagram pode estar bloqueando. Tente mais tarde.";
+    } else if (code === 400) {
+      friendlyError = "Erro na requisição. O usuário pode ter bloqueado DMs.";
+    }
 
     res.status(500).json({ success: false, error: friendlyError });
   }
@@ -1565,6 +1884,269 @@ app.post('/api/campaigns', async (req, res) => {
   }
 });
 
+// Resend: Send Single Email (Simplified endpoint for direct email sending)
+app.post('/api/resend/send', async (req, res) => {
+  try {
+    const { to, subject, body, html, from } = req.body;
+    const resendKey = process.env.RESEND_API_KEY;
+
+    if (!resendKey || !resendKey.startsWith('re_')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Chave API do Resend não configurada. Configure RESEND_API_KEY no .env'
+      });
+    }
+
+    if (!to) {
+      return res.status(400).json({
+        success: false,
+        error: 'Destinatário (to) é obrigatório'
+      });
+    }
+
+    if (!subject) {
+      return res.status(400).json({
+        success: false,
+        error: 'Assunto (subject) é obrigatório'
+      });
+    }
+
+    if (!body && !html) {
+      return res.status(400).json({
+        success: false,
+        error: 'Conteúdo do email (body ou html) é obrigatório'
+      });
+    }
+
+    // Normalize recipient(s)
+    const toList = Array.isArray(to) ? to : [to];
+
+    console.log(`[RESEND] Enviando email para: ${toList.join(', ')}`);
+
+    // Build email payload
+    const emailPayload = {
+      from: from || 'onboarding@resend.dev',
+      to: toList,
+      subject: subject,
+      html: html || body.replace(/\n/g, '<br>')
+    };
+
+    // AVISO: Em modo sandbox (onboarding@resend.dev), só pode enviar para o email do dono da conta
+    // Configure seu domínio próprio no Resend para enviar para qualquer email
+
+    const response = await axios.post('https://api.resend.com/emails', emailPayload, {
+      headers: {
+        'Authorization': `Bearer ${resendKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log('[RESEND] Email enviado com sucesso:', response.data);
+
+    res.json({
+      success: true,
+      message: 'Email enviado com sucesso',
+      data: {
+        id: response.data.id,
+        to: toList,
+        subject: subject
+      }
+    });
+
+  } catch (error) {
+    console.error('[RESEND ERROR]', error.response?.data || error.message);
+
+    let friendlyError = error.message;
+    const resendError = error.response?.data;
+
+    if (resendError) {
+      if (resendError.statusCode === 403) {
+        friendlyError = 'Acesso negado. Em modo sandbox, você só pode enviar para o email do dono da conta Resend. Configure um domínio próprio para enviar para outros emails.';
+      } else if (resendError.statusCode === 422) {
+        friendlyError = `Dados inválidos: ${resendError.message}`;
+      } else {
+        friendlyError = resendError.message || error.message;
+      }
+    }
+
+    res.status(500).json({
+      success: false,
+      error: friendlyError
+    });
+  }
+});
+
+/* -------------------------------------------------
+   MercadoPago PIX API
+   ------------------------------------------------- */
+
+// Generate PIX Payment/Charge
+app.post('/api/mercadopago/pix', async (req, res) => {
+  try {
+    const {
+      valor,
+      descricao,
+      email,
+      nome,
+      leadName,
+      leadEmail,
+      cpf,
+      token, // Token pode vir do frontend
+      expiracao = 30 // minutos para expirar (default 30 min)
+    } = req.body;
+
+    // Prioriza token do .env, mas aceita token do frontend
+    const mpAccessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || token;
+
+    if (!mpAccessToken) {
+      return res.status(400).json({
+        success: false,
+        error: 'Token do MercadoPago não configurado. Configure MERCADOPAGO_ACCESS_TOKEN no .env ou envie via parâmetro "token"'
+      });
+    }
+
+    if (!valor || valor <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Valor é obrigatório e deve ser maior que zero'
+      });
+    }
+
+    console.log(`[MERCADOPAGO] Gerando PIX: R$ ${valor} - ${descricao || 'Cobrança'}`);
+
+    // Calculate expiration date
+    const expirationDate = new Date();
+    expirationDate.setMinutes(expirationDate.getMinutes() + parseInt(expiracao));
+
+    // Build payment payload for MercadoPago
+    const paymentPayload = {
+      transaction_amount: parseFloat(valor),
+      description: descricao || 'Cobrança via WhatsMiau2',
+      payment_method_id: 'pix',
+      date_of_expiration: expirationDate.toISOString(),
+      payer: {
+        email: email || leadEmail || 'cliente@email.com',
+        first_name: nome || leadName || 'Cliente',
+        identification: cpf ? {
+          type: 'CPF',
+          number: cpf.replace(/\D/g, '')
+        } : undefined
+      }
+    };
+
+    // Remove undefined fields
+    if (!paymentPayload.payer.identification) {
+      delete paymentPayload.payer.identification;
+    }
+
+    const response = await axios.post(
+      'https://api.mercadopago.com/v1/payments',
+      paymentPayload,
+      {
+        headers: {
+          'Authorization': `Bearer ${mpAccessToken}`,
+          'Content-Type': 'application/json',
+          'X-Idempotency-Key': `pix-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        }
+      }
+    );
+
+    const payment = response.data;
+    const pixData = payment.point_of_interaction?.transaction_data;
+
+    if (!pixData) {
+      throw new Error('Erro ao gerar dados do PIX. Verifique se a conta MercadoPago está habilitada para PIX.');
+    }
+
+    console.log(`[MERCADOPAGO] PIX gerado com sucesso! ID: ${payment.id}`);
+
+    res.json({
+      success: true,
+      message: 'PIX gerado com sucesso',
+      data: {
+        id: payment.id,
+        status: payment.status,
+        valor: payment.transaction_amount,
+        descricao: payment.description,
+        pixCode: pixData.qr_code, // Código copia-cola
+        pixQrCodeBase64: pixData.qr_code_base64, // QR Code em base64
+        pixQrCodeUrl: `data:image/png;base64,${pixData.qr_code_base64}`,
+        ticketUrl: pixData.ticket_url, // Link para página de pagamento
+        expiration: expirationDate.toISOString(),
+        expiresIn: `${expiracao} minutos`
+      }
+    });
+
+  } catch (error) {
+    console.error('[MERCADOPAGO ERROR]', error.response?.data || error.message);
+
+    let friendlyError = error.message;
+    const mpError = error.response?.data;
+
+    if (mpError) {
+      if (mpError.status === 401) {
+        friendlyError = 'Token de acesso inválido ou expirado. Verifique MERCADOPAGO_ACCESS_TOKEN no .env';
+      } else if (mpError.message) {
+        friendlyError = mpError.message;
+      } else if (mpError.cause && mpError.cause[0]?.description) {
+        friendlyError = mpError.cause[0].description;
+      }
+    }
+
+    res.status(500).json({
+      success: false,
+      error: friendlyError
+    });
+  }
+});
+
+// Check PIX Payment Status
+app.get('/api/mercadopago/pix/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const mpAccessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+
+    if (!mpAccessToken) {
+      return res.status(400).json({
+        success: false,
+        error: 'Token do MercadoPago não configurado'
+      });
+    }
+
+    const response = await axios.get(
+      `https://api.mercadopago.com/v1/payments/${id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${mpAccessToken}`
+        }
+      }
+    );
+
+    const payment = response.data;
+
+    res.json({
+      success: true,
+      data: {
+        id: payment.id,
+        status: payment.status,
+        statusDetail: payment.status_detail,
+        valor: payment.transaction_amount,
+        descricao: payment.description,
+        pago: payment.status === 'approved',
+        dataPagamento: payment.date_approved,
+        metodoPagamento: payment.payment_method_id
+      }
+    });
+
+  } catch (error) {
+    console.error('[MERCADOPAGO STATUS ERROR]', error.response?.data || error.message);
+    res.status(500).json({
+      success: false,
+      error: error.response?.data?.message || error.message
+    });
+  }
+});
+
 // Sincronizar leads com frontend
 app.post('/api/leads/sync', (req, res) => {
   const { leads } = req.body;
@@ -1983,6 +2565,127 @@ app.delete("/api/tickets/:id", (req, res) => {
   res.json({ success: true });
 });
 
+/* -------------------------------------------------
+   Instagram Automation Endpoints
+   ------------------------------------------------- */
+
+app.get("/api/instagram/config", (req, res) => {
+  res.json({ success: true, data: instagramConfig });
+});
+
+app.post("/api/instagram/config", (req, res) => {
+  const { enabled, welcomeMessage, sessionId } = req.body;
+
+  if (enabled !== undefined) instagramConfig.enabled = enabled;
+  if (welcomeMessage !== undefined) instagramConfig.welcomeMessage = welcomeMessage;
+  if (sessionId !== undefined) instagramConfig.sessionId = sessionId;
+
+  saveInstagramConfig();
+  res.json({ success: true, data: instagramConfig });
+});
+
+// Manual Test Send
+app.post("/api/instagram/send-test-dm", async (req, res) => {
+  const { targetId, message, sessionId } = req.body;
+  const sid = sessionId || instagramConfig.sessionId;
+
+  if (!targetId || !message || !sid) {
+    return res.status(400).json({ success: false, error: "Missing parameters" });
+  }
+
+  try {
+    await sendInstagramDM(targetId, message, sid);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message, details: err.response?.data });
+  }
+});
+
+async function sendInstagramDM(targetId, text, sessionId) {
+  // Extract ds_user_id from sessionid if possible
+  const match = sessionId.match(/(\d+)%3A|(\d+):/);
+  const ds_user_id = match ? (match[1] || match[2]) : "";
+
+  const url = "https://i.instagram.com/api/v1/direct_v2/threads/broadcast/text/";
+  const headers = {
+    "User-Agent": "Instagram 269.0.0.18.75 Android (26/8.0.0; 480dpi; 1080x1920; Samsung; SM-G960F; starlte; samsungexynos9810; en_US; 443493138)",
+    "Cookie": `sessionid=${sessionId}; ds_user_id=${ds_user_id};`,
+    "Content-Type": "application/x-www-form-urlencoded"
+  };
+
+  const uuid = crypto.randomUUID();
+  const payload = new URLSearchParams({
+    "recipient_users": `[[${targetId}]]`,
+    "action": "send_item",
+    "thread_ids": "[]",
+    "client_context": uuid,
+    "text": text,
+    "offline_threading_id": uuid,
+    "device_id": `android-${uuid}`
+  });
+
+  return axios.post(url, payload.toString(), { headers });
+}
+
+async function startInstagramAutomation() {
+  console.log("[Instagram] Iniciando serviço de automação...");
+
+  setInterval(async () => {
+    if (!instagramConfig.enabled || !instagramConfig.sessionId) return;
+
+    try {
+      const sessionId = instagramConfig.sessionId;
+      const match = sessionId.match(/(\d+)%3A|(\d+):/);
+      const ds_user_id = match ? (match[1] || match[2]) : "";
+
+      if (!ds_user_id) return;
+
+      console.log("[Instagram] Verificando novos seguidores...");
+
+      const followersUrl = `https://i.instagram.com/api/v1/friendships/${ds_user_id}/followers/?count=50`;
+      const headers = {
+        "User-Agent": "Instagram 269.0.0.18.75 Android (26/8.0.0; 480dpi; 1080x1920; Samsung; SM-G960F; starlte; samsungexynos9810; en_US; 443493138)",
+        "Cookie": `sessionid=${sessionId}; ds_user_id=${ds_user_id};`,
+      };
+
+      const res = await axios.get(followersUrl, { headers });
+      const currentFollowers = res.data.users || [];
+
+      // If it's the first run, just populate the sentTo list to avoid spamming existing followers
+      const isFirstRun = instagramConfig.sentTo.length === 0;
+
+      let newCount = 0;
+      for (const follower of currentFollowers) {
+        const fId = follower.pk.toString();
+
+        if (!instagramConfig.sentTo.includes(fId)) {
+          if (!isFirstRun) {
+            console.log(`[Instagram] Novo seguidor detectado: ${follower.username} (${fId})`);
+            try {
+              await sendInstagramDM(fId, instagramConfig.welcomeMessage, sessionId);
+              console.log(`[Instagram] Mensagem enviada para ${follower.username}`);
+              await new Promise(r => setTimeout(r, 2000));
+            } catch (dmErr) {
+              console.error(`[Instagram] Erro ao enviar DM para ${follower.username}:`, dmErr.message);
+            }
+          }
+          instagramConfig.sentTo.push(fId);
+          newCount++;
+        }
+      }
+
+      if (newCount > 0) {
+        saveInstagramConfig();
+        console.log(`[Instagram] ${isFirstRun ? 'Popularizados' : 'Processados'} ${newCount} seguidores.`);
+      }
+
+    } catch (err) {
+      console.error("[Instagram Automation Error]", err.message);
+    }
+
+  }, 10 * 60 * 1000); // Check every 10 minutes
+}
+
 // Generic API proxy handler - using regex for Express 5.x
 app.all(/^\/api\/.*/, async (req, res) => {
   const apiPath = req.path.replace("/api", "");
@@ -2139,6 +2842,7 @@ server.listen(PORT, async () => {
 
   // Monitoramento de Saúde da API Go
   startFollowUpScheduler();
+  startInstagramAutomation();
   let apiWasOnline = true;
   const EVOLUTION_API_URL = "https://evolution.automacoescomerciais.com.br";
   const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || API_KEY;

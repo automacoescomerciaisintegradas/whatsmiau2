@@ -43,7 +43,7 @@ func New(cfg *config.Config, db *database.Database, manager *whatsapp.Manager) *
 	if err != nil {
 		zap.L().Fatal("Failed to get SQL DB from GORM", zap.Error(err))
 	}
-	crmServer := crm.NewServer(sqlDB)
+	crmServer := crm.NewServerWithManager(sqlDB, manager)
 
 	server := &Server{
 		config:    cfg,
@@ -186,6 +186,17 @@ func (s *Server) setupRoutes() {
 			crm.PUT("/leads/:id", s.crmServer.UpdateLead)
 			crm.DELETE("/leads/:id", s.crmServer.DeleteLead)
 			crm.GET("/leads/stats", s.crmServer.GetLeadStats)
+
+			// Automation
+			automation := crm.Group("/automation")
+			{
+				automation.POST("/rules", s.crmServer.CreateAutomationRule)
+				automation.GET("/rules", s.crmServer.ListAutomationRules)
+				automation.GET("/rules/:id", s.crmServer.GetAutomationRule)
+				automation.PUT("/rules/:id", s.crmServer.UpdateAutomationRule)
+				automation.DELETE("/rules/:id", s.crmServer.DeleteAutomationRule)
+				automation.POST("/trigger", s.crmServer.TriggerAutomation)
+			}
 		}
 	}
 

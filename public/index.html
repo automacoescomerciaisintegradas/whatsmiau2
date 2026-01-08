@@ -84,12 +84,20 @@
                     <i class="fas fa-address-book me-2"></i> Contatos
                 </a>
 
+                <a href="/instagram" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fab fa-instagram me-2"></i> Instagram
+                </a>
+
                 <a href="/tickets" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-ticket-alt me-2"></i> Tickets
                 </a>
 
                 <a href="/kanban" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-columns me-2"></i> Kanban
+                </a>
+
+                <a href="/crm-full" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-hand-holding-usd me-2"></i> CRM & Pagamentos
                 </a>
 
                 <a href="/internal-chat" class="list-group-item list-group-item-action bg-transparent">
@@ -240,14 +248,14 @@
 
         if (localStorage.getItem('theme') === 'dark') {
             body.setAttribute('data-theme', 'dark');
-            toggleSwitch.checked = true;
+            if (toggleSwitch) toggleSwitch.checked = true;
         }
 
         function toggleTheme() {
             const theme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
             body.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
-            toggleSwitch.checked = (theme === 'dark');
+            if (toggleSwitch) toggleSwitch.checked = (theme === 'dark');
         }
 
         document.getElementById("menu-toggle").onclick = function () {

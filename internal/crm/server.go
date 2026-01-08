@@ -9,14 +9,18 @@ import (
 	"whatsmiau2/internal/crm/handlers"
 	"whatsmiau2/internal/crm/models"
 	"whatsmiau2/internal/crm/repository"
+	"whatsmiau2/internal/crm/services"
+	"whatsmiau2/internal/whatsapp"
 
 	"github.com/gin-gonic/gin"
 )
 
 // Server representa o servidor CRM
 type Server struct {
-	db          *sql.DB
-	leadHandler *handlers.LeadHandler
+	db                *sql.DB
+	leadHandler       *handlers.LeadHandler
+	automationHandler *handlers.AutomationHandler
+	automationService *services.AutomationService
 }
 
 // NewServer cria novo servidor CRM
@@ -26,11 +30,12 @@ func NewServer(db *sql.DB) *Server {
 		log.Printf("Warning: Failed to create CRM tables: %v", err)
 	}
 
-	// Criar repository
-	repo := repository.NewSQLiteCRMRepository(db)
+	// Criar repositories
+	crmRepo := repository.NewSQLiteCRMRepository(db)
+	automationRepo := repository.NewSQLiteAutomationRepository(db)
 
 	// Criar handlers
-	leadHandler := handlers.NewLeadHandler(repo)
+	leadHandler := handlers.NewLeadHandler(crmRepo)
 
 	return &Server{
 		db:          db,
@@ -38,55 +43,96 @@ func NewServer(db *sql.DB) *Server {
 	}
 }
 
-// Gin-compatible handlers
+// NewServerWithManager cria novo servidor CRM com acesso ao gerenciador do WhatsApp
+func NewServerWithManager(db *sql.DB, manager *whatsapp.Manager) *Server {
+	// Criar tabelas
+	if err := CreateTables(db); err != nil {
+		log.Printf("Warning: Failed to create CRM tables: %v", err)
+	}
 
-// CreateLead cria novo lead (Gin)
-func (s *Server) CreateLead(c *gin.Context) {
-	var req models.CreateLeadRequest
+	// Criar repositories
+	crmRepo := repository.NewSQLiteCRMRepository(db)
+	automationRepo := repository.NewSQLiteAutomationRepository(db)
+
+	// Criar services
+	automationService := services.NewAutomationService(automationRepo, manager)
+
+	// Criar handlers
+	leadHandler := handlers.NewLeadHandler(crmRepo)
+	automationHandler := handlers.NewAutomationHandler(automationService)
+
+	return &Server{
+		db:                db,
+		leadHandler:       leadHandler,
+		automationHandler: automationHandler,
+		automationService: automationService,
+	}
+}
+
+// CreateAutomationRule cria nova regra de automação (Gin)
+func (s *Server) CreateAutomationRule(c *gin.Context) {
+	if s.automationService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Automation service not initialized"})
+		return
+	}
+
+	var req models.CreateAutomationRuleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid request body"})
 		return
 	}
 
-	lead := &models.Lead{
-		Nome:        req.Nome,
-		WhatsApp:    req.WhatsApp,
-		Email:       req.Email,
-		Empresa:     req.Empresa,
-		Site:        req.Site,
-		Instagram:   req.Instagram,
-		LinkedIn:    req.LinkedIn,
-		Localizacao: req.Localizacao,
-		Valor:       req.Valor,
-		Fonte:       req.Fonte,
-		Status:      req.Status,
-		Temperatura: req.Temperatura,
-		Observacoes: req.Observacoes,
-	}
-
-	// Defaults
-	if lead.Fonte == "" {
-		lead.Fonte = "outro"
-	}
-	if lead.Status == "" {
-		lead.Status = "novo"
-	}
-	if lead.Temperatura == "" {
-		lead.Temperatura = "morno"
-	}
-
-	repo := repository.NewSQLiteCRMRepository(s.db)
-	if err := repo.CreateLead(lead); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
+	rule, err := s.automationService.CreateRule(&req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "Failed to create automation rule: " + err.Error(),
+		})
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
-		"message": "Lead created successfully",
-		"lead":    lead,
+		"message": "Automation rule created successfully",
+		"rule":    rule,
 	})
 }
+
+// ListAutomationRules lista regras de automação (Gin)
+func (s *Server) ListAutomationRules(c *gin.Context) {
+	if s.automationService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Automation service not initialized"})
+		return
+	}
+
+	enabledStr := c.Query("enabled")
+	var enabled *bool
+	if enabledStr != "" {
+		enabledVal := enabledStr == "true"
+		enabled = &enabledVal
+	}
+
+	// Obter repositório de automação
+	automationRepo := repository.NewSQLiteAutomationRepository(s.db)
+
+	// Listar regras
+	rules, err := automationRepo.ListAutomationRules(enabled)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "Failed to list automation rules: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"count":   len(rules),
+		"rules":   rules,
+	})
+}
+
+
 
 // ListLeads lista leads (Gin)
 func (s *Server) ListLeads(c *gin.Context) {

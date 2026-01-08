@@ -411,7 +411,7 @@ func (c *Client) DownloadMediaFromURL(url string) ([]byte, string, error) {
 // PairPhone pairs with a phone number
 func (c *Client) PairPhone(phone string) (string, error) {
 	if c.WA.Store.ID != nil {
-		return "", fmt.Errorf("already connected")
+		return "", fmt.Errorf("esta instância já possui uma conexão ativa ou sessão salva. Clique em 'Limpar Sessão' antes de tentar um novo pareamento")
 	}
 
 	// Ensure client is connected to WebSocket

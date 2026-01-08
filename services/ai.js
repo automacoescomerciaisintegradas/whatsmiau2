@@ -42,7 +42,7 @@ export async function generateChatResponse(userMessage, systemPrompt) {
     if (!key) throw new Error("GEMINI_API_KEY não configurada no .env");
 
     const genAI = new GoogleGenerativeAI(key);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
     const fullPrompt = `${systemPrompt}\n\nMensagem do Usuário: ${userMessage}\nResposta:`;
 
@@ -61,7 +61,7 @@ export async function analyzeLeadMessage(userMessage, history = "") {
     if (!key) return null; // Fail silently if no key
 
     const genAI = new GoogleGenerativeAI(key);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
     const prompt = `
     Analise a mensagem do cliente abaixo no contexto de um CRM de vendas.
@@ -99,7 +99,7 @@ export async function generateSummaryWithGemini(context) {
     if (!key) throw new Error("GEMINI_API_KEY não configurada no .env");
 
     const genAI = new GoogleGenerativeAI(key);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
     const prompt = `
     Atue como um narrador de resumo de grupo.
