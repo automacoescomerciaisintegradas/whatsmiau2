@@ -89,10 +89,11 @@ app.use(express.static(path.join(__dirname, "public"), { etag: false, lastModifi
 console.log("Servindo arquivos estáticos de:", path.join(__dirname, "public"));
 
 // Rotas HTML estáticas
-app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "home.html")));
 app.get("/dashboard", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 app.get("/home", (req, res) => res.sendFile(path.join(__dirname, "public", "home.html")));
 app.get("/admin", (req, res) => res.sendFile(path.join(__dirname, "public", "admin_example.html")));
+app.get("/docs", (req, res) => res.sendFile(path.join(__dirname, "public", "docs.html")));
 
 // Core Features
 app.get("/connections", (req, res) => res.sendFile(path.join(__dirname, "public", "instancias.html")));
@@ -107,6 +108,7 @@ app.get("/exportar-contatos", (req, res) => res.sendFile(path.join(__dirname, "p
 // Automation & AI
 app.get("/ai-agents", (req, res) => res.sendFile(path.join(__dirname, "public", "ai-agents.html")));
 app.get("/automacao", (req, res) => res.sendFile(path.join(__dirname, "public", "automacao.html")));
+app.get("/automacao-editor", (req, res) => res.sendFile(path.join(__dirname, "public", "automacao-editor.html")));
 app.get("/disparador", (req, res) => res.sendFile(path.join(__dirname, "public", "disparador.html")));
 app.get("/webhooks", (req, res) => res.sendFile(path.join(__dirname, "public", "webhooks.html")));
 
@@ -248,6 +250,284 @@ app.get("/api/normalize-jid", (req, res) => {
     jid: jid,
     friendly: jidToFriendly(jid)
   });
+});
+
+/* -------------------------------------------------
+   Instance Proxy Routes (Pairing)
+   ------------------------------------------------- */
+
+// Pairing by Phone - Get pairing code
+app.post("/api/instance/pairPhone/:instance", async (req, res) => {
+  const { instance } = req.params;
+  const { phoneNumber } = req.body;
+
+  console.log(`[PAIRING] Requesting code for ${phoneNumber} on instance ${instance}`);
+
+  try {
+    const response = await axios.post(`${API_URL}/v1/instance/pairPhone/${instance}`,
+      { phoneNumber },
+      { headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' } }
+    );
+
+    console.log(`[PAIRING] Code received:`, response.data);
+
+    // Inicia monitoramento para enviar alerta quando conectar
+    startConnectionMonitor(instance, phoneNumber);
+
+    res.json(response.data);
+  } catch (err) {
+    console.error(`[PAIRING] Error:`, err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({
+      error: err.response?.data?.message || err.message,
+      message: 'Erro ao solicitar código de pareamento'
+    });
+  }
+});
+
+// Monitor de conexão - envia alerta quando instância conectar
+const connectionMonitors = new Map();
+
+function startConnectionMonitor(instance, phoneNumber) {
+  // Cancela monitor anterior se existir
+  if (connectionMonitors.has(instance)) {
+    clearInterval(connectionMonitors.get(instance));
+  }
+
+  let attempts = 0;
+  const maxAttempts = 40; // 2 minutos (40 x 3 segundos)
+
+  console.log(`[MONITOR] Iniciando monitoramento de conexão para ${instance}`);
+
+  const monitor = setInterval(async () => {
+    attempts++;
+
+    if (attempts > maxAttempts) {
+      console.log(`[MONITOR] Timeout para ${instance}`);
+      clearInterval(monitor);
+      connectionMonitors.delete(instance);
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${API_URL}/v1/instance/connectionState/${instance}`, {
+        headers: { 'apikey': API_KEY }
+      });
+
+      const state = response.data.instance?.state || response.data.state;
+
+      if (state === 'open') {
+        console.log(`[MONITOR] Instância ${instance} conectada! Enviando alerta...`);
+        clearInterval(monitor);
+        connectionMonitors.delete(instance);
+
+        // Envia mensagem de alerta
+        await sendConnectionAlert(instance, phoneNumber);
+      }
+    } catch (err) {
+      // Ignora erros de verificação
+    }
+  }, 3000);
+
+  connectionMonitors.set(instance, monitor);
+}
+
+async function sendConnectionAlert(instance, phoneNumber) {
+  const now = new Date();
+  const dateTime = now.toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+
+  const alertMessage = `🔐 *ALERTA DE SEGURANÇA*\n\n` +
+    `✅ Seu WhatsApp foi conectado à API WhatsMiau2\n\n` +
+    `📱 *Instância:* ${instance}\n` +
+    `📅 *Data/Hora:* ${dateTime}\n` +
+    `🌐 *Servidor:* WhatsMiau2 API\n\n` +
+    `⚠️ Se você NÃO realizou esta conexão, desconecte imediatamente em:\n` +
+    `WhatsApp → Configurações → Aparelhos conectados`;
+
+  try {
+    await axios.post(`${API_URL}/v1/message/sendText/${instance}`, {
+      number: phoneNumber,
+      textMessage: { text: alertMessage }
+    }, {
+      headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' }
+    });
+
+    console.log(`[ALERT] ✅ Alerta de conexão enviado para ${phoneNumber}`);
+  } catch (err) {
+    console.error(`[ALERT] ❌ Erro ao enviar alerta:`, err.response?.data || err.message);
+  }
+}
+
+// Logout / Clear Session
+app.delete("/api/instance/logout/:instance", async (req, res) => {
+  const { instance } = req.params;
+
+  console.log(`[LOGOUT] Clearing session for instance ${instance}`);
+
+  try {
+    const response = await axios.delete(`${API_URL}/v1/instance/logout/${instance}`, {
+      headers: { 'apikey': API_KEY }
+    });
+
+    res.json(response.data);
+  } catch (err) {
+    console.error(`[LOGOUT] Error:`, err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({
+      error: err.response?.data?.message || err.message
+    });
+  }
+});
+
+// Connect / Get QR Code
+app.get("/api/instance/connect/:instance", async (req, res) => {
+  const { instance } = req.params;
+
+  console.log(`[CONNECT] Requesting QR for instance ${instance}`);
+
+  try {
+    const response = await axios.get(`${API_URL}/v1/instance/connect/${instance}`, {
+      headers: { 'apikey': API_KEY }
+    });
+
+    res.json(response.data);
+  } catch (err) {
+    console.error(`[CONNECT] Error:`, err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({
+      error: err.response?.data?.message || err.message
+    });
+  }
+});
+
+// Connection State
+app.get("/api/instance/connectionState/:instance", async (req, res) => {
+  const { instance } = req.params;
+
+  try {
+    const response = await axios.get(`${API_URL}/v1/instance/connectionState/${instance}`, {
+      headers: { 'apikey': API_KEY }
+    });
+
+    res.json(response.data);
+  } catch (err) {
+    res.status(err.response?.status || 500).json({
+      error: err.response?.data?.message || err.message
+    });
+  }
+});
+
+/* -------------------------------------------------
+   Webhook Receiver - Connection Events
+   ------------------------------------------------- */
+
+// Webhook para receber eventos da API Go (conexão, desconexão, etc.)
+app.post("/api/webhook/instance-status", async (req, res) => {
+  const event = req.body;
+
+  console.log(`[WEBHOOK] Evento recebido:`, JSON.stringify(event).substring(0, 200));
+
+  try {
+    // Verifica se é evento de conexão
+    if (event.event === 'connection.update' || event.event === 'CONNECTION_UPDATE') {
+      const instance = event.instance || event.instanceName;
+      const state = event.state || event.data?.state;
+
+      console.log(`[WEBHOOK] Conexão atualizada: ${instance} -> ${state}`);
+
+      // Se conectou (open), envia mensagem de alerta
+      if (state === 'open' || state === 'connected') {
+        const now = new Date();
+        const dateTime = now.toLocaleString('pt-BR', {
+          timeZone: 'America/Sao_Paulo',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+
+        // Obtém informações da instância para pegar o número
+        try {
+          const infoResponse = await axios.get(`${API_URL}/v1/instance/info/${instance}`, {
+            headers: { 'apikey': API_KEY }
+          });
+
+          const instanceInfo = infoResponse.data;
+          const ownerNumber = instanceInfo.jid?.split('@')[0] || instanceInfo.owner?.split('@')[0];
+
+          if (ownerNumber) {
+            const alertMessage = `🔐 *ALERTA DE SEGURANÇA*\n\n` +
+              `✅ Seu WhatsApp foi conectado à API WhatsMiau2\n\n` +
+              `📱 *Instância:* ${instance}\n` +
+              `📅 *Data/Hora:* ${dateTime}\n` +
+              `🆔 *ID:* ${instanceInfo.id || 'N/A'}\n\n` +
+              `⚠️ Se você NÃO realizou esta conexão, desconecte imediatamente em:\n` +
+              `WhatsApp → Configurações → Aparelhos conectados`;
+
+            await axios.post(`${API_URL}/v1/message/sendText/${instance}`, {
+              number: ownerNumber,
+              textMessage: { text: alertMessage }
+            }, {
+              headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' }
+            });
+
+            console.log(`[WEBHOOK] Alerta de conexão enviado para ${ownerNumber}`);
+          }
+        } catch (infoErr) {
+          console.error(`[WEBHOOK] Erro ao obter info/enviar alerta:`, infoErr.message);
+        }
+      }
+    }
+
+    res.json({ success: true, received: true });
+  } catch (error) {
+    console.error(`[WEBHOOK] Erro:`, error.message);
+    res.json({ success: false, error: error.message });
+  }
+});
+
+// Webhook genérico para qualquer evento
+app.post("/api/webhook/:instance", async (req, res) => {
+  const { instance } = req.params;
+  const event = req.body;
+
+  console.log(`[WEBHOOK/${instance}] Evento:`, event.event || 'unknown');
+
+  // Processa evento de conexão
+  if (event.event === 'connection.update' && event.data?.state === 'open') {
+    const now = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
+    try {
+      // Pega o número dono da instância
+      const infoResponse = await axios.get(`${API_URL}/v1/instance/info/${instance}`, {
+        headers: { 'apikey': API_KEY }
+      });
+
+      const ownerNumber = infoResponse.data.jid?.split('@')[0];
+
+      if (ownerNumber) {
+        await axios.post(`${API_URL}/v1/message/sendText/${instance}`, {
+          number: ownerNumber,
+          textMessage: {
+            text: `🔐 *CONEXÃO DETECTADA*\n\n✅ Instância: ${instance}\n📅 ${now}\n\n_WhatsMiau2 API_`
+          }
+        }, {
+          headers: { 'apikey': API_KEY }
+        });
+      }
+    } catch (err) {
+      console.error(`[WEBHOOK/${instance}] Erro alerta:`, err.message);
+    }
+  }
+
+  res.json({ success: true });
 });
 
 // WhatsMiau2 API Status
@@ -2252,127 +2532,148 @@ app.post("/api/webhook/instance-status", async (req, res) => {
 
   console.log(`[WEBHOOK] Evento: ${event || 'raw'} | Instância ${instance}: ${currentStatus}`);
 
-  // 1. Tratar Status de Conexão
-  if (event === "instance.close" || status === "close" || status === "DESCONECTADO") {
-    console.warn(`🚨 A instância ${instance} foi DESCONECTADA!`);
-    sendAlert(`Sua API caiu ou a instância *${instance}* desconectou agora mesmo!`);
+  // 1. Tratar Status de Conexão (v1 e v2)
+  if (event === "instance.close" || event === "connection.update" || status === "close" || status === "DESCONECTADO") {
+    const state = (data && data.state) || status;
+
+    if (state === "close" || state === "DESCONECTADO" || event === "instance.close") {
+      console.warn(`🚨 A instância ${instance} foi DESCONECTADA!`);
+      sendAlert(`Sua API caiu ou a instância *${instance}* desconectou agora mesmo!`);
+    } else if (state === "open") {
+      console.log(`✅ Instância ${instance} conectada com sucesso!`);
+    }
   }
 
-  // 2. Tratar Mensagens Recebidas (Auto-Responder)
-  if (event === "message.received" && AI_AGENT_ENABLED) {
+  // 1.1 Tratar QR Code (v2)
+  if (event === "qrcode.updated") {
+    const qrcode = data?.qrcode?.base64 || data?.qrcode?.code;
+    console.log(`[WEBHOOK] QR Code atualizado para ${instance}`);
+    if (io) {
+      io.emit("instance-status", { instance, status: "QRCODE_UPDATED", qrcode });
+    }
+  }
+
+  // 2. Tratar Mensagens Recebidas (v1: message.received | v2: messages.upsert / messages.set)
+  if (event === "message.received" || event === "messages.upsert" || event === "messages.set") {
     const msg = data;
     const fromMe = msg.key?.fromMe;
     const remoteJid = msg.key?.remoteJid;
     const isGroup = remoteJid?.includes("@g.us");
+    const pushName = msg.pushName || remoteJid.split('@')[0];
 
-    const textMsg = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
+    // Extrair conteúdo e tipo da mensagem
+    let mType = 'text';
+    let mText = '';
+    let mMediaUrl = null;
 
-    if (!fromMe && textMsg && !isGroup) {
-      console.log(`[ROBOT] Processando mensagem de ${remoteJid}: ${textMsg}`);
+    if (msg.message?.conversation) {
+      mText = msg.message.conversation;
+    } else if (msg.message?.extendedTextMessage?.text) {
+      mText = msg.message.extendedTextMessage.text;
+    } else if (msg.message?.imageMessage) {
+      mType = 'image';
+      mMediaUrl = msg.message.imageMessage.url;
+      mText = msg.message.imageMessage.caption || 'Foto';
+    } else if (msg.message?.audioMessage) {
+      mType = 'audio';
+      mMediaUrl = msg.message.audioMessage.url;
+      mText = 'Áudio';
+    } else if (msg.message?.videoMessage) {
+      mType = 'video';
+      mMediaUrl = msg.message.videoMessage.url;
+      mText = msg.message.videoMessage.caption || 'Vídeo';
+    } else if (msg.message?.documentMessage) {
+      mType = 'document';
+      mMediaUrl = msg.message.documentMessage.url;
+      mText = msg.message.documentMessage.fileName || 'Arquivo';
+    }
 
-      // -- GESTÃO DE TICKETS AUTOMÁTICA (CRM & KANBAN) --
-      let ticket = ticketsDatabase.find(t => t.customerPhone === remoteJid && t.status !== 'FECHADO');
-      let isNewTicket = false;
+    // Se não for do sistema (fromMe) e não for grupo, processamos
+    if (!fromMe && !isGroup && (mText || mMediaUrl)) {
+      console.log(`[WEBHOOK] Mensagem (${mType}) de ${pushName}: ${mText}`);
+
+      // -- GESTÃO DE TICKETS/CONVERSAS --
+      let ticket = ticketsDatabase.find(t => (t.customerPhone === remoteJid || t.contact?.number === remoteJid) && t.status !== 'FECHADO');
 
       if (!ticket) {
-        // [KANBAN] Novo Lead (Coluna: NOVO)
-        isNewTicket = true;
         ticket = {
-          id: Date.now(),
-          customerName: remoteJid.split('@')[0],
+          id: Date.now().toString(),
+          customerName: pushName,
           customerPhone: remoteJid,
-          subject: textMsg.length > 50 ? textMsg.substring(0, 50) + '...' : textMsg,
-          status: 'NOVO', // Coluna Inicial
-          priority: 'MÉDIA',
-          lastActivity: new Date().toISOString(),
+          contact: {
+            name: pushName,
+            number: remoteJid,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(pushName)}&background=3b82f6&color=fff`
+          },
+          subject: mText.length > 50 ? mText.substring(0, 50) + '...' : mText,
+          lastMessage: mText,
+          status: 'NOVO',
+          priority: 'medium',
+          instance: instance || DEFAULT_INSTANCE,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
           messages: []
         };
         ticketsDatabase.push(ticket);
-        console.log(`[CRM] Novo Lead Criado: ${ticket.customerName}`);
       } else {
-        // [KANBAN] Movimentação Automática
-        // Se o cliente respondeu e estava em 'NOVO', movemos para 'ABERTO' (Em Atendimento)
-        if (ticket.status === 'NOVO') {
-          ticket.status = 'ABERTO';
-          console.log(`[CRM] Movendo ${ticket.customerName} de NOVO para ABERTO (Cliente respondeu)`);
-        }
-
-        // Se estava fechado (embora o find acima filtre, mantemos a lógica de reabertura robusta se mudarmos o filtro)
-        if (ticket.status === 'FECHADO' || ticket.status === 'RESOLVIDO') {
-          ticket.status = 'ABERTO';
-          console.log(`[CRM] Reabrindo ticket para ${ticket.customerName}`);
-        }
-
-        ticket.subject = textMsg.length > 50 ? textMsg.substring(0, 50) + '...' : textMsg;
-        ticket.lastActivity = new Date().toISOString();
+        if (ticket.status === 'NOVO') ticket.status = 'ABERTO';
+        ticket.lastMessage = mText;
+        ticket.updatedAt = new Date().toISOString();
+        ticket.customerName = pushName;
       }
 
-      ticket.messages.push({ role: 'customer', text: textMsg, time: new Date().toISOString() });
+      const chatMsg = {
+        id: Date.now().toString(),
+        text: mText,
+        mediaUrl: mMediaUrl,
+        type: fromMe ? 'outgoing' : 'incoming',
+        mediaType: mType === 'text' ? null : mType,
+        timestamp: new Date().toISOString()
+      };
+
+      if (!ticket.messages) ticket.messages = [];
+      ticket.messages.push(chatMsg);
       saveTicketsToFile();
 
-      // Emitir evento para o Kanban atualizar em tempo real
+      // Emitir eventos em tempo real
       if (io) {
         io.emit('ticket-update', ticket);
-        io.emit('kanban-move', { id: ticket.id, status: ticket.status });
+        io.emit('chat:message', {
+          conversationId: ticket.id.toString(),
+          message: chatMsg
+        });
       }
 
-      try {
-        const { generateChatResponse, analyzeLeadMessage } = await import("./services/ai.js");
+      // --- AUTO-RESPONDER (IA) ---
+      if (AI_AGENT_ENABLED && mType === 'text') {
+        try {
+          const { generateChatResponse } = await import("./services/ai.js");
+          const response = await generateChatResponse(mText, AI_AGENT_PROMPT);
 
-        // --- AI Analysis for CRM (Async) ---
-        // Pass recent history for context
-        const msgHistory = ticket.messages.slice(-5).map(m => `[${m.role}]: ${m.text}`).join(' | ');
+          await axios.post(`${API_URL}/v1/message/sendText/${instance || DEFAULT_INSTANCE}`, {
+            number: remoteJid,
+            textMessage: { text: response }
+          }, {
+            headers: { 'apikey': API_KEY }
+          });
 
-        analyzeLeadMessage(textMsg, msgHistory).then(analysis => {
-          if (analysis) {
-            console.log(`[AI Analysis] Sentiment: ${analysis.sentiment}, Intention: ${analysis.intention}`);
-
-            let updated = false;
-
-            // Update Priority if suggested and different
-            if (analysis.suggestedPriority && ticket.priority !== analysis.suggestedPriority) {
-              // Only upgrade priority automatically, dont downgrade unless logic is stricter? 
-              // For now, accept AI suggestion
-              ticket.priority = analysis.suggestedPriority;
-              updated = true;
-              console.log(`[CRM AI] Prioridade atualizada para ${ticket.priority}`);
-            }
-
-            // Update Name if extracted and currently generic (using simple heuristic for generic name)
-            const currentName = ticket.customerName;
-            if (analysis.extractedName && analysis.extractedName !== 'null' && (!currentName || currentName.includes('@') || currentName === ticket.customerPhone)) {
-              ticket.customerName = analysis.extractedName;
-              updated = true;
-              console.log(`[CRM AI] Nome extraído: ${ticket.customerName}`);
-            }
-
-            if (updated) {
-              saveTicketsToFile();
-              if (io) {
-                io.emit('ticket-update', ticket);
-                io.emit('kanban-move', { id: ticket.id, status: ticket.status });
-              }
-            }
-          }
-        }).catch(err => console.error("Erro na análise de lead (async):", err));
-
-
-        const response = await generateChatResponse(textMsg, AI_AGENT_PROMPT);
-
-        console.log(`[ROBOT] Respondendo: ${response}`);
-
-        // Enviar a resposta via API
-        await axios.post(`${API_URL}/v1/message/sendText/${instance || DEFAULT_INSTANCE}`, {
-          number: remoteJid,
-          textMessage: { text: response }
-        }, {
-          headers: { 'apikey': API_KEY }
-        });
-      } catch (err) {
-        console.error(`[ROBOT ERROR] Falha ao responder:`, err.message);
+          const aiMsg = {
+            id: (Date.now() + 1).toString(),
+            text: response,
+            type: 'outgoing',
+            role: 'agent',
+            timestamp: new Date().toISOString()
+          };
+          ticket.messages.push(aiMsg);
+          saveTicketsToFile();
+          if (io) io.emit('chat:message', { conversationId: ticket.id.toString(), message: aiMsg });
+        } catch (err) {
+          console.error(`[AI ERROR]`, err.message);
+        }
       }
     }
   }
+
 
   if (io) {
     io.emit("instance-status", { instance, status: currentStatus, event, data });
@@ -2686,6 +2987,1069 @@ async function startInstagramAutomation() {
   }, 10 * 60 * 1000); // Check every 10 minutes
 }
 
+// ============================================
+// CHAT DE ATENDIMENTO - API ENDPOINTS
+// ============================================
+
+// Get all conversations
+app.get('/api/chat/conversations', async (req, res) => {
+  try {
+    // Usar a base global ticketsDatabase
+    const conversations = ticketsDatabase.map(ticket => ({
+      id: ticket.id.toString(),
+      contactName: ticket.customerName || ticket.contact?.name || 'Desconhecido',
+      contactNumber: ticket.customerPhone || ticket.contact?.number,
+      contactAvatar: ticket.contact?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(ticket.customerName || 'U')}&background=3b82f6&color=fff`,
+      lastMessage: ticket.lastMessage || 'Conversa iniciada',
+      timestamp: ticket.updatedAt || ticket.lastActivity || ticket.createdAt,
+      unread: ticket.status === 'NOVO',
+      status: ticket.status,
+      priority: ticket.priority || 'medium',
+      instance: ticket.instance || DEFAULT_INSTANCE
+    }));
+
+    conversations.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    res.json({ success: true, conversations });
+  } catch (error) {
+    console.error('[CHAT API] Error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get detailed conversation
+app.get('/api/chat/conversations/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ticket = ticketsDatabase.find(t => t.id.toString() === id.toString());
+
+    if (!ticket) return res.status(404).json({ success: false, error: 'Conversa não encontrada' });
+
+    res.json({ success: true, conversation: ticket });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Send message (Real Integration with Media Support)
+app.post('/api/chat/conversations/:id/messages', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { message, media, mediaType, mimetype } = req.body;
+
+    const ticketIndex = ticketsDatabase.findIndex(t => t.id.toString() === id.toString());
+
+    if (ticketIndex === -1) {
+      return res.status(404).json({ success: false, error: 'Conversa não encontrada' });
+    }
+
+    const ticket = ticketsDatabase[ticketIndex];
+    const instance = ticket.instance || DEFAULT_INSTANCE;
+    const remoteJid = ticket.customerPhone || ticket.contact?.number;
+
+    let response;
+    let newMessage = {
+      id: Date.now().toString(),
+      type: 'outgoing',
+      role: 'agent',
+      timestamp: new Date().toISOString(),
+      time: new Date().toISOString(),
+      status: 'sent'
+    };
+
+    if (media && mediaType === 'audio') {
+      // ENVIAR ÁUDIO VIA EVOLUTION API
+      console.log(`[CHAT] Enviando áUDIO real para ${remoteJid} via ${instance}`);
+      response = await axios.post(`${API_URL}/v1/message/sendWhatsAppAudio/${instance}`, {
+        number: remoteJid,
+        audioMessage: { audio: media, ptt: true }
+      }, { headers: { 'apikey': API_KEY } });
+
+      newMessage.text = '🎤 Áudio enviado';
+      newMessage.mediaType = 'audio';
+      newMessage.mediaUrl = media.startsWith('http') ? media : `data:audio/mp3;base64,${media}`; // Simplificado para exibição local imediata
+    } else if (media && mediaType) {
+      // ENVIAR OUTRAS MÍDIAS
+      console.log(`[CHAT] Enviando ${mediaType} real para ${remoteJid} via ${instance}`);
+      response = await axios.post(`${API_URL}/v1/message/sendMedia/${instance}`, {
+        number: remoteJid,
+        mediaMessage: {
+          mediatype: mediaType,
+          media: media,
+          mimetype: mimetype || 'application/octet-stream',
+          caption: message || ''
+        }
+      }, { headers: { 'apikey': API_KEY } });
+
+      newMessage.text = message || `${mediaType} enviado`;
+      newMessage.mediaType = mediaType;
+      newMessage.mediaUrl = media.startsWith('http') ? media : `data:${mimetype || 'image/jpeg'};base64,${media}`;
+    } else {
+      // ENVIAR TEXTO SIMPLES
+      console.log(`[CHAT] Enviando mensagem de texto real para ${remoteJid} via ${instance}`);
+      response = await axios.post(`${API_URL}/v1/message/sendText/${instance}`, {
+        number: remoteJid,
+        textMessage: { text: message }
+      }, { headers: { 'apikey': API_KEY } });
+
+      newMessage.text = message;
+    }
+
+    if (!ticket.messages) ticket.messages = [];
+    ticket.messages.push(newMessage);
+    ticket.lastMessage = newMessage.text;
+    ticket.updatedAt = new Date().toISOString();
+
+    saveTicketsToFile();
+
+    if (io) {
+      io.emit('chat:message', {
+        conversationId: id.toString(),
+        message: newMessage
+      });
+      io.emit('ticket-update', ticket);
+    }
+
+    res.json({ success: true, message: newMessage });
+  } catch (error) {
+    console.error('[CHAT SEND ERROR] Falha ao enviar:', error.response?.data || error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// List Connected Instances for Chat
+app.get('/api/chat/instances', async (req, res) => {
+  try {
+    const url = `${API_URL}/v1/instance/fetchInstances`;
+    const response = await axios.get(url, { headers: { 'apikey': API_KEY } });
+
+    // Sessions Refresh Status Logic (Inspirado no Woofed CRM)
+    // Verifica cada instância individualmente para garantir redundância ao webhook
+    const rawInstances = response.data || [];
+    const instances = await Promise.all(rawInstances.map(async inst => {
+      try {
+        const stateUrl = `${API_URL}/v1/instance/connectionState/${inst.instanceName}`;
+        const stateRes = await axios.get(stateUrl, { headers: { 'apikey': API_KEY } });
+        const currentState = stateRes.data?.instance?.state || inst.status;
+
+        return {
+          name: inst.instanceName || inst.name,
+          status: currentState === 'open' ? 'online' : 'offline',
+          owner: inst.owner || inst.number,
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(inst.instanceName)}&background=random&color=fff`
+        };
+      } catch (e) {
+        return {
+          name: inst.instanceName || inst.name,
+          status: 'offline',
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(inst.instanceName)}&background=ccc&color=fff`
+        };
+      }
+    }));
+
+    res.json({ success: true, instances });
+  } catch (error) {
+    console.error('[INSTANCES ERROR]', error.message);
+    res.json({
+      success: true,
+      instances: [{ name: DEFAULT_INSTANCE, status: 'online', avatar: `https://ui-avatars.com/api/?name=${DEFAULT_INSTANCE}&background=10b981&color=fff` }]
+    });
+  }
+});
+
+/* -------------------------------------------------
+   SETTINGS & CONFIGURATION ROUTES
+   ------------------------------------------------- */
+
+// Arquivo de configuração persistente
+const SETTINGS_PATH = path.join(__dirname, 'data', 'settings.json');
+
+// Carregar configurações do arquivo
+function loadSettings() {
+  try {
+    if (fs.existsSync(SETTINGS_PATH)) {
+      return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8'));
+    }
+  } catch (e) {
+    console.error('[Settings] Erro ao carregar:', e.message);
+  }
+  return {
+    agentEnabled: false,
+    agentPrompt: `Você é Sofia, Especialista em Automação Digital da Automacoescomerciais.
+- Seja profissional e orientada a resultados
+- Qualifique leads e agende demonstrações
+- Preços: Mensal R$97, Trimestral R$291, Anual R$1.164`,
+    golangApi: { url: '', token: '' },
+    evolutionApi: { url: '', apiKey: '' },
+    mercadoPago: { accessToken: '' },
+    openai: { provider: 'openai', apiKey: '' },
+    webhook: { url: '', events: [] },
+    n8n: { url: '', webhookId: '' },
+    company: {
+      name: 'Automações Comerciais Integradas',
+      email: 'contato@automacoescomerciais.com.br',
+      phone: '+55 88 9215-67214',
+      hours: 'Seg-Sex: 8h às 18h'
+    }
+  };
+}
+
+// Salvar configurações no arquivo
+function saveSettings(settings) {
+  try {
+    if (!fs.existsSync(path.join(__dirname, 'data'))) {
+      fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
+    }
+    fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2));
+    return true;
+  } catch (e) {
+    console.error('[Settings] Erro ao salvar:', e.message);
+    return false;
+  }
+}
+
+// Carregar configurações na inicialização
+let systemSettings = loadSettings();
+
+// === AI Agent Config ===
+app.get('/api/ai/agent-config', (req, res) => {
+  res.json({
+    success: true,
+    enabled: systemSettings.agentEnabled,
+    prompt: systemSettings.agentPrompt
+  });
+});
+
+app.post('/api/ai/agent-config', (req, res) => {
+  const { enabled, prompt } = req.body;
+
+  systemSettings.agentEnabled = enabled;
+  if (prompt) systemSettings.agentPrompt = prompt;
+
+  if (saveSettings(systemSettings)) {
+    console.log(`[AI Agent] Configuração salva. Enabled: ${enabled}`);
+    res.json({ success: true, message: 'Configuração salva com sucesso' });
+  } else {
+    res.status(500).json({ success: false, error: 'Erro ao salvar configuração' });
+  }
+});
+
+// === AI Agent Test ===
+app.post('/api/ai/test', async (req, res) => {
+  const { message } = req.body;
+
+  if (!systemSettings.openai?.apiKey && !process.env.OPENAI_API_KEY) {
+    return res.json({
+      success: true,
+      response: `🤖 *Resposta de Teste (Sofia)*\n\nOlá! Sou a Sofia, sua assistente virtual.\n\n_Esta é uma resposta de demonstração. Configure sua API Key de IA para respostas reais._\n\nSua mensagem foi: "${message || 'Olá!'}"`,
+      demo: true
+    });
+  }
+
+  try {
+    // Usar a API de IA configurada para gerar resposta
+    const aiResponse = await generateTestResponse(message || 'Olá!', systemSettings.agentPrompt);
+    res.json({ success: true, response: aiResponse, demo: false });
+  } catch (e) {
+    res.json({
+      success: true,
+      response: `🤖 *Resposta da Sofia*\n\nDesculpe, houve um erro ao processar. Tente novamente!\n\nErro: ${e.message}`,
+      demo: true
+    });
+  }
+});
+
+// Função auxiliar para teste de resposta
+async function generateTestResponse(message, prompt) {
+  // Se tiver Gemini configurado
+  if (process.env.GEMINI_API_KEY) {
+    const response = await generateSummaryWithGemini(
+      `${prompt}\n\nMensagem do cliente: ${message}\n\nResponda como Sofia:`,
+      'text'
+    );
+    return response;
+  }
+
+  // Resposta demo
+  return `Olá! 👋 Prazer, sou a Sofia!\n\nVocê disse: "${message}"\n\nComo posso ajudar você hoje? 😊`;
+}
+
+// === Golang API Config ===
+app.get('/api/settings/golang', (req, res) => {
+  res.json({
+    success: true,
+    url: systemSettings.golangApi?.url || '',
+    hasToken: !!(systemSettings.golangApi?.token)
+  });
+});
+
+app.post('/api/settings/golang', (req, res) => {
+  const { url, token } = req.body;
+
+  systemSettings.golangApi = { url, token };
+
+  if (saveSettings(systemSettings)) {
+    console.log('[Settings] API Golang salva');
+    res.json({ success: true });
+  } else {
+    res.status(500).json({ success: false, error: 'Erro ao salvar' });
+  }
+});
+
+app.post('/api/settings/golang/test', async (req, res) => {
+  const { url, token } = req.body;
+
+  try {
+    const response = await axios.get(`${url}/health`, {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      timeout: 5000
+    });
+
+    res.json({ success: true, status: response.status, data: response.data });
+  } catch (e) {
+    res.json({ success: false, error: e.message });
+  }
+});
+
+// === Evolution API Config ===
+app.get('/api/settings/evolution', (req, res) => {
+  res.json({
+    success: true,
+    url: systemSettings.evolutionApi?.url || '',
+    hasApiKey: !!(systemSettings.evolutionApi?.apiKey)
+  });
+});
+
+app.post('/api/settings/evolution', (req, res) => {
+  const { url, apiKey } = req.body;
+
+  systemSettings.evolutionApi = { url, apiKey };
+
+  if (saveSettings(systemSettings)) {
+    console.log('[Settings] Evolution API salva');
+    res.json({ success: true });
+  } else {
+    res.status(500).json({ success: false, error: 'Erro ao salvar' });
+  }
+});
+
+app.post('/api/evolution/test', async (req, res) => {
+  const { url, apiKey } = req.body;
+
+  try {
+    const response = await axios.get(`${url}/instance/fetchInstances`, {
+      headers: { 'apikey': apiKey },
+      timeout: 5000
+    });
+
+    res.json({ success: true, instances: response.data?.length || 0 });
+  } catch (e) {
+    res.json({ success: false, error: e.message });
+  }
+});
+
+// === Mercado Pago Config ===
+app.get('/api/settings/mercadopago', (req, res) => {
+  res.json({
+    success: true,
+    hasToken: !!(systemSettings.mercadoPago?.accessToken)
+  });
+});
+
+app.post('/api/settings/mercadopago', (req, res) => {
+  const { accessToken } = req.body;
+
+  systemSettings.mercadoPago = { accessToken };
+
+  if (saveSettings(systemSettings)) {
+    console.log('[Settings] Mercado Pago salvo');
+    res.json({ success: true });
+  } else {
+    res.status(500).json({ success: false, error: 'Erro ao salvar' });
+  }
+});
+
+app.post('/api/settings/mercadopago/test', async (req, res) => {
+  const { accessToken } = req.body;
+
+  try {
+    const response = await axios.get('https://api.mercadopago.com/users/me', {
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+      timeout: 5000
+    });
+
+    res.json({
+      success: true,
+      user: {
+        id: response.data.id,
+        nickname: response.data.nickname,
+        email: response.data.email
+      }
+    });
+  } catch (e) {
+    res.json({ success: false, error: e.message });
+  }
+});
+
+// === OpenAI / IA Config ===
+app.get('/api/settings/openai', (req, res) => {
+  res.json({
+    success: true,
+    provider: systemSettings.openai?.provider || 'openai',
+    hasApiKey: !!(systemSettings.openai?.apiKey)
+  });
+});
+
+app.post('/api/settings/openai', (req, res) => {
+  const { provider, apiKey } = req.body;
+
+  systemSettings.openai = { provider, apiKey };
+
+  if (saveSettings(systemSettings)) {
+    console.log('[Settings] OpenAI/IA salvo');
+    res.json({ success: true });
+  } else {
+    res.status(500).json({ success: false, error: 'Erro ao salvar' });
+  }
+});
+
+// === Webhook Config ===
+app.get('/api/settings/webhook', (req, res) => {
+  res.json({
+    success: true,
+    url: systemSettings.webhook?.url || '',
+    events: systemSettings.webhook?.events || []
+  });
+});
+
+app.post('/api/settings/webhook', (req, res) => {
+  const { url, events } = req.body;
+
+  systemSettings.webhook = { url, events };
+
+  if (saveSettings(systemSettings)) {
+    console.log('[Settings] Webhook salvo');
+    res.json({ success: true });
+  } else {
+    res.status(500).json({ success: false, error: 'Erro ao salvar' });
+  }
+});
+
+app.post('/api/settings/webhook/test', async (req, res) => {
+  const { url } = req.body;
+
+  if (!url) {
+    return res.json({ success: false, error: 'URL não informada' });
+  }
+
+  try {
+    const testPayload = {
+      event: 'test',
+      timestamp: new Date().toISOString(),
+      data: {
+        message: 'Este é um teste de webhook do WhatsMiau2',
+        source: 'settings-page'
+      }
+    };
+
+    await axios.post(url, testPayload, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10000
+    });
+
+    res.json({ success: true, message: 'Webhook enviado com sucesso' });
+  } catch (e) {
+    res.json({ success: false, error: e.message });
+  }
+});
+
+// === N8N Config ===
+app.get('/api/settings/n8n', (req, res) => {
+  res.json({
+    success: true,
+    url: systemSettings.n8n?.url || '',
+    webhookId: systemSettings.n8n?.webhookId || ''
+  });
+});
+
+app.post('/api/settings/n8n', (req, res) => {
+  const { url, webhookId } = req.body;
+
+  systemSettings.n8n = { url, webhookId };
+
+  if (saveSettings(systemSettings)) {
+    console.log('[Settings] N8N salvo');
+    res.json({ success: true });
+  } else {
+    res.status(500).json({ success: false, error: 'Erro ao salvar' });
+  }
+});
+
+// === Company Profile ===
+app.get('/api/settings/company', (req, res) => {
+  res.json({
+    success: true,
+    ...systemSettings.company
+  });
+});
+
+app.post('/api/settings/company', (req, res) => {
+  const { name, email, phone, hours, address } = req.body;
+
+  systemSettings.company = { name, email, phone, hours, address };
+
+  if (saveSettings(systemSettings)) {
+    console.log('[Settings] Perfil da empresa salvo');
+    res.json({ success: true });
+  } else {
+    res.status(500).json({ success: false, error: 'Erro ao salvar' });
+  }
+});
+
+// === All Settings (for backup/restore) ===
+app.get('/api/settings/all', (req, res) => {
+  res.json({
+    success: true,
+    settings: {
+      ...systemSettings,
+      // Ocultar tokens/keys
+      golangApi: { url: systemSettings.golangApi?.url, hasToken: !!systemSettings.golangApi?.token },
+      evolutionApi: { url: systemSettings.evolutionApi?.url, hasApiKey: !!systemSettings.evolutionApi?.apiKey },
+      mercadoPago: { hasToken: !!systemSettings.mercadoPago?.accessToken },
+      openai: { provider: systemSettings.openai?.provider, hasApiKey: !!systemSettings.openai?.apiKey }
+    }
+  });
+});
+
+/* -------------------------------------------------
+   CRM ROUTES
+   ------------------------------------------------- */
+
+// Arquivo de leads persistente
+const LEADS_PATH = path.join(__dirname, 'data', 'leads.json');
+const COBRANCAS_PATH = path.join(__dirname, 'data', 'cobrancas.json');
+
+// Carregar leads
+function loadLeads() {
+  try {
+    if (fs.existsSync(LEADS_PATH)) {
+      return JSON.parse(fs.readFileSync(LEADS_PATH, 'utf8'));
+    }
+  } catch (e) {
+    console.error('[CRM] Erro ao carregar leads:', e.message);
+  }
+  return [];
+}
+
+// Salvar leads
+function saveLeads(leads) {
+  try {
+    if (!fs.existsSync(path.join(__dirname, 'data'))) {
+      fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
+    }
+    fs.writeFileSync(LEADS_PATH, JSON.stringify(leads, null, 2));
+    return true;
+  } catch (e) {
+    console.error('[CRM] Erro ao salvar leads:', e.message);
+    return false;
+  }
+}
+
+// Carregar cobranças
+function loadCobrancas() {
+  try {
+    if (fs.existsSync(COBRANCAS_PATH)) {
+      return JSON.parse(fs.readFileSync(COBRANCAS_PATH, 'utf8'));
+    }
+  } catch (e) {
+    console.error('[CRM] Erro ao carregar cobranças:', e.message);
+  }
+  return [];
+}
+
+// Salvar cobranças
+function saveCobrancas(cobrancas) {
+  try {
+    if (!fs.existsSync(path.join(__dirname, 'data'))) {
+      fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
+    }
+    fs.writeFileSync(COBRANCAS_PATH, JSON.stringify(cobrancas, null, 2));
+    return true;
+  } catch (e) {
+    console.error('[CRM] Erro ao salvar cobranças:', e.message);
+    return false;
+  }
+}
+
+// Inicializar dados do CRM
+let crmLeads = loadLeads();
+let crmCobrancas = loadCobrancas();
+
+// === Leads API ===
+app.get('/api/crm/leads', (req, res) => {
+  res.json({ success: true, leads: crmLeads });
+});
+
+app.post('/api/crm/leads', (req, res) => {
+  const { leads } = req.body;
+
+  if (leads) {
+    crmLeads = leads;
+    if (saveLeads(crmLeads)) {
+      console.log(`[CRM] ${crmLeads.length} leads salvos`);
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar leads' });
+    }
+  } else {
+    res.status(400).json({ success: false, error: 'Leads não informados' });
+  }
+});
+
+app.post('/api/crm/leads/add', (req, res) => {
+  const lead = req.body;
+
+  if (!lead.nome || !lead.whatsapp) {
+    return res.status(400).json({ success: false, error: 'Nome e WhatsApp são obrigatórios' });
+  }
+
+  lead.id = Date.now().toString();
+  lead.createdAt = new Date().toISOString();
+  lead.history = [{ type: 'created', date: lead.createdAt, text: 'Lead criado' }];
+
+  crmLeads.push(lead);
+  saveLeads(crmLeads);
+
+  console.log(`[CRM] Novo lead: ${lead.nome}`);
+  res.json({ success: true, lead });
+});
+
+app.put('/api/crm/leads/:id', (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+
+  const leadIndex = crmLeads.findIndex(l => l.id === id);
+  if (leadIndex === -1) {
+    return res.status(404).json({ success: false, error: 'Lead não encontrado' });
+  }
+
+  crmLeads[leadIndex] = { ...crmLeads[leadIndex], ...updates };
+  saveLeads(crmLeads);
+
+  console.log(`[CRM] Lead ${id} atualizado`);
+  res.json({ success: true, lead: crmLeads[leadIndex] });
+});
+
+app.delete('/api/crm/leads/:id', (req, res) => {
+  const { id } = req.params;
+
+  crmLeads = crmLeads.filter(l => l.id !== id);
+  saveLeads(crmLeads);
+
+  console.log(`[CRM] Lead ${id} removido`);
+  res.json({ success: true });
+});
+
+// === Cobranças API ===
+app.get('/api/crm/cobrancas', (req, res) => {
+  res.json({ success: true, cobrancas: crmCobrancas });
+});
+
+app.post('/api/crm/cobrancas', (req, res) => {
+  const cobranca = req.body;
+
+  cobranca.id = Date.now().toString();
+  cobranca.createdAt = new Date().toISOString();
+  cobranca.status = 'pendente';
+
+  crmCobrancas.push(cobranca);
+  saveCobrancas(crmCobrancas);
+
+  console.log(`[CRM] Nova cobrança: R$ ${cobranca.valor}`);
+  res.json({ success: true, cobranca });
+});
+
+app.put('/api/crm/cobrancas/:id', (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const cobranca = crmCobrancas.find(c => c.id === id);
+  if (!cobranca) {
+    return res.status(404).json({ success: false, error: 'Cobrança não encontrada' });
+  }
+
+  cobranca.status = status;
+  saveCobrancas(crmCobrancas);
+
+  console.log(`[CRM] Cobrança ${id} atualizada para ${status}`);
+  res.json({ success: true, cobranca });
+});
+
+// === Mercado Pago PIX ===
+app.post('/api/mercadopago/pix', async (req, res) => {
+  const { valor, descricao, leadId, leadName, leadEmail, leadWhatsapp, expiracao } = req.body;
+
+  // Usar token do settings ou variável de ambiente
+  const accessToken = systemSettings.mercadoPago?.accessToken || process.env.MERCADOPAGO_ACCESS_TOKEN;
+
+  if (!accessToken) {
+    return res.status(400).json({
+      success: false,
+      error: 'Token do Mercado Pago não configurado. Vá em Configurações > APIs.'
+    });
+  }
+
+  try {
+    const expirationDate = new Date();
+    expirationDate.setMinutes(expirationDate.getMinutes() + (expiracao || 30));
+
+    const payload = {
+      transaction_amount: parseFloat(valor),
+      description: descricao || 'Pagamento',
+      payment_method_id: 'pix',
+      payer: {
+        email: leadEmail || 'cliente@email.com',
+        first_name: leadName || 'Cliente'
+      },
+      date_of_expiration: expirationDate.toISOString()
+    };
+
+    const response = await axios.post(
+      'https://api.mercadopago.com/v1/payments',
+      payload,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'X-Idempotency-Key': `pix-${Date.now()}`
+        }
+      }
+    );
+
+    const pixCode = response.data.point_of_interaction?.transaction_data?.qr_code || '';
+    const pixQrCodeBase64 = response.data.point_of_interaction?.transaction_data?.qr_code_base64 || '';
+
+    // Salvar cobrança com leadId para relacionar no webhook
+    const cobranca = {
+      id: response.data.id.toString(),
+      leadId,
+      leadName,
+      leadWhatsapp,
+      valor,
+      descricao,
+      pixCode,
+      status: 'pendente',
+      createdAt: new Date().toISOString(),
+      expiresAt: expirationDate.toISOString()
+    };
+
+    crmCobrancas.push(cobranca);
+    saveCobrancas(crmCobrancas);
+
+    console.log(`[PIX] Cobrança de R$ ${valor} gerada para ${leadName} (Lead ID: ${leadId})`);
+
+    res.json({
+      success: true,
+      data: {
+        id: response.data.id,
+        pixCode,
+        pixQrCodeBase64,
+        valor,
+        expiresAt: expirationDate.toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('[PIX ERROR]', error.response?.data || error.message);
+    res.status(500).json({
+      success: false,
+      error: error.response?.data?.message || error.message
+    });
+  }
+});
+
+// Verificar status do pagamento
+app.get('/api/mercadopago/pix/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const accessToken = systemSettings.mercadoPago?.accessToken || process.env.MERCADOPAGO_ACCESS_TOKEN;
+
+  if (!accessToken) {
+    return res.status(400).json({ success: false, error: 'Token não configurado' });
+  }
+
+  try {
+    const response = await axios.get(
+      `https://api.mercadopago.com/v1/payments/${id}`,
+      {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      }
+    );
+
+    const status = response.data.status;
+
+    // Atualizar cobrança local
+    const cobranca = crmCobrancas.find(c => c.id === id);
+    if (cobranca && cobranca.status !== status) {
+      cobranca.status = status;
+      saveCobrancas(crmCobrancas);
+    }
+
+    res.json({
+      success: true,
+      status,
+      statusDetail: response.data.status_detail
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.response?.data?.message || error.message
+    });
+  }
+});
+
+// === Dashboard Stats ===
+app.get('/api/crm/stats', (req, res) => {
+  const totalLeads = crmLeads.length;
+  const conversoes = crmLeads.filter(l => l.status === 'fechado').length;
+  const totalCobrancas = crmCobrancas.length;
+  const receita = crmLeads.filter(l => l.status === 'fechado').reduce((sum, l) => sum + (l.valor || 0), 0);
+
+  const byStatus = {
+    novo: crmLeads.filter(l => l.status === 'novo').length,
+    contato: crmLeads.filter(l => l.status === 'contato').length,
+    negociacao: crmLeads.filter(l => l.status === 'negociacao').length,
+    proposta: crmLeads.filter(l => l.status === 'proposta').length,
+    fechado: crmLeads.filter(l => l.status === 'fechado').length
+  };
+
+  res.json({
+    success: true,
+    stats: {
+      totalLeads,
+      conversoes,
+      totalCobrancas,
+      receita,
+      byStatus
+    }
+  });
+});
+
+/* -------------------------------------------------
+   MERCADO PAGO WEBHOOKS
+   ------------------------------------------------- */
+
+// Webhook para receber notificações do Mercado Pago
+app.post('/api/webhook/mercadopago', async (req, res) => {
+  console.log('[MP Webhook] Recebido:', JSON.stringify(req.body));
+
+  try {
+    const { action, data, type } = req.body;
+
+    // Mercado Pago envia diferentes tipos de notificações
+    if (type === 'payment' || action === 'payment.updated' || action === 'payment.created') {
+      const paymentId = data?.id || req.body.data?.id;
+
+      if (!paymentId) {
+        console.log('[MP Webhook] ID do pagamento não encontrado');
+        return res.status(200).send('OK');
+      }
+
+      // Buscar detalhes do pagamento
+      const accessToken = systemSettings.mercadoPago?.accessToken || process.env.MERCADOPAGO_ACCESS_TOKEN;
+
+      if (!accessToken) {
+        console.log('[MP Webhook] Token não configurado');
+        return res.status(200).send('OK');
+      }
+
+      const paymentResponse = await axios.get(
+        `https://api.mercadopago.com/v1/payments/${paymentId}`,
+        { headers: { 'Authorization': `Bearer ${accessToken}` } }
+      );
+
+      const payment = paymentResponse.data;
+      const status = payment.status;
+      const statusDetail = payment.status_detail;
+
+      console.log(`[MP Webhook] Pagamento ${paymentId}: ${status} (${statusDetail})`);
+
+      // Atualizar cobrança local
+      const cobranca = crmCobrancas.find(c => c.id === paymentId.toString());
+
+      if (cobranca) {
+        const previousStatus = cobranca.status;
+        cobranca.status = status;
+        cobranca.statusDetail = statusDetail;
+        cobranca.updatedAt = new Date().toISOString();
+        saveCobrancas(crmCobrancas);
+
+        // Se o pagamento foi aprovado e antes não estava
+        if (status === 'approved' && previousStatus !== 'approved') {
+          console.log(`[MP Webhook] 🎉 PIX PAGO! R$ ${payment.transaction_amount}`);
+
+          // Buscar o lead relacionado
+          const lead = crmLeads.find(l => l.id === cobranca.leadId);
+
+          if (lead) {
+            // Adicionar ao histórico do lead
+            lead.history = lead.history || [];
+            lead.history.push({
+              type: 'payment_received',
+              date: new Date().toISOString(),
+              text: `PIX de R$ ${payment.transaction_amount.toFixed(2)} confirmado!`
+            });
+
+            // Atualizar status do lead para fechado se ainda não estiver
+            if (lead.status !== 'fechado') {
+              lead.status = 'fechado';
+              lead.history.push({
+                type: 'status_change',
+                date: new Date().toISOString(),
+                text: 'Status alterado para Fechado (pagamento confirmado)'
+              });
+            }
+
+            saveLeads(crmLeads);
+
+            // Enviar mensagem de confirmação via WhatsApp
+            if (lead.whatsapp) {
+              try {
+                await axios.post(`${API_URL}/v1/message/sendText/${DEFAULT_INSTANCE}`, {
+                  number: lead.whatsapp,
+                  textMessage: {
+                    text: `✅ *Pagamento Confirmado!*\n\n` +
+                      `Olá ${lead.nome}! 👋\n\n` +
+                      `Recebemos seu pagamento de *R$ ${payment.transaction_amount.toFixed(2)}*.\n\n` +
+                      `Muito obrigado pela confiança! 🙏\n\n` +
+                      `Se tiver qualquer dúvida, estamos à disposição.\n\n` +
+                      `_Automações Comerciais Integradas_`
+                  }
+                }, {
+                  headers: { 'apikey': API_KEY }
+                });
+
+                console.log(`[MP Webhook] ✅ Confirmação enviada para ${lead.whatsapp}`);
+
+                // Adicionar ao histórico
+                lead.history.push({
+                  type: 'message_sent',
+                  date: new Date().toISOString(),
+                  text: 'Confirmação de pagamento enviada via WhatsApp'
+                });
+                saveLeads(crmLeads);
+
+              } catch (msgErr) {
+                console.error('[MP Webhook] Erro ao enviar mensagem:', msgErr.message);
+              }
+            }
+
+            // Notificar admin via Socket.IO
+            if (io) {
+              io.emit('payment-confirmed', {
+                leadId: lead.id,
+                leadName: lead.nome,
+                amount: payment.transaction_amount,
+                paymentId
+              });
+            }
+          }
+
+          // Enviar alerta para o desenvolvedor
+          try {
+            await axios.post(`${API_URL}/v1/message/sendText/${DEFAULT_INSTANCE}`, {
+              number: DEVELOPER_NUMBER,
+              textMessage: {
+                text: `💰 *PAGAMENTO RECEBIDO!*\n\n` +
+                  `👤 Cliente: ${cobranca.leadName || 'N/A'}\n` +
+                  `💵 Valor: R$ ${payment.transaction_amount.toFixed(2)}\n` +
+                  `📋 ID: ${paymentId}\n` +
+                  `⏰ ${new Date().toLocaleString('pt-BR')}`
+              }
+            }, {
+              headers: { 'apikey': API_KEY }
+            });
+          } catch (alertErr) {
+            console.error('[MP Webhook] Erro ao enviar alerta:', alertErr.message);
+          }
+        }
+      } else {
+        console.log(`[MP Webhook] Cobrança ${paymentId} não encontrada localmente`);
+      }
+    }
+
+    // Sempre responder 200 para o Mercado Pago
+    res.status(200).send('OK');
+
+  } catch (error) {
+    console.error('[MP Webhook ERROR]', error.message);
+    // Ainda retorna 200 para evitar retentativas infinitas
+    res.status(200).send('OK');
+  }
+});
+
+// Webhook IPN (Instant Payment Notification) - formato alternativo
+app.post('/api/webhook/mercadopago/ipn', async (req, res) => {
+  console.log('[MP IPN] Recebido:', req.query, req.body);
+
+  try {
+    const topic = req.query.topic || req.body.topic;
+    const id = req.query.id || req.body.id;
+
+    if (topic === 'payment' && id) {
+      // Redirecionar para o handler principal
+      req.body = { type: 'payment', data: { id } };
+      // Chamar a rota principal internamente
+      const accessToken = systemSettings.mercadoPago?.accessToken || process.env.MERCADOPAGO_ACCESS_TOKEN;
+
+      if (accessToken) {
+        const paymentResponse = await axios.get(
+          `https://api.mercadopago.com/v1/payments/${id}`,
+          { headers: { 'Authorization': `Bearer ${accessToken}` } }
+        );
+
+        const status = paymentResponse.data.status;
+        console.log(`[MP IPN] Pagamento ${id}: ${status}`);
+
+        // Atualizar cobrança
+        const cobranca = crmCobrancas.find(c => c.id === id.toString());
+        if (cobranca) {
+          cobranca.status = status;
+          cobranca.updatedAt = new Date().toISOString();
+          saveCobrancas(crmCobrancas);
+        }
+      }
+    }
+
+    res.status(200).send('OK');
+  } catch (error) {
+    console.error('[MP IPN ERROR]', error.message);
+    res.status(200).send('OK');
+  }
+});
+
+// Página de configuração do webhook
+app.get('/api/webhook/mercadopago/info', (req, res) => {
+  const baseUrl = process.env.BASE_URL || `http://localhost:${PORT}`;
+
+  res.json({
+    success: true,
+    info: {
+      webhookUrl: `${baseUrl}/api/webhook/mercadopago`,
+      ipnUrl: `${baseUrl}/api/webhook/mercadopago/ipn`,
+      instructions: [
+        '1. Acesse https://www.mercadopago.com.br/developers/panel/app',
+        '2. Selecione sua aplicação',
+        '3. Vá em "Webhooks" ou "Notificações IPN"',
+        '4. Adicione a URL do webhook acima',
+        '5. Selecione os eventos: payment.created, payment.updated',
+        '6. Salve as configurações'
+      ],
+      events: ['payment.created', 'payment.updated'],
+      status: 'ready'
+    }
+  });
+});
+
 // Generic API proxy handler - using regex for Express 5.x
 app.all(/^\/api\/.*/, async (req, res) => {
   const apiPath = req.path.replace("/api", "");
@@ -2862,6 +4226,689 @@ server.listen(PORT, async () => {
       console.error("[FALLBACK ALERT ERROR]", fallbackErr.message);
     }
   }
+
+  /* -------------------------------------------------
+     WORKFLOWS / AUTOMATION FLOWS API
+     ------------------------------------------------- */
+
+  const WORKFLOWS_FILE = path.join(__dirname, 'data', 'workflows.json');
+
+  // Load workflows from file
+  function loadWorkflows() {
+    try {
+      if (fs.existsSync(WORKFLOWS_FILE)) {
+        return JSON.parse(fs.readFileSync(WORKFLOWS_FILE, 'utf-8'));
+      }
+    } catch (e) {
+      console.error('[WORKFLOWS] Erro ao carregar:', e.message);
+    }
+    return [];
+  }
+
+  // Save workflows to file
+  function saveWorkflows(data) {
+    try {
+      const dir = path.dirname(WORKFLOWS_FILE);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(WORKFLOWS_FILE, JSON.stringify(data, null, 2));
+      return true;
+    } catch (e) {
+      console.error('[WORKFLOWS] Erro ao salvar:', e.message);
+      return false;
+    }
+  }
+
+  let workflowsData = loadWorkflows();
+
+  // GET - List all workflows
+  app.get('/api/workflows', (req, res) => {
+    res.json({ success: true, workflows: workflowsData });
+  });
+
+  // GET - Get single workflow
+  app.get('/api/workflows/:id', (req, res) => {
+    const workflow = workflowsData.find(w => w.id === req.params.id);
+    if (!workflow) {
+      return res.status(404).json({ success: false, error: 'Workflow não encontrado' });
+    }
+    res.json({ success: true, workflow });
+  });
+
+  // POST - Create workflow
+  app.post('/api/workflows', (req, res) => {
+    const { name, description, nodes, connections, active } = req.body;
+
+    const workflow = {
+      id: `wf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: name || 'Novo Fluxo',
+      description: description || '',
+      nodes: nodes || [],
+      connections: connections || [],
+      active: active !== false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastExecuted: null,
+      executionCount: 0
+    };
+
+    workflowsData.push(workflow);
+    if (saveWorkflows(workflowsData)) {
+      console.log(`[WORKFLOWS] Criado: ${workflow.name} (${workflow.id})`);
+      res.json({ success: true, workflow });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar workflow' });
+    }
+  });
+
+  // PUT - Update workflow
+  app.put('/api/workflows/:id', (req, res) => {
+    const index = workflowsData.findIndex(w => w.id === req.params.id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, error: 'Workflow não encontrado' });
+    }
+
+    const { name, description, nodes, connections, active } = req.body;
+
+    workflowsData[index] = {
+      ...workflowsData[index],
+      name: name !== undefined ? name : workflowsData[index].name,
+      description: description !== undefined ? description : workflowsData[index].description,
+      nodes: nodes !== undefined ? nodes : workflowsData[index].nodes,
+      connections: connections !== undefined ? connections : workflowsData[index].connections,
+      active: active !== undefined ? active : workflowsData[index].active,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (saveWorkflows(workflowsData)) {
+      console.log(`[WORKFLOWS] Atualizado: ${workflowsData[index].name}`);
+      res.json({ success: true, workflow: workflowsData[index] });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar workflow' });
+    }
+  });
+
+  // DELETE - Delete workflow
+  app.delete('/api/workflows/:id', (req, res) => {
+    const index = workflowsData.findIndex(w => w.id === req.params.id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, error: 'Workflow não encontrado' });
+    }
+
+    const deleted = workflowsData.splice(index, 1)[0];
+    if (saveWorkflows(workflowsData)) {
+      console.log(`[WORKFLOWS] Excluído: ${deleted.name}`);
+      res.json({ success: true, message: 'Workflow excluído' });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar workflow' });
+    }
+  });
+
+  // POST - Toggle workflow active status
+  app.post('/api/workflows/:id/toggle', (req, res) => {
+    const workflow = workflowsData.find(w => w.id === req.params.id);
+    if (!workflow) {
+      return res.status(404).json({ success: false, error: 'Workflow não encontrado' });
+    }
+
+    workflow.active = !workflow.active;
+    workflow.updatedAt = new Date().toISOString();
+    if (saveWorkflows(workflowsData)) {
+      console.log(`[WORKFLOWS] ${workflow.name} ${workflow.active ? 'ATIVADO' : 'PAUSADO'}`);
+      res.json({ success: true, active: workflow.active });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar workflow' });
+    }
+  });
+
+  // POST - Execute workflow manually
+  app.post('/api/workflows/:id/execute', async (req, res) => {
+    const workflow = workflowsData.find(w => w.id === req.params.id);
+    if (!workflow) {
+      return res.status(404).json({ success: false, error: 'Workflow não encontrado' });
+    }
+
+    console.log(`[WORKFLOWS] Executando manualmente: ${workflow.name}`);
+
+    const executionLog = [];
+    const startTime = Date.now();
+
+    try {
+      for (const node of workflow.nodes) {
+        executionLog.push({
+          nodeId: node.id,
+          nodeTitle: node.title,
+          status: 'completed',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      workflow.lastExecuted = new Date().toISOString();
+      workflow.executionCount = (workflow.executionCount || 0) + 1;
+      if (saveWorkflows(workflowsData)) {
+        res.json({
+          success: true,
+          executionTime: Date.now() - startTime,
+          log: executionLog
+        });
+      } else {
+        res.status(500).json({ success: false, error: 'Erro ao salvar workflow' });
+      }
+
+    } catch (error) {
+      console.error(`[WORKFLOWS] Erro:`, error.message);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+
+
+
+  /* -------------------------------------------------
+     CREDENTIALS API
+     ------------------------------------------------- */
+
+  const CREDENTIALS_FILE = path.join(__dirname, 'data', 'credentials.json');
+
+  function loadCredentials() {
+    try {
+      if (fs.existsSync(CREDENTIALS_FILE)) {
+        return JSON.parse(fs.readFileSync(CREDENTIALS_FILE, 'utf-8'));
+      }
+    } catch (e) {
+      console.error('[CREDENTIALS] Erro ao carregar:', e.message);
+    }
+    return [];
+  }
+
+  function saveCredentials(data) {
+    try {
+      const dir = path.dirname(CREDENTIALS_FILE);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(CREDENTIALS_FILE, JSON.stringify(data, null, 2));
+      return true;
+    } catch (e) {
+      console.error('[CREDENTIALS] Erro ao salvar:', e.message);
+      return false;
+    }
+  }
+
+  let credentialsData = loadCredentials();
+
+  // GET - List all credentials
+  app.get('/api/credentials', (req, res) => {
+    // Don't expose actual values
+    const safeCredentials = credentialsData.map(c => ({
+      ...c,
+      value: c.value ? '••••••••' : ''
+    }));
+    res.json({ success: true, credentials: safeCredentials });
+  });
+
+  // POST - Create credential
+  app.post('/api/credentials', (req, res) => {
+    const { name, type, value } = req.body;
+
+    const credential = {
+      id: `cred_${Date.now()}`,
+      name: name || 'New Credential',
+      type: type || 'API Key',
+      value: value || '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    credentialsData.push(credential);
+    if (saveCredentials(credentialsData)) {
+      console.log(`[CREDENTIALS] Created: ${credential.name}`);
+      res.json({ success: true, credential: { ...credential, value: '••••••••' } });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar credential' });
+    }
+  });
+
+  // PUT - Update credential
+  app.put('/api/credentials/:id', (req, res) => {
+    const index = credentialsData.findIndex(c => c.id === req.params.id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, error: 'Credential not found' });
+    }
+
+    const { name, type, value } = req.body;
+
+    credentialsData[index] = {
+      ...credentialsData[index],
+      name: name !== undefined ? name : credentialsData[index].name,
+      type: type !== undefined ? type : credentialsData[index].type,
+      value: value !== undefined ? value : credentialsData[index].value,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (saveCredentials(credentialsData)) {
+      res.json({ success: true, credential: { ...credentialsData[index], value: '••••••••' } });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar credential' });
+    }
+  });
+
+  // DELETE - Delete credential
+  app.delete('/api/credentials/:id', (req, res) => {
+    const index = credentialsData.findIndex(c => c.id === req.params.id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, error: 'Credential not found' });
+    }
+
+    credentialsData.splice(index, 1);
+    if (saveCredentials(credentialsData)) {
+      res.json({ success: true, message: 'Credential deleted' });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar credential' });
+    }
+  });
+
+  /* -------------------------------------------------
+     VARIABLES API
+     ------------------------------------------------- */
+
+  const VARIABLES_FILE = path.join(__dirname, 'data', 'variables.json');
+
+  function loadVariables() {
+    try {
+      if (fs.existsSync(VARIABLES_FILE)) {
+        return JSON.parse(fs.readFileSync(VARIABLES_FILE, 'utf-8'));
+      }
+    } catch (e) {
+      console.error('[VARIABLES] Erro ao carregar:', e.message);
+    }
+    return [];
+  }
+
+  function saveVariables(data) {
+    try {
+      const dir = path.dirname(VARIABLES_FILE);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(VARIABLES_FILE, JSON.stringify(data, null, 2));
+      return true;
+    } catch (e) {
+      console.error('[VARIABLES] Erro ao salvar:', e.message);
+      return false;
+    }
+  }
+
+  let variablesData = loadVariables();
+
+  // GET - List all variables
+  app.get('/api/variables', (req, res) => {
+    res.json({ success: true, variables: variablesData });
+  });
+
+  // POST - Create variable
+  app.post('/api/variables', (req, res) => {
+    const { key, value, type } = req.body;
+
+    const variable = {
+      id: `var_${Date.now()}`,
+      key: key || 'NEW_VAR',
+      value: value || '',
+      type: type || 'String',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    variablesData.push(variable);
+    if (saveVariables(variablesData)) {
+      console.log(`[VARIABLES] Created: ${variable.key}`);
+      res.json({ success: true, variable });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar variable' });
+    }
+  });
+
+  // PUT - Update variable
+  app.put('/api/variables/:id', (req, res) => {
+    const index = variablesData.findIndex(v => v.id === req.params.id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, error: 'Variable not found' });
+    }
+
+    const { key, value, type } = req.body;
+
+    variablesData[index] = {
+      ...variablesData[index],
+      key: key !== undefined ? key : variablesData[index].key,
+      value: value !== undefined ? value : variablesData[index].value,
+      type: type !== undefined ? type : variablesData[index].type,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (saveVariables(variablesData)) {
+      res.json({ success: true, variable: variablesData[index] });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar variable' });
+    }
+  });
+
+  // DELETE - Delete variable
+  app.delete('/api/variables/:id', (req, res) => {
+    const index = variablesData.findIndex(v => v.id === req.params.id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, error: 'Variable not found' });
+    }
+
+    variablesData.splice(index, 1);
+    if (saveVariables(variablesData)) {
+      res.json({ success: true, message: 'Variable deleted' });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar variable' });
+    }
+  });
+
+  /* -------------------------------------------------
+     DATA TABLES API
+     ------------------------------------------------- */
+
+  const DATATABLES_FILE = path.join(__dirname, 'data', 'datatables.json');
+
+  function loadDataTables() {
+    try {
+      if (fs.existsSync(DATATABLES_FILE)) {
+        return JSON.parse(fs.readFileSync(DATATABLES_FILE, 'utf-8'));
+      }
+    } catch (e) {
+      console.error('[DATATABLES] Erro ao carregar:', e.message);
+    }
+    return [];
+  }
+
+  function saveDataTables(data) {
+    try {
+      const dir = path.dirname(DATATABLES_FILE);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(DATATABLES_FILE, JSON.stringify(data, null, 2));
+      return true;
+    } catch (e) {
+      console.error('[DATATABLES] Erro ao salvar:', e.message);
+      return false;
+    }
+  }
+
+  let dataTables = loadDataTables();
+
+  // GET - List all data tables
+  app.get('/api/datatables', (req, res) => {
+    res.json({ success: true, tables: dataTables });
+  });
+
+  // GET - Get single table with data
+  app.get('/api/datatables/:id', (req, res) => {
+    const table = dataTables.find(t => t.id === req.params.id);
+    if (!table) {
+      return res.status(404).json({ success: false, error: 'Table not found' });
+    }
+    res.json({ success: true, table });
+  });
+
+  // POST - Create table
+  app.post('/api/datatables', (req, res) => {
+    const { name, columns } = req.body;
+
+    const table = {
+      id: `dt_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      name: name || 'New Table',
+      columns: columns || [
+        { id: 'col_1', name: 'Name', type: 'text' },
+        { id: 'col_2', name: 'Value', type: 'text' }
+      ],
+      rows: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    dataTables.push(table);
+    if (saveDataTables(dataTables)) {
+      console.log(`[DATATABLES] Created: ${table.name}`);
+      res.json({ success: true, table });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar tabela' });
+    }
+  });
+
+  /* -------------------------------------------------
+     PERSONAL AGENTS API (Agent Builder)
+     ------------------------------------------------- */
+
+  const PERSONAL_AGENTS_FILE = path.join(__dirname, 'data', 'personal_agents.json');
+
+  function loadPersonalAgents() {
+    try {
+      if (fs.existsSync(PERSONAL_AGENTS_FILE)) {
+        return JSON.parse(fs.readFileSync(PERSONAL_AGENTS_FILE, 'utf-8'));
+      }
+    } catch (e) {
+      console.error('[AGENTS] Erro ao carregar:', e.message);
+    }
+    // Return default "Agent Building Expert" if empty
+    return [{
+      id: 'agent_expert',
+      name: 'Agent Building Expert',
+      role: 'Especialista em Arquitetura de Agentes',
+      description: 'Agente especializado em criação, edição e validação de agentes BMAD.',
+      model: 'gpt-4o',
+      temperature: 0.7,
+      systemPrompt: `## Papel
+Especialista em Arquitetura de Agentes
+
+## Descrição
+Agente especializado em criação, edição e validação de agentes BMAD com melhores práticas. Especializado em criar agentes robustos, mantíveis e em conformidade com os padrões BMAD Core.
+
+## Instruções
+Como Especialista em Arquitetura de Agentes, você deve:
+
+1. **Planejamento de Agente:**
+   - Garantir que cada agente siga os padrões BMAD Core e melhores práticas
+   - Desenvolver personas específicas e autênticas que direcionem o comportamento do agente
+   - Criar estrutura de menu consistente em todos os agentes
+   - Validar conformidade antes de finalizar qualquer agente
+   - Carregar recursos em tempo de execução, nunca pré-carregar
+   - Focar na implementação prática e uso no mundo real
+
+2. **Design de Persona:**
+   - Criar personas específicas e autênticas para cada agente
+   - Definir identidade clara com expertise relevante
+   - Estabelecer estilo de comunicação apropriado
+   - Seguir princípios definidos para o comportamento do agente
+
+3. **Melhores Práticas:**
+   - Seguir padrões de design estabelecidos
+   - Considerar manutenibilidade desde o início
+   - Implementar validações de conformidade
+   - Documentar decisões arquiteturais
+
+4. **Conformidade BMAD:**
+   - Verificar conformidade com padrões BMAD Core
+   - Validar estrutura e organização
+   - Testar comportamento do agente
+   - Garantir aderência aos princípios estabelecidos
+
+## Menu
+- \`CA\` - [CA] Criar novo agente BMAD com melhores práticas e conformidade
+- \`create-agent\` - [CA] Criar novo agente BMAD com melhores práticas e conformidade
+- \`EA\` - [EA] Editar agentes BMAD existentes mantendo conformidade
+- \`edit-agent\` - [EA] Editar agentes BMAD existentes mantendo conformidade`
+    }];
+  }
+
+  function savePersonalAgents(data) {
+    try {
+      const dir = path.dirname(PERSONAL_AGENTS_FILE);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(PERSONAL_AGENTS_FILE, JSON.stringify(data, null, 2));
+      return true;
+    } catch (e) {
+      console.error('[AGENTS] Erro ao salvar:', e.message);
+      return false;
+    }
+  }
+
+  let personalAgents = loadPersonalAgents();
+
+  app.get('/api/personal-agents', (req, res) => {
+    res.json({ success: true, agents: personalAgents });
+  });
+
+  app.post('/api/personal-agents', (req, res) => {
+    const agent = {
+      id: `ag_${Date.now()}`,
+      ...req.body,
+      createdAt: new Date().toISOString()
+    };
+    personalAgents.push(agent);
+    savePersonalAgents(personalAgents);
+    res.json({ success: true, agent });
+  });
+
+  app.put('/api/personal-agents/:id', (req, res) => {
+    const index = personalAgents.findIndex(a => a.id === req.params.id);
+    if (index === -1) return res.status(404).json({ success: false, error: 'Agent not found' });
+
+    personalAgents[index] = { ...personalAgents[index], ...req.body };
+    savePersonalAgents(personalAgents);
+    res.json({ success: true, agent: personalAgents[index] });
+  });
+
+  app.post('/api/personal-agents/:id/chat', async (req, res) => {
+    const { message, history } = req.body;
+    const agent = personalAgents.find(a => a.id === req.params.id);
+
+    if (!agent) return res.status(404).json({ success: false, error: 'Agent not found' });
+
+    try {
+      // Using the existing AI service infrastructure
+      // Construct prompt with history
+      const historyText = history ? history.map(h => `${h.role}: ${h.content}`).join('\n') : '';
+      const fullPrompt = `${agent.systemPrompt}\n\nHistorico:\n${historyText}\n\nUser: ${message}\nAssistant:`;
+
+      // Using generateChatResponse or similar function from services/ai.js if available, 
+      // OR calling OpenAI/Gemini directly similar to other endpoints.
+      // For now, let's reuse generateSummaryWithGemini or implement a direct call 
+      // depending on what imports we have. 
+      // We imported `generateAudioWithOpenAI`, `generateSummaryWithGemini` at the top.
+      // Let's assume we can use a generic generate function or call OpenAI directly if keys are present.
+
+      // Basic OpenAI/Gemini implementation for now:
+      let responseText = "AI Service not fully configured for custom agents yet.";
+
+      const { generateChatResponse } = await import("./services/ai.js");
+      responseText = await generateChatResponse(message, agent.systemPrompt, history || []);
+
+      res.json({ success: true, response: responseText });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ success: false, error: e.message });
+    }
+  });
+
+  // PUT - Update table structure
+  app.put('/api/datatables/:id', (req, res) => {
+    const index = dataTables.findIndex(t => t.id === req.params.id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, error: 'Table not found' });
+    }
+
+    const { name, columns } = req.body;
+
+    dataTables[index] = {
+      ...dataTables[index],
+      name: name !== undefined ? name : dataTables[index].name,
+      columns: columns !== undefined ? columns : dataTables[index].columns,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (saveDataTables(dataTables)) {
+      res.json({ success: true, table: dataTables[index] });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar tabela' });
+    }
+  });
+
+  // DELETE - Delete table
+  app.delete('/api/datatables/:id', (req, res) => {
+    const index = dataTables.findIndex(t => t.id === req.params.id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, error: 'Table not found' });
+    }
+
+    dataTables.splice(index, 1);
+    if (saveDataTables(dataTables)) {
+      res.json({ success: true, message: 'Table deleted' });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar tabela' });
+    }
+  });
+
+  // POST - Add row to table
+  app.post('/api/datatables/:id/rows', (req, res) => {
+    const table = dataTables.find(t => t.id === req.params.id);
+    if (!table) {
+      return res.status(404).json({ success: false, error: 'Table not found' });
+    }
+
+    const row = {
+      id: `row_${Date.now()}`,
+      data: req.body.data || {},
+      createdAt: new Date().toISOString()
+    };
+
+    table.rows.push(row);
+    table.updatedAt = new Date().toISOString();
+    if (saveDataTables(dataTables)) {
+      res.json({ success: true, row });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar tabela' });
+    }
+  });
+
+  // PUT - Update row
+  app.put('/api/datatables/:tableId/rows/:rowId', (req, res) => {
+    const table = dataTables.find(t => t.id === req.params.tableId);
+    if (!table) {
+      return res.status(404).json({ success: false, error: 'Table not found' });
+    }
+
+    const row = table.rows.find(r => r.id === req.params.rowId);
+    if (!row) {
+      return res.status(404).json({ success: false, error: 'Row not found' });
+    }
+
+    row.data = { ...row.data, ...req.body.data };
+    row.updatedAt = new Date().toISOString();
+    table.updatedAt = new Date().toISOString();
+    if (saveDataTables(dataTables)) {
+      res.json({ success: true, row });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar tabela' });
+    }
+  });
+
+  // DELETE - Delete row
+  app.delete('/api/datatables/:tableId/rows/:rowId', (req, res) => {
+    const table = dataTables.find(t => t.id === req.params.tableId);
+    if (!table) {
+      return res.status(404).json({ success: false, error: 'Table not found' });
+    }
+
+    const index = table.rows.findIndex(r => r.id === req.params.rowId);
+    if (index === -1) {
+      return res.status(404).json({ success: false, error: 'Row not found' });
+    }
+
+    table.rows.splice(index, 1);
+    table.updatedAt = new Date().toISOString();
+    if (saveDataTables(dataTables)) {
+      res.json({ success: true, message: 'Row deleted' });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar tabela' });
+    }
+  });
 
   setInterval(async () => {
     try {

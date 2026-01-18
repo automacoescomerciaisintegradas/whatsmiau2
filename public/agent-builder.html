@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Builder - WhatsMiau2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* CustomScrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(156, 163, 175, 0.5);
+            border-radius: 20px;
+        }
+    </style>
+</head>
+
+<body class="bg-white h-screen flex text-gray-800">
+
+    <!-- Sidebar -->
+    <div class="w-64 bg-white border-r border-gray-200 flex flex-col h-full flex-shrink-0">
+        <!-- Header -->
+        <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded bg-red-500 text-white flex items-center justify-center font-bold">WM</div>
+                <span class="font-semibold text-gray-700">WhatsMiau2</span>
+            </div>
+            <button class="text-gray-400 hover:text-gray-600"><i class="fas fa-search"></i></button>
+        </div>
+
+        <!-- New Chat Button -->
+        <div class="p-4">
+            <button onclick="startNewChat()"
+                class="w-full flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700">
+                <i class="fas fa-plus"></i> New chat
+            </button>
+        </div>
+
+        <!-- Lists -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar px-2 space-y-6">
+
+            <!-- Personal Agents -->
+            <div>
+                <div class="px-2 mb-2 flex items-center justify-between group cursor-pointer"
+                    onclick="toggleSection('personalAgentsList')">
+                    <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                        <i class="far fa-user"></i> Personal agents
+                    </span>
+                    <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                </div>
+                <div id="personalAgentsList" class="space-y-0.5">
+                    <!-- Loaded dynamically -->
+                </div>
+                <div onclick="createNewAgent()"
+                    class="px-2 py-1.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded cursor-pointer flex items-center gap-2 mt-1">
+                    <i class="fas fa-plus text-xs"></i> Create agent
+                </div>
+            </div>
+
+            <!-- Workflow Agents -->
+            <div>
+                <div class="px-2 mb-2 flex items-center justify-between group cursor-pointer">
+                    <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fas fa-project-diagram"></i> Workflow agents
+                    </span>
+                    <i class="fas fa-chevron-right text-xs text-gray-400"></i>
+                </div>
+            </div>
+
+            <!-- Integrations (Mock) -->
+            <div>
+                <div class="px-2 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Integrations</div>
+                <div class="space-y-0.5 opacity-60">
+                    <div class="px-2 py-1.5 text-sm flex items-center gap-2"><i class="fas fa-robot"></i> OpenAI</div>
+                    <div class="px-2 py-1.5 text-sm flex items-center gap-2"><i class="fas fa-brain"></i> Anthropic
+                    </div>
+                    <div class="px-2 py-1.5 text-sm flex items-center gap-2"><i class="fab fa-google"></i> Google</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- User Profile -->
+        <div class="p-4 border-t border-gray-100 flex items-center gap-3 cursor-pointer hover:bg-gray-50">
+            <div
+                class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-xs">
+                U</div>
+            <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-gray-700 truncate">User</div>
+                <div class="text-xs text-gray-400">Free Account</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col h-full relative" id="mainContainer">
+
+        <!-- Top Bar -->
+        <div class="h-14 border-b border-gray-100 flex items-center justify-between px-6 bg-white z-10">
+            <div class="flex items-center gap-3">
+                <div id="currentAgentIcon"
+                    class="w-8 h-8 rounded-full bg-red-100 text-red-500 flex items-center justify-center font-bold text-sm hidden">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                    <div id="currentAgentName" class="font-semibold text-gray-800">Select an agent</div>
+                    <div id="currentAgentStatus" class="text-xs text-gray-500 hidden">Ready</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="editAgent()" id="editAgentBtn" class="hidden text-gray-400 hover:text-gray-600 p-2"><i
+                        class="fas fa-cog"></i></button>
+                <button class="text-gray-400 hover:text-gray-600 p-2"><i class="far fa-star"></i></button>
+                <button class="text-gray-400 hover:text-gray-600 p-2"><i class="fas fa-ellipsis-h"></i></button>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6" id="chatContainer">
+            <!-- Intro / Empty State -->
+            <div class="h-full flex flex-col items-center justify-center text-center space-y-4" id="emptyState">
+                <div class="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
+                    <i class="fas fa-magic text-2xl text-gray-400"></i>
+                </div>
+                <h1 class="text-2xl font-semibold text-gray-800">Hello, User!</h1>
+                <p class="text-gray-500 max-w-md">Select an agent from the sidebar to start building or chatting.</p>
+            </div>
+
+            <!-- Messages will appear here -->
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-6 pt-2 bg-white">
+            <div class="relative max-w-4xl mx-auto">
+                <div class="absolute bottom-full left-0 mb-2 flex gap-2" id="suggestionChips">
+                    <!-- Chips -->
+                </div>
+
+                <div
+                    class="border border-gray-200 rounded-xl shadow-sm bg-white focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-400 transition-all flex flex-col">
+                    <textarea id="messageInput" rows="1"
+                        class="w-full p-4 bg-transparent border-none focus:ring-0 resize-none max-h-48 text-gray-700 placeholder-gray-400"
+                        placeholder="Message..." oninput="autoResize(this)"
+                        onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }"></textarea>
+
+                    <div class="flex items-center justify-between px-3 pb-3">
+                        <button
+                            class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-plus"></i> Tools
+                        </button>
+
+                        <div class="flex items-center gap-2">
+                            <button class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"><i
+                                    class="fas fa-paperclip"></i></button>
+                            <button class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"><i
+                                    class="fas fa-microphone"></i></button>
+                            <button onclick="sendMessage()"
+                                class="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 shadow-sm transition-colors w-8 h-8 flex items-center justify-center">
+                                <i class="fas fa-arrow-up"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center mt-2 text-xs text-gray-400">
+                    AI can make mistakes. Please verify important information.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Config Modal -->
+    <div id="configModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                <h3 class="font-semibold text-lg">Configure Agent</h3>
+                <button onclick="closeConfig()" class="text-gray-400 hover:text-gray-600"><i
+                        class="fas fa-times"></i></button>
+            </div>
+
+            <div class="p-6 space-y-6 overflow-y-auto flex-1">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Agent Name</label>
+                    <input type="text" id="cfgName"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Role / Description</label>
+                    <input type="text" id="cfgRole"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Model</label>
+                        <select id="cfgModel"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="gpt-4o">GPT-4o</option>
+                            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                            <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Temperature</label>
+                        <input type="number" id="cfgTemp" step="0.1" min="0" max="2"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">System Prompt</label>
+                    <textarea id="cfgPrompt" rows="10"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm"></textarea>
+                    <p class="text-xs text-gray-500 mt-1">Markdown supported. Define user instructions here.</p>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+                <button onclick="closeConfig()"
+                    class="px-4 py-2 text-gray-600 font-medium hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
+                <button onclick="saveAgent()"
+                    class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 shadow-md transition-all">Save
+                    Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let agents = [];
+        let currentAgentId = null;
+        let chatHistory = {}; // Map agentId -> array of messages
+        let isTyping = false;
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAgents();
+        });
+
+        async function loadAgents() {
+            try {
+                const res = await fetch('/api/personal-agents');
+                const data = await res.json();
+                agents = data.agents || [];
+                renderAgentsList();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderAgentsList() {
+            const list = document.getElementById('personalAgentsList');
+            list.innerHTML = agents.map(agent => `
+                <div onclick="selectAgent('${agent.id}')" class="px-2 py-2 rounded-lg cursor-pointer flex items-center gap-3 group transition-colors ${currentAgentId === agent.id ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}">
+                    <div class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold ${currentAgentId === agent.id ? 'bg-red-500 text-white shadow-sm' : 'bg-gray-200 text-gray-500 group-hover:bg-gray-300'}">
+                        ${agent.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="flex-1 min-w-0 truncate text-sm font-medium">${agent.name}</div>
+                </div>
+            `).join('');
+        }
+
+        function selectAgent(id) {
+            if (currentAgentId === id) return;
+            currentAgentId = id;
+            renderAgentsList();
+
+            const agent = agents.find(a => a.id === id);
+
+            // Update Header
+            document.getElementById('currentAgentName').textContent = agent.name;
+            document.getElementById('currentAgentStatus').classList.remove('hidden');
+            document.getElementById('currentAgentStatus').textContent = agent.role || 'Personal Agent';
+            document.getElementById('currentAgentIcon').classList.remove('hidden');
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('editAgentBtn').classList.remove('hidden');
+
+            // Clear Chat View
+            const container = document.getElementById('chatContainer');
+            container.innerHTML = '';
+
+            // Initialize History if needed
+            if (!chatHistory[id]) chatHistory[id] = [];
+
+            // Ask for greeting if empty and history empty
+            if (chatHistory[id].length === 0) {
+                // Optionally add a system greeting
+                const greeting = { role: 'assistant', content: `Hello! I am **${agent.name}**. ${agent.description || ''} How can I help you today?` };
+                chatHistory[id].push(greeting);
+            }
+
+            // Render History
+            chatHistory[id].forEach(msg => renderMessage(msg));
+            scrollToBottom();
+        }
+
+        function startNewChat() {
+            if (currentAgentId) {
+                chatHistory[currentAgentId] = [];
+                selectAgent(currentAgentId); // Re-select to clear UI
+            } else {
+                // Reset everything
+                document.getElementById('currentAgentName').textContent = 'Select an agent';
+                document.getElementById('currentAgentStatus').classList.add('hidden');
+                document.getElementById('currentAgentIcon').classList.add('hidden');
+                document.getElementById('emptyState').classList.remove('hidden');
+                document.getElementById('chatContainer').innerHTML = '';
+                document.getElementById('editAgentBtn').classList.add('hidden');
+                currentAgentId = null;
+                renderAgentsList();
+            }
+        }
+
+        function renderMessage(msg) {
+            const container = document.getElementById('chatContainer');
+            const isUser = msg.role === 'user';
+
+            // Parse Markdown
+            const contentHtml = marked.parse(msg.content);
+
+            const div = document.createElement('div');
+            div.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+            div.innerHTML = `
+                <div class="max-w-[80%] rounded-2xl px-5 py-3 ${isUser ? 'bg-gray-100 text-gray-900' : 'bg-transparent text-gray-800'} text-sm leading-relaxed shadow-sm border border-transparent ${!isUser && 'border-gray-100'}">
+                    <div class="prose prose-sm max-w-none ${isUser ? '' : 'prose-blue'}">
+                        ${contentHtml}
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        async function sendMessage() {
+            if (!currentAgentId || isTyping) return;
+
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            // UI Update
+            input.value = '';
+            input.style.height = 'auto'; // Reset height
+
+            const userMsg = { role: 'user', content: message };
+            chatHistory[currentAgentId].push(userMsg);
+            renderMessage(userMsg);
+            scrollToBottom();
+
+            isTyping = true;
+
+            // Show Typing Indicator
+            const container = document.getElementById('chatContainer');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typingIndicator';
+            typingDiv.className = 'flex justify-start';
+            typingDiv.innerHTML = `
+                <div class="bg-gray-50 rounded-2xl px-4 py-3 flex gap-1 items-center">
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                </div>
+            `;
+            container.appendChild(typingDiv);
+            scrollToBottom();
+
+            try {
+                // API Call
+                const response = await fetch(`/api/personal-agents/${currentAgentId}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        history: chatHistory[currentAgentId].slice(0, -1) // Send context excluding last user msg (or include it depending on API logic)
+                        // Actually, sending last user message in body, so history should be previous
+                    })
+                });
+                const data = await response.json();
+
+                // Remove typing indicator
+                document.getElementById('typingIndicator').remove();
+
+                if (data.success) {
+                    const aiMsg = { role: 'assistant', content: data.response };
+                    chatHistory[currentAgentId].push(aiMsg);
+                    renderMessage(aiMsg);
+                } else {
+                    renderMessage({ role: 'assistant', content: '_Error: ' + data.error + '_' });
+                }
+
+            } catch (e) {
+                document.getElementById('typingIndicator').remove();
+                renderMessage({ role: 'assistant', content: '_Network Error_' });
+            }
+
+            isTyping = false;
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('chatContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+        // --- Config Modal ---
+        function createNewAgent() {
+            currentAgentId = null; // New agent mode
+            document.getElementById('cfgName').value = 'New Agent';
+            document.getElementById('cfgRole').value = '';
+            document.getElementById('cfgPrompt').value = '';
+            document.getElementById('cfgModel').value = 'gpt-4o';
+            document.getElementById('cfgTemp').value = 0.7;
+
+            document.getElementById('configModal').classList.remove('hidden');
+            document.getElementById('configModal').classList.add('flex');
+        }
+
+        function editAgent() {
+            if (!currentAgentId) return;
+            const agent = agents.find(a => a.id === currentAgentId);
+
+            document.getElementById('cfgName').value = agent.name;
+            document.getElementById('cfgRole').value = agent.role || '';
+            document.getElementById('cfgPrompt').value = agent.systemPrompt || '';
+            document.getElementById('cfgModel').value = agent.model || 'gpt-4o';
+            document.getElementById('cfgTemp').value = agent.temperature || 0.7;
+
+            document.getElementById('configModal').classList.remove('hidden');
+            document.getElementById('configModal').classList.add('flex');
+        }
+
+        function closeConfig() {
+            document.getElementById('configModal').classList.add('hidden');
+            document.getElementById('configModal').classList.remove('flex');
+        }
+
+        async function saveAgent() {
+            const payload = {
+                name: document.getElementById('cfgName').value,
+                role: document.getElementById('cfgRole').value,
+                systemPrompt: document.getElementById('cfgPrompt').value,
+                model: document.getElementById('cfgModel').value,
+                temperature: parseFloat(document.getElementById('cfgTemp').value)
+            };
+
+            // If editing existing
+            let url = '/api/personal-agents';
+            let method = 'POST';
+
+            if (currentAgentId && agents.find(a => a.id === currentAgentId)) { // Careful with createNewAgent logic
+                // If we clicked "Create Agent", currentAgentId is null.
+                // If we clicked "Edit", it's set.
+                if (currentAgentId) {
+                    url = `/api/personal-agents/${currentAgentId}`;
+                    method = 'PUT';
+                }
+            }
+
+            try {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    closeConfig();
+                    loadAgents();
+                    if (!currentAgentId) { // Created new
+                        // Optional: Auto Select
+                    }
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function toggleSection(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('hidden');
+        }
+
+    </script>
+</body>
+
+</html>

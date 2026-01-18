@@ -32,7 +32,7 @@ func NewServer(db *sql.DB) *Server {
 
 	// Criar repositories
 	crmRepo := repository.NewSQLiteCRMRepository(db)
-	automationRepo := repository.NewSQLiteAutomationRepository(db)
+	// automationRepo := repository.NewSQLiteAutomationRepository(db)
 
 	// Criar handlers
 	leadHandler := handlers.NewLeadHandler(crmRepo)
@@ -132,7 +132,41 @@ func (s *Server) ListAutomationRules(c *gin.Context) {
 	})
 }
 
+// GetAutomationRule busca regra de automação (Gin)
+func (s *Server) GetAutomationRule(c *gin.Context) {
+	if s.automationHandler != nil {
+		s.automationHandler.GetAutomationRule(c.Writer, c.Request)
+	} else {
+		c.JSON(http.StatusNotImplemented, gin.H{"error": "Automation handler not initialized"})
+	}
+}
 
+// UpdateAutomationRule atualiza regra de automação (Gin)
+func (s *Server) UpdateAutomationRule(c *gin.Context) {
+	if s.automationHandler != nil {
+		s.automationHandler.UpdateAutomationRule(c.Writer, c.Request)
+	} else {
+		c.JSON(http.StatusNotImplemented, gin.H{"error": "Automation handler not initialized"})
+	}
+}
+
+// DeleteAutomationRule deleta regra de automação (Gin)
+func (s *Server) DeleteAutomationRule(c *gin.Context) {
+	if s.automationHandler != nil {
+		s.automationHandler.DeleteAutomationRule(c.Writer, c.Request)
+	} else {
+		c.JSON(http.StatusNotImplemented, gin.H{"error": "Automation handler not initialized"})
+	}
+}
+
+// TriggerAutomation aciona automação manualmente (Gin)
+func (s *Server) TriggerAutomation(c *gin.Context) {
+	if s.automationHandler != nil {
+		s.automationHandler.TriggerAutomation(c.Writer, c.Request)
+	} else {
+		c.JSON(http.StatusNotImplemented, gin.H{"error": "Automation handler not initialized"})
+	}
+}
 
 // ListLeads lista leads (Gin)
 func (s *Server) ListLeads(c *gin.Context) {
@@ -191,6 +225,16 @@ func (s *Server) GetLead(c *gin.Context) {
 		"success": true,
 		"lead":    lead,
 	})
+}
+
+// CreateLead cria novo lead (Gin Wrapper)
+func (s *Server) CreateLead(c *gin.Context) {
+	// Adapter for LeadHandler.CreateLead which uses http.ResponseWriter
+	if s.leadHandler != nil {
+		s.leadHandler.CreateLead(c.Writer, c.Request)
+	} else {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Lead handler not initialized"})
+	}
 }
 
 // UpdateLead atualiza lead (Gin)

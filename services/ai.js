@@ -36,7 +36,7 @@ function cleanTextForAudio(text) {
 // ... existing imports ...
 // ... existing code ...
 
-export async function generateChatResponse(userMessage, systemPrompt) {
+export async function generateChatResponse(userMessage, systemPrompt, history = []) {
     // ... existing implementation ...
     const key = process.env.GEMINI_API_KEY;
     if (!key) throw new Error("GEMINI_API_KEY não configurada no .env");
@@ -44,7 +44,10 @@ export async function generateChatResponse(userMessage, systemPrompt) {
     const genAI = new GoogleGenerativeAI(key);
     const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
-    const fullPrompt = `${systemPrompt}\n\nMensagem do Usuário: ${userMessage}\nResposta:`;
+    // Format history
+    const historyText = history.map(h => `${h.role === 'user' ? 'Usuário' : 'Assistente'}: ${h.content}`).join('\n');
+
+    const fullPrompt = `${systemPrompt}\n\nHistórico:\n${historyText}\n\nMensagem do Usuário: ${userMessage}\nResposta:`;
 
     try {
         const result = await model.generateContent(fullPrompt);

@@ -17,11 +17,11 @@ type AutomationRepository interface {
 	UpdateAutomationRule(id int64, updates *models.UpdateAutomationRuleRequest) error
 	DeleteAutomationRule(id int64) error
 	ListAutomationRules(enabled *bool) ([]*models.AutomationRule, error)
-	
+
 	CreateAutomationAction(action *models.AutomationAction) error
 	GetAutomationActionsByRule(ruleID int64) ([]*models.AutomationAction, error)
 	DeleteAutomationActionsByRule(ruleID int64) error
-	
+
 	CreateAutomationExecution(execution *models.AutomationExecution) error
 	UpdateAutomationExecutionStatus(id int64, status string, error *string) error
 	GetAutomationExecutionsByRule(ruleID int64) ([]*models.AutomationExecution, error)
@@ -102,7 +102,7 @@ func (r *SQLiteAutomationRepository) GetAutomationRule(id int64) (*models.Automa
 	}
 
 	// Obter ações associadas
-	actionsList, err := r.GetAutomationActionsByRule(id)
+	_, err = r.GetAutomationActionsByRule(id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get automation actions: %w", err)
 	}

@@ -10,6 +10,65 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="/assets/css/style.css" rel="stylesheet">
+    <style>
+        .api-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .api-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+
+        .api-card.connected {
+            border-color: #10b981;
+        }
+
+        .api-card.error {
+            border-color: #ef4444;
+        }
+
+        .api-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .nav-pills .nav-link {
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 500;
+            color: #6b7280;
+        }
+
+        .nav-pills .nav-link.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .nav-pills .nav-link:hover:not(.active) {
+            background: #f3f4f6;
+        }
+
+        .config-section {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 
 <body>
@@ -27,45 +86,34 @@
                 <a href="/dashboard" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                 </a>
-
                 <a href="/connections" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fas fa-wifi me-2"></i> ConexÃµes
+                    <i class="fas fa-wifi me-2"></i> Conexões
                 </a>
-
                 <a href="/disparador" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-paper-plane me-2"></i> Disparador
                 </a>
-
                 <a href="/exportar-contatos" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-file-export me-2"></i> Exportar Contatos
                 </a>
-
                 <a href="/resumo-grupos" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-chart-bar me-2"></i> Resumo de Grupos
                 </a>
-
                 <a href="/contacts" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-address-book me-2"></i> Contatos
                 </a>
-
                 <a href="/tickets" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-ticket-alt me-2"></i> Tickets
                 </a>
-
                 <a href="/kanban" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-columns me-2"></i> Kanban
                 </a>
-
                 <a href="/internal-chat" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-comments me-2"></i> Chat Interno
                 </a>
-
                 <div class="border-top my-3"></div>
-
-                <a href="/settings" class="list-group-item list-group-item-action bg-transparent">
+                <a href="/settings" class="list-group-item list-group-item-action bg-transparent active">
                     <i class="fas fa-cog me-2"></i> Configurações
                 </a>
-
                 <a href="/" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
                     <i class="fas fa-sign-out-alt me-2"></i> Sair
                 </a>
@@ -80,7 +128,6 @@
                     <button class="btn btn-outline-secondary" id="menu-toggle">
                         <i class="fas fa-bars"></i>
                     </button>
-
                     <div class="dropdown">
                         <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark"
                             id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
@@ -101,85 +148,513 @@
             </nav>
 
             <div class="container-fluid p-4">
-                <h2 class="fw-bold mb-4">Configurações do Sistema</h2>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="fw-bold mb-1">⚙️ Configurações do Sistema</h2>
+                        <p class="text-muted mb-0">Gerencie suas APIs, integrações e configurações gerais</p>
+                    </div>
+                </div>
 
-                <div class="row">
-                    <div class="col-lg-8">
-                        <div class="card border-0 shadow-sm p-4 mb-4">
-                            <h5 class="fw-bold mb-4">Perfil da Empresa</h5>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label small fw-bold">Nome da Empresa</label>
-                                    <input type="text" class="form-control" value="ACI - Automações Comerciais">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label small fw-bold">E-mail Administrativo</label>
-                                    <input type="email" class="form-control" value="admin@aci.com.br">
-                                </div>
-                                <div class="col-md-12 text-end mt-4">
-                                    <button class="btn btn-primary fw-bold px-4">Salvar Alterações</button>
-                                </div>
-                            </div>
-                        </div>
+                <!-- Navigation Tabs -->
+                <ul class="nav nav-pills mb-4" id="settingsTabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="pill" href="#apis">
+                            <i class="fas fa-plug me-2"></i> APIs & Integrações
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="pill" href="#agente">
+                            <i class="fas fa-robot me-2"></i> Agente de IA
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="pill" href="#empresa">
+                            <i class="fas fa-building me-2"></i> Empresa
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="pill" href="#suporte">
+                            <i class="fas fa-headset me-2"></i> Suporte
+                        </a>
+                    </li>
+                </ul>
 
-                        <div class="card border-0 shadow-sm p-4">
-                            <h5 class="fw-bold mb-4">Configurações de Atendimento</h5>
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold">Departamento Principal</label>
-                                <input type="text" class="form-control mb-3" value="Suporte" readonly>
-                                <label class="form-label small fw-bold">Link de Redirecionamento (WhatsApp
-                                    Group)</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="support-link"
-                                        value="https://chat.whatsapp.com/LezpB0nJoQA5v3YUyhmWJR">
-                                    <button class="btn btn-outline-primary" onclick="copySupportLink()">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
+                <!-- Tab Content -->
+                <div class="tab-content">
+
+                    <!-- APIs & Integrações -->
+                    <div class="tab-pane fade show active" id="apis">
+                        <div class="row g-4">
+
+                            <!-- API Golang (Própria) -->
+                            <div class="col-md-6">
+                                <div class="api-card p-4" id="golangApiCard">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="api-icon bg-primary text-white me-3">
+                                                <i class="fas fa-code"></i>
+                                            </div>
+                                            <div>
+                                                <h5 class="fw-bold mb-0">API Golang</h5>
+                                                <small class="text-muted">API Backend Principal</small>
+                                            </div>
+                                        </div>
+                                        <span class="status-badge bg-secondary text-white" id="golangStatus">Não
+                                            Configurada</span>
+                                    </div>
+                                    <p class="text-muted small mb-3">
+                                        Sua API principal em Golang. Conecte para usar funcionalidades personalizadas.
+                                    </p>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">URL da API</label>
+                                        <input type="text" class="form-control" id="golangApiUrl"
+                                            placeholder="https://sua-api.com/api">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Token de Acesso</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="golangApiToken"
+                                                placeholder="Seu token de autenticação">
+                                            <button class="btn btn-outline-secondary" type="button"
+                                                onclick="togglePassword('golangApiToken')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-outline-primary btn-sm" onclick="testGolangApi()">
+                                            <i class="fas fa-plug me-1"></i> Testar Conexão
+                                        </button>
+                                        <button class="btn btn-primary btn-sm" onclick="saveGolangApi()">
+                                            <i class="fas fa-save me-1"></i> Salvar
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="form-text small mt-2">Os clientes que clicarem em "Suporte" serão
-                                    direcionados
-                                    para este link.</div>
                             </div>
-                            <div class="text-end mt-3">
-                                <button class="btn btn-primary btn-sm px-4"
-                                    onclick="alert('Configuração de Atendimento Salva!')">Salvar</button>
-                            </div>
-                        </div>
-                        <div class="card border-0 shadow-sm p-4 mt-4">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h5 class="fw-bold mb-0">Agente de IA (Auto-Resposta)</h5>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="ai-agent-enabled">
-                                    <label class="form-check-label small fw-bold" for="ai-agent-enabled">Bot
-                                        Ativo</label>
+
+                            <!-- Evolution API -->
+                            <div class="col-md-6">
+                                <div class="api-card p-4" id="evolutionApiCard">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="api-icon bg-success text-white me-3">
+                                                <i class="fab fa-whatsapp"></i>
+                                            </div>
+                                            <div>
+                                                <h5 class="fw-bold mb-0">Evolution API</h5>
+                                                <small class="text-muted">WhatsApp Business</small>
+                                            </div>
+                                        </div>
+                                        <span class="status-badge bg-secondary text-white" id="evolutionStatus">Não
+                                            Configurada</span>
+                                    </div>
+                                    <p class="text-muted small mb-3">
+                                        API para envio e recebimento de mensagens via WhatsApp.
+                                    </p>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">URL da Evolution API</label>
+                                        <input type="text" class="form-control" id="evolutionApiUrl"
+                                            placeholder="https://evolution.sua-api.com">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">API Key Global</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="evolutionApiKey"
+                                                placeholder="Sua API Key">
+                                            <button class="btn btn-outline-secondary" type="button"
+                                                onclick="togglePassword('evolutionApiKey')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-outline-success btn-sm" onclick="testEvolutionApi()">
+                                            <i class="fas fa-plug me-1"></i> Testar Conexão
+                                        </button>
+                                        <button class="btn btn-success btn-sm" onclick="saveEvolutionApi()">
+                                            <i class="fas fa-save me-1"></i> Salvar
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold">Prompt do Sistema (Persona & Roteiro)</label>
-                                <textarea class="form-control" id="ai-agent-prompt" rows="8"
-                                    style="font-size: 0.85rem;"></textarea>
-                                <div class="form-text small mt-2">Este prompt define como o robô deve se comportar e o
-                                    roteiro que deve seguir.</div>
+
+                            <!-- Mercado Pago API -->
+                            <div class="col-md-6">
+                                <div class="api-card p-4" id="mercadoPagoCard">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="api-icon text-white me-3" style="background: #00bcff;">
+                                                <i class="fas fa-credit-card"></i>
+                                            </div>
+                                            <div>
+                                                <h5 class="fw-bold mb-0">Mercado Pago</h5>
+                                                <small class="text-muted">Pagamentos PIX</small>
+                                            </div>
+                                        </div>
+                                        <span class="status-badge bg-secondary text-white" id="mpStatus">Não
+                                            Configurada</span>
+                                    </div>
+                                    <p class="text-muted small mb-3">
+                                        Gere cobranças PIX automaticamente dentro do chat.
+                                    </p>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Access Token (Produção)</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="mpAccessToken"
+                                                placeholder="APP_USR-...">
+                                            <button class="btn btn-outline-secondary" type="button"
+                                                onclick="togglePassword('mpAccessToken')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Webhook Info -->
+                                    <div class="mb-3 p-2 bg-light rounded border">
+                                        <label class="form-label small fw-bold mb-1">
+                                            <i class="fas fa-link me-1"></i>URL do Webhook para PIX
+                                        </label>
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" class="form-control" id="mpWebhookUrl" readonly
+                                                value="Carregando...">
+                                            <button class="btn btn-outline-primary" type="button"
+                                                onclick="copyWebhookUrl()">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Configure esta URL no painel do Mercado Pago</small>
+                                    </div>
+
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <button class="btn btn-outline-info btn-sm" onclick="testMercadoPago()">
+                                            <i class="fas fa-plug me-1"></i> Testar Conexão
+                                        </button>
+                                        <button class="btn btn-info btn-sm text-white" onclick="saveMercadoPago()">
+                                            <i class="fas fa-save me-1"></i> Salvar
+                                        </button>
+                                        <button class="btn btn-outline-secondary btn-sm"
+                                            onclick="showMpWebhookInstructions()">
+                                            <i class="fas fa-question-circle me-1"></i> Ajuda
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="text-end">
-                                <button class="btn btn-primary px-4" onclick="saveAgentConfig()">Salvar Configuração do
-                                    Agente</button>
+
+                            <!-- OpenAI / IA API -->
+                            <div class="col-md-6">
+                                <div class="api-card p-4" id="openaiCard">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="api-icon text-white me-3" style="background: #10a37f;">
+                                                <i class="fas fa-brain"></i>
+                                            </div>
+                                            <div>
+                                                <h5 class="fw-bold mb-0">OpenAI / IA</h5>
+                                                <small class="text-muted">Inteligência Artificial</small>
+                                            </div>
+                                        </div>
+                                        <span class="status-badge bg-secondary text-white" id="openaiStatus">Não
+                                            Configurada</span>
+                                    </div>
+                                    <p class="text-muted small mb-3">
+                                        API para respostas automáticas inteligentes do chatbot.
+                                    </p>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Provedor de IA</label>
+                                        <select class="form-select" id="aiProvider">
+                                            <option value="openai">OpenAI (GPT)</option>
+                                            <option value="gemini">Google Gemini</option>
+                                            <option value="anthropic">Anthropic Claude</option>
+                                            <option value="ollama">Ollama (Local)</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">API Key</label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="openaiApiKey"
+                                                placeholder="sk-...">
+                                            <button class="btn btn-outline-secondary" type="button"
+                                                onclick="togglePassword('openaiApiKey')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-outline-secondary btn-sm" onclick="testOpenAI()">
+                                            <i class="fas fa-plug me-1"></i> Testar Conexão
+                                        </button>
+                                        <button class="btn btn-dark btn-sm" onclick="saveOpenAI()">
+                                            <i class="fas fa-save me-1"></i> Salvar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Webhook / Integração Externa -->
+                            <div class="col-md-6">
+                                <div class="api-card p-4" id="webhookCard">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="api-icon bg-warning text-dark me-3">
+                                                <i class="fas fa-bolt"></i>
+                                            </div>
+                                            <div>
+                                                <h5 class="fw-bold mb-0">Webhooks</h5>
+                                                <small class="text-muted">Notificações Externas</small>
+                                            </div>
+                                        </div>
+                                        <span class="status-badge bg-secondary text-white" id="webhookStatus">Não
+                                            Configurada</span>
+                                    </div>
+                                    <p class="text-muted small mb-3">
+                                        Receba notificações em sua aplicação quando eventos ocorrerem.
+                                    </p>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">URL do Webhook</label>
+                                        <input type="text" class="form-control" id="webhookUrl"
+                                            placeholder="https://seu-servidor.com/webhook">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Eventos</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="webhookMsgReceived"
+                                                checked>
+                                            <label class="form-check-label small">Mensagem Recebida</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="webhookMsgSent" checked>
+                                            <label class="form-check-label small">Mensagem Enviada</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="webhookTicket">
+                                            <label class="form-check-label small">Ticket Atualizado</label>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-outline-warning btn-sm" onclick="testWebhook()">
+                                            <i class="fas fa-paper-plane me-1"></i> Enviar Teste
+                                        </button>
+                                        <button class="btn btn-warning btn-sm" onclick="saveWebhook()">
+                                            <i class="fas fa-save me-1"></i> Salvar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- N8N / Automação -->
+                            <div class="col-md-6">
+                                <div class="api-card p-4" id="n8nCard">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="api-icon text-white me-3" style="background: #ff6d5a;">
+                                                <i class="fas fa-project-diagram"></i>
+                                            </div>
+                                            <div>
+                                                <h5 class="fw-bold mb-0">N8N / Make</h5>
+                                                <small class="text-muted">Automação de Fluxos</small>
+                                            </div>
+                                        </div>
+                                        <span class="status-badge bg-secondary text-white" id="n8nStatus">Não
+                                            Configurada</span>
+                                    </div>
+                                    <p class="text-muted small mb-3">
+                                        Conecte com N8N ou Make para criar fluxos de automação avançados.
+                                    </p>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">URL do N8N</label>
+                                        <input type="text" class="form-control" id="n8nUrl"
+                                            placeholder="https://n8n.sua-empresa.com">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Webhook ID</label>
+                                        <input type="text" class="form-control" id="n8nWebhookId"
+                                            placeholder="abc123-webhook-id">
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-outline-danger btn-sm" onclick="testN8N()">
+                                            <i class="fas fa-plug me-1"></i> Testar Conexão
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" onclick="saveN8N()">
+                                            <i class="fas fa-save me-1"></i> Salvar
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-4">
-                        <div class="card border-0 shadow-sm p-4 mb-4">
-                            <h5 class="fw-bold mb-4">Ajuda & Suporte</h5>
-                            <p class="text-muted small">Precisa de ajuda com a configuração? Entre em contato com nosso
-                                suporte técnico oficial no grupo.</p>
-                            <a href="https://chat.whatsapp.com/LezpB0nJoQA5v3YUyhmWJR" target="_blank"
-                                class="btn btn-primary w-100 fw-bold mb-2">
-                                <i class="fab fa-whatsapp me-2"></i> Grupo de Suporte
-                            </a>
-                            <a href="https://wa.me/558894227586" target="_blank"
-                                class="btn btn-outline-secondary w-100 fw-bold">
-                                <i class="fas fa-user-headset me-2"></i> Falar com Atendente
-                            </a>
+
+                    <!-- Agente de IA -->
+                    <div class="tab-pane fade" id="agente">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <div class="card border-0 shadow-sm p-4 mb-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-4">
+                                        <div>
+                                            <h5 class="fw-bold mb-1">🤖 Agente de IA - Sofia</h5>
+                                            <small class="text-muted">Especialista em Automação Digital</small>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="ai-agent-enabled"
+                                                style="width: 50px; height: 25px;">
+                                            <label class="form-check-label small fw-bold ms-2"
+                                                for="ai-agent-enabled">Bot Ativo</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="alert alert-info d-flex align-items-center mb-4" id="agentStatus">
+                                        <i class="fas fa-robot me-3 fa-2x"></i>
+                                        <div>
+                                            <strong>Status:</strong> <span
+                                                id="agentStatusText">Verificando...</span><br>
+                                            <small class="text-muted">Última atualização: <span
+                                                    id="lastUpdate">-</span></small>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-bold">Nome do Bot</label>
+                                            <input type="text" class="form-control" id="botName" value="Sofia">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-bold">Cargo</label>
+                                            <input type="text" class="form-control" id="botRole"
+                                                value="Especialista em Automação">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label small fw-bold">Tom de Voz</label>
+                                            <select class="form-select" id="botTone">
+                                                <option value="profissional" selected>Profissional</option>
+                                                <option value="formal">Formal</option>
+                                                <option value="casual">Casual</option>
+                                                <option value="amigavel">Amigável</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="form-label small fw-bold mb-0">Prompt do Sistema</label>
+                                            <button class="btn btn-outline-secondary btn-sm"
+                                                onclick="loadDefaultPrompt()">
+                                                <i class="fas fa-undo me-1"></i> Restaurar Padrão
+                                            </button>
+                                        </div>
+                                        <textarea class="form-control" id="ai-agent-prompt" rows="15"
+                                            style="font-size: 0.85rem; font-family: monospace;"></textarea>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between">
+                                        <button class="btn btn-outline-secondary" onclick="testAgent()">
+                                            <i class="fas fa-flask me-2"></i> Testar Agente
+                                        </button>
+                                        <button class="btn btn-primary px-4" onclick="saveAgentConfig()">
+                                            <i class="fas fa-save me-2"></i> Salvar Configuração
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="card border-0 shadow-sm p-4">
+                                    <h6 class="fw-bold mb-3">💡 Dicas</h6>
+                                    <ul class="small text-muted mb-0">
+                                        <li class="mb-2">Defina claramente a personalidade do bot</li>
+                                        <li class="mb-2">Inclua os preços dos planos no prompt</li>
+                                        <li class="mb-2">Adicione restrições para evitar erros</li>
+                                        <li class="mb-2">Use exemplos de respostas</li>
+                                        <li>Teste antes de ativar em produção</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Empresa -->
+                    <div class="tab-pane fade" id="empresa">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <div class="card border-0 shadow-sm p-4 mb-4">
+                                    <h5 class="fw-bold mb-4">🏢 Perfil da Empresa</h5>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold">Nome da Empresa</label>
+                                            <input type="text" class="form-control" id="companyName"
+                                                value="Automações Comerciais Integradas">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold">E-mail</label>
+                                            <input type="email" class="form-control" id="adminEmail"
+                                                value="contato@automacoescomerciais.com.br">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold">WhatsApp</label>
+                                            <input type="text" class="form-control" id="supportPhone"
+                                                value="+55 88 9215-67214">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label small fw-bold">Horário</label>
+                                            <input type="text" class="form-control" id="businessHours"
+                                                value="Seg-Sex: 8h às 18h">
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label class="form-label small fw-bold">Endereço</label>
+                                            <input type="text" class="form-control" id="companyAddress"
+                                                placeholder="Endereço completo">
+                                        </div>
+                                        <div class="col-md-12 text-end mt-4">
+                                            <button class="btn btn-primary fw-bold px-4" onclick="saveCompanyProfile()">
+                                                <i class="fas fa-save me-2"></i> Salvar Alterações
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Suporte -->
+                    <div class="tab-pane fade" id="suporte">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="card border-0 shadow-sm p-4 mb-4">
+                                    <h5 class="fw-bold mb-4">📞 Contato e Suporte</h5>
+
+                                    <div class="mb-3 p-3 bg-light rounded">
+                                        <div class="small fw-bold text-primary mb-1">📱 WhatsApp</div>
+                                        <div class="fw-bold">+55 88 9215-67214</div>
+                                        <div class="small text-muted">Seg-Sex: 8h às 18h</div>
+                                    </div>
+
+                                    <div class="mb-3 p-3 bg-light rounded">
+                                        <div class="small fw-bold text-primary mb-1">📧 E-mail</div>
+                                        <div class="fw-bold">contato@automacoescomerciais.com.br</div>
+                                        <div class="small text-muted">Resposta em até 4h</div>
+                                    </div>
+
+                                    <a href="https://chat.whatsapp.com/LezpB0nJoQA5v3YUyhmWJR" target="_blank"
+                                        class="btn btn-success w-100 fw-bold mb-2">
+                                        <i class="fab fa-whatsapp me-2"></i> Grupo de Suporte
+                                    </a>
+                                    <a href="https://wa.me/558892156714" target="_blank"
+                                        class="btn btn-outline-primary w-100 fw-bold">
+                                        <i class="fas fa-headset me-2"></i> Falar com Atendente
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="card border-0 shadow-sm p-4">
+                                    <h6 class="fw-bold mb-3">🏢 Desenvolvido por</h6>
+                                    <p class="small text-muted mb-2">
+                                        <strong>Automações Comerciais Integradas</strong><br>
+                                        Especialistas em Automação Digital
+                                    </p>
+                                    <hr>
+                                    <p class="small text-muted mb-0">
+                                        © 2025 Automações Comerciais Integradas.<br>
+                                        Todos os direitos reservados.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -189,29 +664,335 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        var el = document.getElementById("wrapper");
-        var toggleButton = document.getElementById("menu-toggle");
-        toggleButton.onclick = function () { el.classList.toggle("sb-sidenav-toggled"); };
-        document.querySelectorAll('.list-group-item').forEach(link => {
-            if (link.getAttribute('href') === currentPath) link.classList.add('active');
-        });
+        // Menu Toggle
+        document.getElementById("menu-toggle").onclick = function () {
+            document.getElementById("wrapper").classList.toggle("sb-sidenav-toggled");
+        };
 
-        function copySupportLink() {
-            const link = document.getElementById('support-link');
-            link.select();
-            document.execCommand('copy');
-            alert('Link copiado para a área de transferência!');
+        // Toggle Password Visibility
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            input.type = input.type === 'password' ? 'text' : 'password';
         }
 
-        // AI Agent Logic
+        // === API Functions ===
+
+        // Golang API
+        async function testGolangApi() {
+            const url = document.getElementById('golangApiUrl').value;
+            const token = document.getElementById('golangApiToken').value;
+            if (!url) return alert('Informe a URL da API');
+
+            try {
+                const res = await fetch('/api/settings/golang/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, token })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    updateCardStatus('golangApiCard', 'golangStatus', true, 'Conectada');
+                    alert('✅ Conexão com API Golang bem-sucedida!');
+                } else {
+                    throw new Error(data.error || 'Falha na conexão');
+                }
+            } catch (e) {
+                updateCardStatus('golangApiCard', 'golangStatus', false, 'Erro');
+                alert('❌ Erro ao conectar: ' + e.message);
+            }
+        }
+
+        async function saveGolangApi() {
+            try {
+                const res = await fetch('/api/settings/golang', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        url: document.getElementById('golangApiUrl').value,
+                        token: document.getElementById('golangApiToken').value
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ Configuração da API Golang salva!');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                alert('❌ Erro ao salvar: ' + e.message);
+            }
+        }
+
+        // Evolution API
+        async function testEvolutionApi() {
+            const url = document.getElementById('evolutionApiUrl').value;
+            const apiKey = document.getElementById('evolutionApiKey').value;
+            if (!url) return alert('Informe a URL da Evolution API');
+
+            try {
+                const res = await fetch('/api/evolution/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, apiKey })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    updateCardStatus('evolutionApiCard', 'evolutionStatus', true, `Conectada (${data.instances} inst.)`);
+                    alert('✅ Evolution API conectada!');
+                } else {
+                    throw new Error(data.error || 'Falha');
+                }
+            } catch (e) {
+                updateCardStatus('evolutionApiCard', 'evolutionStatus', false, 'Erro');
+                alert('❌ Erro: ' + e.message);
+            }
+        }
+
+        async function saveEvolutionApi() {
+            try {
+                const res = await fetch('/api/settings/evolution', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        url: document.getElementById('evolutionApiUrl').value,
+                        apiKey: document.getElementById('evolutionApiKey').value
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ Evolution API salva!');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                alert('❌ Erro ao salvar: ' + e.message);
+            }
+        }
+
+        // Mercado Pago
+        async function testMercadoPago() {
+            const accessToken = document.getElementById('mpAccessToken').value;
+            if (!accessToken) return alert('Informe o Access Token');
+
+            try {
+                const res = await fetch('/api/settings/mercadopago/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accessToken })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    updateCardStatus('mercadoPagoCard', 'mpStatus', true, 'Conectada');
+                    alert(`✅ Mercado Pago conectado!\n\nUsuário: ${data.user.nickname}\nEmail: ${data.user.email}`);
+                } else {
+                    throw new Error(data.error || 'Falha');
+                }
+            } catch (e) {
+                updateCardStatus('mercadoPagoCard', 'mpStatus', false, 'Erro');
+                alert('❌ Erro: ' + e.message);
+            }
+        }
+
+        async function saveMercadoPago() {
+            try {
+                const res = await fetch('/api/settings/mercadopago', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        accessToken: document.getElementById('mpAccessToken').value
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ Mercado Pago configurado!');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                alert('❌ Erro ao salvar: ' + e.message);
+            }
+        }
+
+        // OpenAI/IA
+        async function testOpenAI() {
+            alert('🧪 Para testar a IA, vá na aba "Agente de IA" e clique em "Testar Agente".');
+        }
+
+        async function saveOpenAI() {
+            try {
+                const res = await fetch('/api/settings/openai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        provider: document.getElementById('aiProvider').value,
+                        apiKey: document.getElementById('openaiApiKey').value
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    updateCardStatus('openaiCard', 'openaiStatus', true, 'Configurada');
+                    alert('✅ Configuração de IA salva!');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                alert('❌ Erro ao salvar: ' + e.message);
+            }
+        }
+
+        // Webhook
+        async function testWebhook() {
+            const url = document.getElementById('webhookUrl').value;
+            if (!url) return alert('Informe a URL do Webhook');
+
+            try {
+                const res = await fetch('/api/settings/webhook/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    updateCardStatus('webhookCard', 'webhookStatus', true, 'Funcionando');
+                    alert('✅ Webhook de teste enviado com sucesso!');
+                } else {
+                    throw new Error(data.error || 'Falha');
+                }
+            } catch (e) {
+                updateCardStatus('webhookCard', 'webhookStatus', false, 'Erro');
+                alert('❌ Erro: ' + e.message);
+            }
+        }
+
+        async function saveWebhook() {
+            const events = [];
+            if (document.getElementById('webhookMsgReceived').checked) events.push('message_received');
+            if (document.getElementById('webhookMsgSent').checked) events.push('message_sent');
+            if (document.getElementById('webhookTicket').checked) events.push('ticket_updated');
+
+            try {
+                const res = await fetch('/api/settings/webhook', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        url: document.getElementById('webhookUrl').value,
+                        events
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ Webhook configurado!');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                alert('❌ Erro ao salvar: ' + e.message);
+            }
+        }
+
+        // N8N
+        async function testN8N() {
+            const url = document.getElementById('n8nUrl').value;
+            const webhookId = document.getElementById('n8nWebhookId').value;
+            if (!url || !webhookId) return alert('Informe a URL e o Webhook ID');
+
+            try {
+                const testUrl = `${url}/webhook/${webhookId}`;
+                await fetch('/api/settings/webhook/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: testUrl })
+                });
+                updateCardStatus('n8nCard', 'n8nStatus', true, 'Conectado');
+                alert('✅ N8N testado! Verifique a execução no seu workflow.');
+            } catch (e) {
+                updateCardStatus('n8nCard', 'n8nStatus', false, 'Erro');
+                alert('❌ Erro: ' + e.message);
+            }
+        }
+
+        async function saveN8N() {
+            try {
+                const res = await fetch('/api/settings/n8n', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        url: document.getElementById('n8nUrl').value,
+                        webhookId: document.getElementById('n8nWebhookId').value
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ N8N configurado!');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                alert('❌ Erro ao salvar: ' + e.message);
+            }
+        }
+
+        // Update Card Status
+        function updateCardStatus(cardId, statusId, success, text) {
+            const card = document.getElementById(cardId);
+            const status = document.getElementById(statusId);
+
+            if (card) {
+                card.classList.remove('connected', 'error');
+                card.classList.add(success ? 'connected' : 'error');
+            }
+
+            if (status) {
+                status.className = `status-badge ${success ? 'bg-success' : 'bg-danger'} text-white`;
+                status.textContent = text;
+            }
+        }
+
+        // === Agent Functions ===
+        const defaultPrompt = `# IDENTIDADE DA IA
+Você é Sofia, Especialista em Automação Digital da Automacoescomerciais.
+
+## PERSONALIDADE
+- Tom: profissional
+- Estilo: Consultivo e orientado a resultados
+- Empatia: Alta
+
+## PREÇOS DOS PLANOS
+- Mensal: R$ 97,00
+- Trimestral: R$ 291,00  
+- Anual: R$ 1.164,00 (12x)
+
+## CONTATO
+📱 WhatsApp: +55 88 9215-67214
+📧 Email: contato@automacoescomerciais.com.br`;
+
         async function loadAgentConfig() {
             try {
                 const res = await fetch('/api/ai/agent-config');
                 const data = await res.json();
                 document.getElementById('ai-agent-enabled').checked = data.enabled;
-                document.getElementById('ai-agent-prompt').value = data.prompt;
+                document.getElementById('ai-agent-prompt').value = data.prompt || defaultPrompt;
+                updateAgentStatus(data.enabled);
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleString('pt-BR');
             } catch (e) {
-                console.error("Erro ao carregar config do agente", e);
+                console.error('Erro ao carregar config:', e);
+                document.getElementById('ai-agent-prompt').value = defaultPrompt;
+                updateAgentStatus(false);
+            }
+        }
+
+        function updateAgentStatus(enabled) {
+            const statusEl = document.getElementById('agentStatus');
+            const statusText = document.getElementById('agentStatusText');
+
+            if (statusEl && statusText) {
+                if (enabled) {
+                    statusEl.className = 'alert alert-success d-flex align-items-center mb-4';
+                    statusText.innerHTML = '<span class="badge bg-success me-2">ATIVO</span> Respondendo automaticamente';
+                } else {
+                    statusEl.className = 'alert alert-warning d-flex align-items-center mb-4';
+                    statusText.innerHTML = '<span class="badge bg-warning text-dark me-2">INATIVO</span> Aguardando ativação';
+                }
             }
         }
 
@@ -225,16 +1006,187 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ enabled, prompt })
                 });
-                if (res.ok) {
-                    alert('Configuração do Agente salva com sucesso! 🤖');
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ Configuração do Agente salva com sucesso!');
+                    updateAgentStatus(enabled);
+                    document.getElementById('lastUpdate').textContent = new Date().toLocaleString('pt-BR');
+                } else {
+                    throw new Error(data.error);
                 }
             } catch (e) {
-                alert('Erro ao salvar configuração.');
+                alert('❌ Erro ao salvar: ' + e.message);
+            }
+        }
+
+        function loadDefaultPrompt() {
+            if (confirm('Restaurar prompt padrão? O prompt atual será substituído.')) {
+                document.getElementById('ai-agent-prompt').value = defaultPrompt;
+            }
+        }
+
+        // Teste do Agente de IA - FUNCIONAL!
+        async function testAgent() {
+            const testMessage = prompt('Digite uma mensagem de teste para o agente:', 'Olá, quero saber mais sobre os planos');
+            if (!testMessage) return;
+
+            try {
+                const res = await fetch('/api/ai/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: testMessage })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    // Mostrar resposta em um modal ou alert
+                    const demoNote = data.demo ? '\n\n⚠️ Esta é uma resposta de demonstração. Configure sua API Key de IA para respostas reais.' : '';
+                    alert(`🤖 Resposta do Agente:\n\n${data.response}${demoNote}`);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                alert('❌ Erro ao testar: ' + e.message);
+            }
+        }
+
+        async function saveCompanyProfile() {
+            try {
+                const res = await fetch('/api/settings/company', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: document.getElementById('companyName').value,
+                        email: document.getElementById('adminEmail').value,
+                        phone: document.getElementById('supportPhone').value,
+                        hours: document.getElementById('businessHours').value,
+                        address: document.getElementById('companyAddress')?.value || ''
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ Perfil da empresa salvo!');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (e) {
+                alert('❌ Erro ao salvar: ' + e.message);
+            }
+        }
+
+        // Toggle listener
+        document.getElementById('ai-agent-enabled')?.addEventListener('change', function () {
+            updateAgentStatus(this.checked);
+        });
+
+        // Carregar configurações salvas ao iniciar
+        async function loadAllSettings() {
+            try {
+                // Carregar Golang API
+                const golangRes = await fetch('/api/settings/golang');
+                const golangData = await golangRes.json();
+                if (golangData.url) {
+                    document.getElementById('golangApiUrl').value = golangData.url;
+                    if (golangData.hasToken) updateCardStatus('golangApiCard', 'golangStatus', true, 'Configurada');
+                }
+
+                // Carregar Evolution API
+                const evoRes = await fetch('/api/settings/evolution');
+                const evoData = await evoRes.json();
+                if (evoData.url) {
+                    document.getElementById('evolutionApiUrl').value = evoData.url;
+                    if (evoData.hasApiKey) updateCardStatus('evolutionApiCard', 'evolutionStatus', true, 'Configurada');
+                }
+
+                // Carregar Mercado Pago
+                const mpRes = await fetch('/api/settings/mercadopago');
+                const mpData = await mpRes.json();
+                if (mpData.hasToken) updateCardStatus('mercadoPagoCard', 'mpStatus', true, 'Configurada');
+
+                // Carregar OpenAI
+                const aiRes = await fetch('/api/settings/openai');
+                const aiData = await aiRes.json();
+                if (aiData.provider) document.getElementById('aiProvider').value = aiData.provider;
+                if (aiData.hasApiKey) updateCardStatus('openaiCard', 'openaiStatus', true, 'Configurada');
+
+                // Carregar Webhook
+                const webhookRes = await fetch('/api/settings/webhook');
+                const webhookData = await webhookRes.json();
+                if (webhookData.url) {
+                    document.getElementById('webhookUrl').value = webhookData.url;
+                    updateCardStatus('webhookCard', 'webhookStatus', true, 'Configurada');
+                }
+
+                // Carregar N8N
+                const n8nRes = await fetch('/api/settings/n8n');
+                const n8nData = await n8nRes.json();
+                if (n8nData.url) {
+                    document.getElementById('n8nUrl').value = n8nData.url;
+                    document.getElementById('n8nWebhookId').value = n8nData.webhookId || '';
+                    if (n8nData.url) updateCardStatus('n8nCard', 'n8nStatus', true, 'Configurada');
+                }
+
+                // Carregar perfil da empresa
+                const companyRes = await fetch('/api/settings/company');
+                const companyData = await companyRes.json();
+                if (companyData.name) document.getElementById('companyName').value = companyData.name;
+                if (companyData.email) document.getElementById('adminEmail').value = companyData.email;
+                if (companyData.phone) document.getElementById('supportPhone').value = companyData.phone;
+                if (companyData.hours) document.getElementById('businessHours').value = companyData.hours;
+
+            } catch (e) {
+                console.error('Erro ao carregar configurações:', e);
             }
         }
 
         // Initialize
         loadAgentConfig();
+        loadAllSettings();
+        loadMpWebhookInfo();
+
+        // Mercado Pago Webhook Functions
+        async function loadMpWebhookInfo() {
+            try {
+                const res = await fetch('/api/webhook/mercadopago/info');
+                const data = await res.json();
+                if (data.success && data.info) {
+                    document.getElementById('mpWebhookUrl').value = data.info.webhookUrl;
+                }
+            } catch (e) {
+                document.getElementById('mpWebhookUrl').value = window.location.origin + '/api/webhook/mercadopago';
+            }
+        }
+
+        function copyWebhookUrl() {
+            const input = document.getElementById('mpWebhookUrl');
+            input.select();
+            document.execCommand('copy');
+            alert('✅ URL do Webhook copiada!');
+        }
+
+        function showMpWebhookInstructions() {
+            alert(`📋 Como configurar o Webhook do Mercado Pago:
+
+1. Acesse: https://www.mercadopago.com.br/developers/panel/app
+
+2. Selecione sua aplicação
+
+3. Vá em "Notificações" ou "Webhooks"
+
+4. Clique em "Configurar notificações"
+
+5. Cole a URL do Webhook (mostrada acima)
+
+6. Selecione os eventos:
+   ✓ Pagamentos
+
+7. Salve as configurações
+
+Após isso, quando um PIX for pago:
+• O status será atualizado automaticamente
+• O cliente receberá confirmação via WhatsApp
+• Você receberá um alerta no seu número`);
+        }
     </script>
 
 </body>

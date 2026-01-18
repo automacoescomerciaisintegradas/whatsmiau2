@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentação da API - WhatsMiau2</title>
+    <meta name="description" content="Documentação completa da API WhatsMiau2 para automação de WhatsApp">
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <style>
+        :root {
+            --whatsapp-green: #25d366;
+            --whatsapp-dark: #128c7e;
+            --bg-dark: #0d1117;
+            --bg-card: #161b22;
+            --bg-code: #1e2228;
+            --border: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #7d8590;
+            --text-muted: #484f58;
+            --accent: #58a6ff;
+            --success: #3fb950;
+            --warning: #d29922;
+            --error: #f85149;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Layout */
+        .docs-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            padding: 24px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 32px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .sidebar-brand img {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+        }
+
+        .sidebar-brand h1 {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .sidebar-brand span {
+            font-size: 0.75rem;
+            color: var(--whatsapp-green);
+            background: rgba(37, 211, 102, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .nav-section {
+            margin-bottom: 24px;
+        }
+
+        .nav-section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .nav-link.active {
+            background: rgba(37, 211, 102, 0.1);
+            color: var(--whatsapp-green);
+        }
+
+        .nav-link i {
+            width: 18px;
+            text-align: center;
+        }
+
+        .method-badge {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .method-get {
+            background: #1f6feb;
+            color: white;
+        }
+
+        .method-post {
+            background: #238636;
+            color: white;
+        }
+
+        .method-put {
+            background: #9e6a03;
+            color: white;
+        }
+
+        .method-delete {
+            background: #da3633;
+            color: white;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 40px 60px;
+            max-width: 1000px;
+        }
+
+        .page-header {
+            margin-bottom: 40px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .page-header p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .badge img {
+            height: 20px;
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 48px;
+        }
+
+        section h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        section h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 24px 0 12px;
+            color: var(--text-primary);
+        }
+
+        section p {
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .card h4 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        /* Endpoint Card */
+        .endpoint-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: var(--bg-code);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .endpoint-method {
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        .endpoint-path {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+
+        .endpoint-body {
+            padding: 20px;
+        }
+
+        .endpoint-desc {
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .param-table th {
+            text-align: left;
+            padding: 10px 12px;
+            background: var(--bg-code);
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .param-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .param-name {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent);
+        }
+
+        .param-type {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--warning);
+            font-size: 0.85rem;
+        }
+
+        .param-required {
+            color: var(--error);
+            font-size: 0.75rem;
+        }
+
+        /* Code Blocks */
+        pre {
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+
+        pre code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .code-header+pre {
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+            margin-top: 0;
+        }
+
+        .copy-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        /* Alert boxes */
+        .alert {
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin: 16px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .alert-info {
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+        }
+
+        .alert-warning {
+            background: rgba(210, 153, 34, 0.1);
+            border: 1px solid rgba(210, 153, 34, 0.3);
+        }
+
+        .alert-success {
+            background: rgba(63, 185, 80, 0.1);
+            border: 1px solid rgba(63, 185, 80, 0.3);
+        }
+
+        .alert i {
+            font-size: 1.2rem;
+            margin-top: 2px;
+        }
+
+        .alert-info i {
+            color: var(--accent);
+        }
+
+        .alert-warning i {
+            color: var(--warning);
+        }
+
+        .alert-success i {
+            color: var(--success);
+        }
+
+        /* Quick Start Steps */
+        .steps {
+            counter-reset: step;
+        }
+
+        .step {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            width: 32px;
+            height: 32px;
+            background: var(--whatsapp-green);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            margin-bottom: 8px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab {
+            padding: 10px 16px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.9rem;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            color: var(--whatsapp-green);
+            border-bottom-color: var(--whatsapp-green);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Footer links */
+        .footer-links {
+            display: flex;
+            gap: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            margin-top: 48px;
+        }
+
+        .footer-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-link:hover {
+            color: var(--whatsapp-green);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="docs-layout">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <a href="/home" class="sidebar-brand">
+                <img src="/assets/logo-whatsmiau2.jpg" alt="WhatsMiau2">
+                <div>
+                    <h1>WhatsMiau2</h1>
+                    <span>API v2.0</span>
+                </div>
+            </a>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Introdução</div>
+                <a href="#overview" class="nav-link active"><i class="fas fa-book"></i> Visão Geral</a>
+                <a href="#quickstart" class="nav-link"><i class="fas fa-rocket"></i> Quick Start</a>
+                <a href="#authentication" class="nav-link"><i class="fas fa-key"></i> Autenticação</a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Mensagens</div>
+                <a href="#send-text" class="nav-link">
+                    <i class="fas fa-comment"></i> Enviar Texto
+                    <span class="method-badge method-post">POST</span>
+                </a>
+                <a href="#send-media" class="nav-link">
+                    <i class="fas fa-image"></i> Enviar Mídia
+                    <span class="method-badge method-post">POST</span>
+                </a>
+                <a href="#send-buttons" class="nav-link">
+                    <i class="fas fa-th-large"></i> Botões
+                    <span class="method-badge method-post">POST</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Instâncias</div>
+                <a href="#list-instances" class="nav-link">
+                    <i class="fas fa-list"></i> Listar
+                    <span class="method-badge method-get">GET</span>
+                </a>
+                <a href="#create-instance" class="nav-link">
+                    <i class="fas fa-plus"></i> Criar
+                    <span class="method-badge method-post">POST</span>
+                </a>
+                <a href="#connect-instance" class="nav-link">
+                    <i class="fas fa-qrcode"></i> Conectar
+                    <span class="method-badge method-post">POST</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Webhooks</div>
+                <a href="#webhooks" class="nav-link"><i class="fas fa-bolt"></i> Configuração</a>
+                <a href="#webhook-events" class="nav-link"><i class="fas fa-stream"></i> Eventos</a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">CRM</div>
+                <a href="#leads" class="nav-link">
+                    <i class="fas fa-users"></i> Leads
+                    <span class="method-badge method-get">GET</span>
+                </a>
+                <a href="#pix" class="nav-link">
+                    <i class="fas fa-qrcode"></i> PIX
+                    <span class="method-badge method-post">POST</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Recursos</div>
+                <a href="https://github.com/automacoescomerciaisintegradas/whatsmiau2" target="_blank" class="nav-link">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+                <a href="https://github.com/tulir/whatsmeow" target="_blank" class="nav-link">
+                    <i class="fas fa-code"></i> WhatsMeow
+                </a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="page-header" id="overview">
+                <h1>📚 Documentação da API</h1>
+                <p>Referência completa da API WhatsMiau2 para automação de WhatsApp</p>
+                <div class="badge-row">
+                    <a href="https://github.com/automacoescomerciaisintegradas/whatsmiau2" target="_blank" class="badge"
+                        style="text-decoration: none; cursor: pointer;">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                    <span class="badge">
+                        <img src="https://img.shields.io/badge/version-2.0.0-green" alt="Version">
+                    </span>
+                    <span class="badge">
+                        <i class="fab fa-node-js" style="color: #68a063;"></i> Node.js
+                    </span>
+                    <span class="badge">
+                        <i class="fab fa-golang" style="color: #00add8;"></i> Go (WhatsMeow)
+                    </span>
+                </div>
+            </header>
+
+            <!-- Visão Geral -->
+            <section>
+                <h2><i class="fas fa-info-circle" style="color: var(--accent);"></i> Visão Geral</h2>
+                <p>
+                    WhatsMiau2 é uma plataforma completa de automação para WhatsApp, construída sobre a
+                    biblioteca <strong>WhatsMeow</strong> (Go) para comunicação confiável e escalável.
+                </p>
+
+                <!-- REPOSITÓRIO GitHub em destaque -->
+                <div class="card"
+                    style="background: linear-gradient(135deg, #161b22 0%, #0d1117 100%); border: 2px solid var(--whatsapp-green);">
+                    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                        <i class="fab fa-github" style="font-size: 3rem; color: var(--text-primary);"></i>
+                        <div style="flex: 1;">
+                            <h4 style="margin-bottom: 4px; color: var(--whatsapp-green);">
+                                <i class="fas fa-star" style="color: gold;"></i> Repositório Oficial
+                            </h4>
+                            <p style="margin-bottom: 8px; color: var(--text-secondary);">
+                                Código fonte completo, issues, contribuições e releases.
+                            </p>
+                            <a href="https://github.com/automacoescomerciaisintegradas/whatsmiau2" target="_blank"
+                                style="display: inline-flex; align-items: center; gap: 8px; 
+                                      background: var(--whatsapp-green); color: #000; 
+                                      padding: 10px 20px; border-radius: 8px; 
+                                      text-decoration: none; font-weight: 600;
+                                      transition: all 0.3s;">
+                                <i class="fab fa-github"></i>
+                                automacoescomerciaisintegradas/whatsmiau2
+                                <i class="fas fa-external-link-alt" style="font-size: 0.8rem;"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4>🔧 Arquitetura</h4>
+                    <p style="margin-bottom: 8px;">O sistema é composto por:</p>
+                    <ul style="color: var(--text-secondary); margin-left: 20px;">
+                        <li><strong>API Node.js</strong> - Interface REST e WebSocket (porta 3002)</li>
+                        <li><strong>Gateway Go</strong> - Comunicação WhatsApp via WhatsMeow (porta 3005)</li>
+                        <li><strong>Socket.IO</strong> - Eventos em tempo real</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <strong>Base URL</strong><br>
+                        Node.js API: <code>http://localhost:3002</code><br>
+                        Go Gateway: <code>http://localhost:3005</code>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Start -->
+            <section id="quickstart">
+                <h2><i class="fas fa-rocket" style="color: var(--success);"></i> Quick Start</h2>
+                <p>Siga estes passos para começar a usar a API em minutos:</p>
+
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-content">
+                            <h4>Obter API Key</h4>
+                            <p>Acesse <a href="/settings" style="color: var(--accent);">Configurações</a> e copie sua
+                                API Key.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-content">
+                            <h4>Conectar uma Instância</h4>
+                            <p>Use a página de <a href="/pairing" style="color: var(--accent);">Pareamento</a> ou
+                                conecte via API.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-content">
+                            <h4>Enviar sua primeira mensagem</h4>
+                            <div class="code-header">
+                                <span>cURL</span>
+                                <button class="copy-btn" onclick="copyCode(this)"><i class="fas fa-copy"></i></button>
+                            </div>
+                            <pre><code class="language-bash">curl -X POST http://localhost:3005/api/send-text \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SUA_API_KEY" \
+  -d '{
+    "instance": "default",
+    "to": "5588999999999",
+    "text": "Olá! Esta é uma mensagem de teste 🐱"
+  }'</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Autenticação -->
+            <section id="authentication">
+                <h2><i class="fas fa-key" style="color: var(--warning);"></i> Autenticação</h2>
+                <p>Todas as requisições à API devem incluir a API Key no header de autorização:</p>
+
+                <div class="code-header">
+                    <span>Header de Autenticação</span>
+                </div>
+                <pre><code class="language-http">Authorization: Bearer SUA_API_KEY
+apikey: SUA_API_KEY</code></pre>
+
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                        <strong>Importante</strong><br>
+                        Nunca exponha sua API Key em código client-side. Use sempre do servidor.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Enviar Texto -->
+            <section id="send-text">
+                <h2><i class="fas fa-comment" style="color: var(--whatsapp-green);"></i> Enviar Mensagem de Texto</h2>
+
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="endpoint-method method-post">POST</span>
+                        <span class="endpoint-path">/api/whatsmiau2/send-text</span>
+                    </div>
+                    <div class="endpoint-body">
+                        <p class="endpoint-desc">Envia uma mensagem de texto para um número de WhatsApp.</p>
+
+                        <h4>Parâmetros</h4>
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>Campo</th>
+                                    <th>Tipo</th>
+                                    <th>Descrição</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="param-name">instance</span></td>
+                                    <td><span class="param-type">string</span></td>
+                                    <td>Nome da instância conectada <span class="param-required">*</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="param-name">to</span></td>
+                                    <td><span class="param-type">string</span></td>
+                                    <td>Número do destinatário (formato: 5588999999999) <span
+                                            class="param-required">*</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="param-name">text</span></td>
+                                    <td><span class="param-type">string</span></td>
+                                    <td>Conteúdo da mensagem <span class="param-required">*</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>Exemplo de Request</h4>
+                        <div class="tabs">
+                            <button class="tab active" onclick="showTab(this, 'curl-text')">cURL</button>
+                            <button class="tab" onclick="showTab(this, 'js-text')">JavaScript</button>
+                            <button class="tab" onclick="showTab(this, 'python-text')">Python</button>
+                        </div>
+
+                        <div id="curl-text" class="tab-content active">
+                            <pre><code class="language-bash">curl -X POST http://localhost:3002/api/whatsmiau2/send-text \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instance": "default",
+    "to": "5588999999999",
+    "text": "Olá! Mensagem enviada via API 🐱"
+  }'</code></pre>
+                        </div>
+
+                        <div id="js-text" class="tab-content">
+                            <pre><code class="language-javascript">const response = await fetch('http://localhost:3002/api/whatsmiau2/send-text', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    instance: 'default',
+    to: '5588999999999',
+    text: 'Olá! Mensagem enviada via API 🐱'
+  })
+});
+
+const data = await response.json();
+console.log(data);</code></pre>
+                        </div>
+
+                        <div id="python-text" class="tab-content">
+                            <pre><code class="language-python">import requests
+
+response = requests.post(
+    'http://localhost:3002/api/whatsmiau2/send-text',
+    json={
+        'instance': 'default',
+        'to': '5588999999999',
+        'text': 'Olá! Mensagem enviada via API 🐱'
+    }
+)
+
+print(response.json())</code></pre>
+                        </div>
+
+                        <h4>Resposta</h4>
+                        <pre><code class="language-json">{
+  "success": true,
+  "messageId": "3EB0F3C8A1B2C3D4E5F6",
+  "timestamp": "2025-01-09T12:00:00.000Z"
+}</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Enviar Mídia -->
+            <section id="send-media">
+                <h2><i class="fas fa-image" style="color: var(--neon-pink);"></i> Enviar Mídia</h2>
+
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="endpoint-method method-post">POST</span>
+                        <span class="endpoint-path">/api/whatsmiau2/send-media</span>
+                    </div>
+                    <div class="endpoint-body">
+                        <p class="endpoint-desc">Envia imagens, vídeos, áudios ou documentos.</p>
+
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>Campo</th>
+                                    <th>Tipo</th>
+                                    <th>Descrição</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="param-name">instance</span></td>
+                                    <td><span class="param-type">string</span></td>
+                                    <td>Nome da instância <span class="param-required">*</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="param-name">to</span></td>
+                                    <td><span class="param-type">string</span></td>
+                                    <td>Número do destinatário <span class="param-required">*</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="param-name">mediaUrl</span></td>
+                                    <td><span class="param-type">string</span></td>
+                                    <td>URL da mídia ou base64 <span class="param-required">*</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="param-name">mediaType</span></td>
+                                    <td><span class="param-type">string</span></td>
+                                    <td>image | video | audio | document</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="param-name">caption</span></td>
+                                    <td><span class="param-type">string</span></td>
+                                    <td>Legenda (opcional)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>Exemplo</h4>
+                        <pre><code class="language-json">{
+  "instance": "default",
+  "to": "5588999999999",
+  "mediaUrl": "https://exemplo.com/imagem.jpg",
+  "mediaType": "image",
+  "caption": "Confira esta imagem! 📷"
+}</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Leads -->
+            <section id="leads">
+                <h2><i class="fas fa-users" style="color: var(--accent);"></i> API de Leads (CRM)</h2>
+
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="endpoint-method method-get">GET</span>
+                        <span class="endpoint-path">/api/crm/leads</span>
+                    </div>
+                    <div class="endpoint-body">
+                        <p class="endpoint-desc">Retorna todos os leads do CRM.</p>
+                        <pre><code class="language-json">{
+  "success": true,
+  "leads": [
+    {
+      "id": "1704790800000abc123",
+      "nome": "João Silva",
+      "whatsapp": "5588999999999",
+      "email": "joao@email.com",
+      "empresa": "Empresa ABC",
+      "valor": 1500.00,
+      "status": "negociacao",
+      "tags": ["cliente", "vip"],
+      "createdAt": "2025-01-09T12:00:00.000Z"
+    }
+  ]
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="endpoint-method method-post">POST</span>
+                        <span class="endpoint-path">/api/crm/leads/add</span>
+                    </div>
+                    <div class="endpoint-body">
+                        <p class="endpoint-desc">Adiciona um novo lead ao CRM.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PIX -->
+            <section id="pix">
+                <h2><i class="fas fa-qrcode" style="color: var(--success);"></i> Gerar Cobrança PIX</h2>
+
+                <div class="endpoint-card">
+                    <div class="endpoint-header">
+                        <span class="endpoint-method method-post">POST</span>
+                        <span class="endpoint-path">/api/mercadopago/pix</span>
+                    </div>
+                    <div class="endpoint-body">
+                        <p class="endpoint-desc">Gera uma cobrança PIX via Mercado Pago.</p>
+
+                        <table class="param-table">
+                            <thead>
+                                <tr>
+                                    <th>Campo</th>
+                                    <th>Tipo</th>
+                                    <th>Descrição</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="param-name">valor</span></td>
+                                    <td><span class="param-type">number</span></td>
+                                    <td>Valor em reais <span class="param-required">*</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="param-name">descricao</span></td>
+                                    <td><span class="param-type">string</span></td>
+                                    <td>Descrição do pagamento</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="param-name">leadId</span></td>
+                                    <td><span class="param-type">string</span></td>
+                                    <td>ID do lead associado</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="param-name">expiracao</span></td>
+                                    <td><span class="param-type">number</span></td>
+                                    <td>Minutos até expirar (default: 30)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h4>Resposta</h4>
+                        <pre><code class="language-json">{
+  "success": true,
+  "data": {
+    "id": "1234567890",
+    "pixCode": "00020126580014br.gov.bcb.pix...",
+    "pixQrCodeBase64": "data:image/png;base64,...",
+    "valor": 97.00,
+    "expiresAt": "2025-01-09T12:30:00.000Z"
+  }
+}</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Webhooks -->
+            <section id="webhooks">
+                <h2><i class="fas fa-bolt" style="color: var(--warning);"></i> Webhooks</h2>
+                <p>Configure webhooks para receber eventos em tempo real.</p>
+
+                <div class="card">
+                    <h4>Webhook de Pagamento (Mercado Pago)</h4>
+                    <p>Configure esta URL no painel do Mercado Pago:</p>
+                    <pre><code>POST /api/webhook/mercadopago</code></pre>
+                </div>
+
+                <h3 id="webhook-events">Eventos Disponíveis</h3>
+                <table class="param-table">
+                    <thead>
+                        <tr>
+                            <th>Evento</th>
+                            <th>Descrição</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="param-name">message.received</span></td>
+                            <td>Nova mensagem recebida</td>
+                        </tr>
+                        <tr>
+                            <td><span class="param-name">message.sent</span></td>
+                            <td>Mensagem enviada com sucesso</td>
+                        </tr>
+                        <tr>
+                            <td><span class="param-name">payment.approved</span></td>
+                            <td>Pagamento PIX aprovado</td>
+                        </tr>
+                        <tr>
+                            <td><span class="param-name">instance.connected</span></td>
+                            <td>Instância conectada ao WhatsApp</td>
+                        </tr>
+                        <tr>
+                            <td><span class="param-name">instance.disconnected</span></td>
+                            <td>Instância desconectada</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- WhatsMeow -->
+            <section>
+                <h2><i class="fab fa-golang" style="color: #00add8;"></i> Sobre o WhatsMeow</h2>
+                <p>
+                    O WhatsMiau2 utiliza a biblioteca <strong>WhatsMeow</strong> para comunicação com o WhatsApp.
+                    WhatsMeow é uma implementação em Go do protocolo WhatsApp Web, oferecendo:
+                </p>
+
+                <div class="card">
+                    <h4>Características</h4>
+                    <ul style="color: var(--text-secondary); margin-left: 20px;">
+                        <li>Conexão estável e confiável</li>
+                        <li>Suporte a múltiplas sessões</li>
+                        <li>Envio de todos os tipos de mídia</li>
+                        <li>Recebimento de mensagens em tempo real</li>
+                        <li>Gerenciamento de grupos</li>
+                        <li>Criptografia end-to-end</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-success">
+                    <i class="fab fa-github"></i>
+                    <div>
+                        <strong>Repositório Oficial</strong><br>
+                        <a href="https://github.com/tulir/whatsmeow" target="_blank" style="color: var(--accent);">
+                            https://github.com/tulir/whatsmeow
+                        </a><br>
+                        <a href="https://pkg.go.dev/github.com/go-whatsapp/whatsmeow" target="_blank"
+                            style="color: var(--accent);">
+                            Documentação Go (pkg.go.dev)
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <div class="footer-links">
+                <a href="https://github.com/automacoescomerciaisintegradas/whatsmiau2" target="_blank"
+                    class="footer-link">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+                <a href="/home" class="footer-link">
+                    <i class="fas fa-home"></i> Voltar ao Início
+                </a>
+                <a href="mailto:contato@automacoescomerciais.com.br" class="footer-link">
+                    <i class="fas fa-envelope"></i> Suporte
+                </a>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        // Highlight code blocks
+        hljs.highlightAll();
+
+        // Tab switching
+        function showTab(btn, tabId) {
+            const parent = btn.closest('.endpoint-body');
+            parent.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            parent.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Copy code
+        function copyCode(btn) {
+            const code = btn.closest('.code-header').nextElementSibling.querySelector('code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => btn.innerHTML = '<i class="fas fa-copy"></i>', 2000);
+            });
+        }
+
+        // Active nav based on scroll
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const top = section.offsetTop - 100;
+                if (scrollY >= top) current = section.getAttribute('id');
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Interno - WhatsMiau2</title>
+    <title>Chat de Atendimento - WhatsMiau2</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -13,71 +13,600 @@
     <link href="/assets/css/style.css" rel="stylesheet">
 
     <style>
-        .chat-container-main {
-            height: calc(100vh - var(--header-height) - 40px);
-            margin: 20px;
-        }
-
-        .avatar-chat {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid white;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .chat-input-wrapper {
+        .chat-app {
+            height: calc(100vh - var(--header-height) - 20px);
+            margin: 10px;
             background: white;
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            display: flex;
         }
 
-        [data-theme="dark"] .chat-input-wrapper {
-            background: #1e293b;
+        /* Inbox Sidebar (Instances) */
+        .inbox-sidebar {
+            width: 70px;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px 0;
+            background: #f8fafc;
+            gap: 16px;
         }
 
-        .chat-input-wrapper input {
-            border: 1px solid var(--border-color);
-            padding: 0.75rem 1.25rem;
-            border-radius: 25px;
-            font-size: 0.95rem;
-            transition: all 0.2s;
-        }
-
-        .chat-input-wrapper input:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
-            outline: none;
-        }
-
-        .btn-send {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
+        .inbox-item {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            transition: all 0.2s;
-            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+            position: relative;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white;
+            border: 2px solid transparent;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
-        .btn-send:hover {
-            transform: scale(1.05);
-            background: var(--primary-hover);
+        .inbox-item img {
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+            object-fit: cover;
         }
 
-        .status-badge {
-            width: 10px;
-            height: 10px;
+        .inbox-item.active {
+            border-color: #3b82f6;
+            transform: scale(1.1);
+        }
+
+        .inbox-item.active::before {
+            content: '';
+            position: absolute;
+            left: -12px;
+            width: 4px;
+            height: 20px;
+            background: #3b82f6;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .inbox-status {
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
-            background: #10b981;
-            display: inline-block;
-            margin-right: 5px;
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
             border: 2px solid white;
+        }
+
+        .inbox-status.online {
+            background: #10b981;
+        }
+
+        .inbox-status.offline {
+            background: #ef4444;
+        }
+
+        .conversations-sidebar {
+            width: 320px;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        .conversation-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.15s;
+            background: white;
+        }
+
+        .conversation-item:hover {
+            background: #f3f4f6;
+        }
+
+        .conversation-item.active {
+            background: #eff6ff;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .conversation-item.unread {
+            background: #fef3c7;
+        }
+
+        .conversation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .conversation-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #1f2937;
+        }
+
+        .conversation-time {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        .conversation-preview {
+            font-size: 0.85rem;
+            color: #6b7280;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .conversation-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .tag-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .priority-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .priority-high {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .priority-medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .priority-low {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .chat-main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        .chat-header-bar {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            background: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .contact-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .contact-details h6 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .contact-status {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f9fafb;
+        }
+
+        .message-group {
+            margin-bottom: 20px;
+        }
+
+        .message-timestamp {
+            text-align: center;
+            margin: 16px 0;
+        }
+
+        .timestamp-badge {
+            font-size: 0.75rem;
+            padding: 4px 12px;
+            border-radius: 12px;
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+
+        .message {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .message.outgoing {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            max-width: 65%;
+        }
+
+        .message.outgoing .message-content {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .message.incoming .message-content {
+            background: white;
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
+        }
+
+        .message-bubble {
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .message.outgoing .message-bubble {
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.incoming .message-bubble {
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            margin-top: 4px;
+            opacity: 0.7;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 12px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            width: fit-content;
+        }
+
+        .typing-indicator.active {
+            display: block;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #6b7280;
+            display: inline-block;
+            margin-right: 4px;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-8px);
+            }
+        }
+
+        .chat-input-area {
+            padding: 16px 20px;
+            border-top: 1px solid #e5e7eb;
+            background: white;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .quick-action-btn {
+            padding: 6px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .quick-action-btn:hover {
+            background: #f3f4f6;
+            border-color: #3b82f6;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .input-tools {
+            display: flex;
+            gap: 8px;
+        }
+
+        .tool-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: #f3f4f6;
+            border-radius: 8px;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .tool-btn:hover {
+            background: #e5e7eb;
+            color: #1f2937;
+        }
+
+        .message-input {
+            flex: 1;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            resize: none;
+            max-height: 120px;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .send-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: #3b82f6;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .send-btn:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .recording-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #fff;
+            z-index: 10;
+            align-items: center;
+            padding: 0 14px;
+            gap: 12px;
+            border-radius: 8px;
+        }
+
+        .recording-overlay.active {
+            display: flex;
+        }
+
+        .record-pulse {
+            width: 12px;
+            height: 12px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: pulse 1.2s infinite;
+        }
+
+        .record-timer {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            color: #ef4444;
+            font-size: 0.9rem;
+        }
+
+        .record-cancel {
+            margin-left: auto;
+            color: #6b7280;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .record-cancel:hover {
+            color: #ef4444;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.3);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Emoji Picker Styles */
+        .emoji-picker {
+            position: absolute;
+            bottom: 50px;
+            left: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 12px;
+            z-index: 1000;
+            width: 250px;
+        }
+
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+        }
+
+        .emoji-grid span {
+            font-size: 1.3rem;
+            padding: 4px;
+            cursor: pointer;
+            border-radius: 6px;
+            text-align: center;
+            transition: background 0.2s;
+        }
+
+        .emoji-grid span:hover {
+            background: #f3f4f6;
+        }
+
+        .contact-sidebar {
+            width: 280px;
+            border-left: 1px solid #e5e7eb;
+            background: #f9fafb;
+            overflow-y: auto;
+        }
+
+        .sidebar-section {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .sidebar-section h6 {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .contact-info-item {
+            margin-bottom: 12px;
+        }
+
+        .contact-info-item label {
+            font-size: 0.8rem;
+            color: #6b7280;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .contact-info-item .value {
+            font-size: 0.9rem;
+            color: #1f2937;
+            font-weight: 500;
+        }
+
+        .conversation-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            background: white;
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: #6b7280;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.15s;
+        }
+
+        .tab-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #f3f4f6;
+        }
+
+        .unread-count {
+            background: #ef4444;
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 6px;
         }
     </style>
 </head>
@@ -95,272 +624,941 @@
                 <a href="/dashboard" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                 </a>
-
                 <a href="/connections" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fas fa-wifi me-2"></i> ConexÃµes
+                    <i class="fas fa-wifi me-2"></i> Conexões
                 </a>
-
                 <a href="/disparador" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-paper-plane me-2"></i> Disparador
                 </a>
-
                 <a href="/exportar-contatos" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-file-export me-2"></i> Exportar Contatos
                 </a>
-
                 <a href="/resumo-grupos" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-chart-bar me-2"></i> Resumo de Grupos
                 </a>
-
                 <a href="/contacts" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-address-book me-2"></i> Contatos
                 </a>
-
+                <a href="/instagram" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fab fa-instagram me-2"></i> Instagram
+                </a>
                 <a href="/tickets" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-ticket-alt me-2"></i> Tickets
                 </a>
-
                 <a href="/kanban" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-columns me-2"></i> Kanban
                 </a>
-
-                <a href="/internal-chat" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fas fa-comments me-2"></i> Chat Interno
+                <a href="/crm-full" class="list-group-item list-group-item-action bg-transparent">
+                    <i class="fas fa-hand-holding-usd me-2"></i> CRM & Pagamentos
                 </a>
-
+                <a href="/internal-chat" class="list-group-item list-group-item-action bg-transparent active">
+                    <i class="fas fa-comments me-2"></i> Chat de Atendimento
+                </a>
                 <div class="border-top my-3"></div>
-
                 <a href="/settings" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-cog me-2"></i> Configurações
                 </a>
-
+                <a href="/logout" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
+                    <i class="fas fa-sign-out-alt me-2"></i> Sair
+                </a>
             </div>
-
-            <a href="/logout" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
-                <i class="fas fa-sign-out-alt me-2"></i> Sair
-            </a>
         </div>
-    </div>
 
-    <!-- Page Content -->
-    <div id="page-content-wrapper">
+        <!-- Page Content -->
+        <div id="page-content-wrapper" style="width: 100%;">
 
-        <nav class="navbar navbar-expand-lg navbar-custom px-4">
-            <div class="d-flex align-items-center w-100 justify-content-between">
-                <div class="d-flex align-items-center">
-                    <button class="btn btn-outline-secondary me-3" id="menu-toggle">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <h5 class="mb-0 fw-bold">Chat de Atendimento</h5>
-                </div>
-                <div class="d-flex align-items-center">
-                    <div class="text-end me-3 d-none d-sm-block">
-                        <div class="fw-bold small">Operador Master</div>
-                        <div class="text-success small"><i class="fas fa-circle fa-xs me-1"></i>online</div>
+            <nav class="navbar navbar-expand-lg navbar-custom px-4">
+                <div class="d-flex align-items-center w-100 justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <button class="btn btn-outline-secondary me-3" id="menu-toggle">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <div class="d-flex align-items-center d-none d-md-flex">
+                            <div class="status-dot status-online"></div>
+                            <span class="small fw-medium">Sistema Online</span>
+                        </div>
                     </div>
-                    <img src="https://ui-avatars.com/api/?name=Admin&background=10b981&color=fff" class="rounded-circle"
-                        width="38">
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark"
+                            id="dropdownUser1" data-bs-toggle="dropdown">
+                            <img src="/assets/img/avatar-support.png" alt="user" width="32" height="32"
+                                class="rounded-circle me-2 bg-light p-1">
+                            <strong class="d-none d-md-inline">Admin</strong>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Perfil</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-credit-card me-2"></i> Assinatura</a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="/logout"><i
+                                        class="fas fa-sign-out-alt me-2"></i> Sair</a></li>
+                        </ul>
+                    </div>
                 </div>
-            </div>
-        </nav>
+            </nav>
 
-        <div class="chat-container-main">
-            <div class="chat-layout shadow-lg h-100">
-                <!-- Chat Sidebar -->
-                <div class="chat-sidebar">
+            <div class="chat-app">
+                <!-- Inbox Sidebar (Instances) -->
+                <div class="inbox-sidebar" id="inboxSidebar">
+                    <!-- Instances will be loaded here -->
+                    <div class="inbox-item active" title="Minha Instância"
+                        onclick="filterByInstance('minha-instancia')">
+                        <img src="https://ui-avatars.com/api/?name=W&background=10b981&color=fff">
+                        <div class="inbox-status online"></div>
+                    </div>
+                </div>
+
+                <!-- Conversations Sidebar -->
+                <div class="conversations-sidebar">
+                    <div class="conversation-tabs">
+                        <button class="tab-btn active" onclick="switchChatTab('active', this)" id="tab-active">
+                            Caixa de Entrada <span class="unread-count" id="activeCount">0</span>
+                        </button>
+                        <button class="tab-btn" onclick="switchChatTab('resolved', this)" id="tab-resolved">
+                            Resolvidos
+                        </button>
+                    </div>
+
                     <div class="p-3 border-bottom">
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-0"><i
-                                    class="fas fa-search text-muted"></i></span>
-                            <input type="text" class="form-control bg-light border-0 small"
-                                placeholder="Buscar conversas...">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light border-0"><i class="fas fa-search"></i></span>
+                            <input type="text" class="form-control bg-light border-0" placeholder="Buscar conversas..."
+                                id="searchConversations">
                         </div>
                     </div>
 
-                    <div class="chat-list" id="conversations-list">
-                        <div class="chat-item active">
-                            <img src="https://ui-avatars.com/api/?name=Joao+Silva&background=3b82f6&color=fff"
-                                class="avatar-chat">
-                            <div class="flex-grow-1 overflow-hidden">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0 text-truncate fw-bold">João Silva</h6>
-                                    <small class="text-muted">14:30</small>
-                                </div>
-                                <p class="text-muted mb-0 text-truncate small fw-bold">Queria saber sobre o plano
-                                    Premium...</p>
-                            </div>
-                        </div>
-
-                        <div class="chat-item">
-                            <img src="https://ui-avatars.com/api/?name=Maria+Loja&background=10b981&color=fff"
-                                class="avatar-chat">
-                            <div class="flex-grow-1 overflow-hidden">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0 text-truncate fw-bold">Maria Loja (Suporte)</h6>
-                                    <span class="badge bg-success rounded-pill ms-auto"
-                                        style="font-size: 0.6rem;">2</span>
-                                </div>
-                                <p class="text-muted mb-0 text-truncate small fw-bold">Obrigado pelo atendimento!</p>
-                            </div>
-                        </div>
-
-                        <div class="chat-item">
-                            <img src="https://ui-avatars.com/api/?name=Carlos+Tech&background=6366f1&color=fff"
-                                class="avatar-chat">
-                            <div class="flex-grow-1 overflow-hidden">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0 text-truncate fw-bold">Carlos Tech</h6>
-                                    <small class="text-muted">Ontem</small>
-                                </div>
-                                <p class="text-muted mb-0 text-truncate small">A integração via webhook...</p>
-                            </div>
-                        </div>
-
-                        <div class="chat-item opacity-50">
-                            <img src="https://ui-avatars.com/api/?name=Joao+Silva&background=gray&color=fff"
-                                class="avatar-chat">
-                            <div class="flex-grow-1 overflow-hidden">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0 text-truncate">João Silva</h6>
-                                    <small class="text-muted">Em atendimento</small>
-                                </div>
-                                <p class="text-muted mb-0 text-truncate small">...</p>
-                            </div>
-                        </div>
+                    <div style="overflow-y: auto; flex: 1;" id="conversationsList">
+                        <!-- Conversation items will be here -->
                     </div>
                 </div>
 
-                <!-- Chat Main -->
-                <div class="chat-main">
-                    <div
-                        class="p-3 border-bottom d-flex align-items-center justify-content-between bg-white bg-opacity-50">
-                        <div class="d-flex align-items-center">
-                            <img src="https://ui-avatars.com/api/?name=Joao+Silva&background=3b82f6&color=fff"
-                                class="avatar-chat me-3">
-                            <div>
-                                <h6 class="mb-0 fw-bold">João Silva</h6>
-                                <small class="text-success fw-medium"><span class="status-badge"></span>Em
-                                    atendimento</small>
+                <!-- Chat Main Area -->
+                <div class="chat-main-area" id="chatMainArea" style="display: none;">
+                    <div class="chat-header-bar">
+                        <div class="chat-header-info">
+                            <img src="" class="contact-avatar" id="currentAvatar">
+                            <div class="contact-details">
+                                <h6 id="currentContactName">Selecione um contato</h6>
+                                <div class="contact-status" id="currentStatus">
+                                    Aguardando seleção...
+                                </div>
                             </div>
                         </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-light btn-sm rounded-pill px-3 shadow-sm border"><i
-                                    class="fas fa-check me-2 text-success"></i>Resolver</button>
-                            <button class="btn btn-light btn-sm rounded-circle border shadow-sm"
-                                style="width:34px; height:34px;"><i class="fas fa-ellipsis-v"></i></button>
+                        <div class="chat-actions">
+                            <button class="btn btn-sm btn-light" title="Resolver conversa"
+                                onclick="resolveCurrentConversation()">
+                                <i class="fas fa-check text-success"></i>
+                            </button>
+                            <button class="btn btn-sm btn-light" title="Atribuir para">
+                                <i class="fas fa-user-tag"></i>
+                            </button>
+                            <button class="btn btn-sm btn-light" title="Mais opções">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
                         </div>
                     </div>
 
-                    <div class="messages-area" id="msgArea">
-                        <div class="text-center my-3">
-                            <span
-                                class="badge bg-light text-dark px-3 py-2 rounded-pill shadow-sm border small fw-normal">Conversa
-                                iniciada às 14:15</span>
-                        </div>
-
-                        <div class="message-bubble message-received shadow-sm">
-                            Olá, boa tarde! Gostaria de saber mais sobre as automações do WhatsMiau.
-                            <div class="message-time">14:30</div>
-                        </div>
-
-                        <div class="message-bubble message-sent shadow-sm">
-                            Olá João! Claro, posso te ajudar com isso. Qual é a sua principal necessidade hoje?
-                            <div class="message-time">14:31 <i class="fas fa-check-double ms-1"></i></div>
-                        </div>
-
-                        <div class="message-bubble message-received shadow-sm">
-                            Eu precisava de um CRM integrado que movesse as mensagens para colunas automaticamente.
-                            <div class="message-time">14:32</div>
-                        </div>
+                    <div class="messages-container" id="messagesArea">
+                        <!-- Messages loaded here -->
                     </div>
 
-                    <div class="chat-input-wrapper">
-                        <div class="input-group gap-3 align-items-center">
-                            <button class="btn p-0 text-muted d-none d-md-block"><i
-                                    class="far fa-smile fa-lg"></i></button>
-                            <button class="btn p-0 text-muted"><i class="fas fa-paperclip fa-lg"></i></button>
-                            <input type="text" class="form-control" placeholder="Escreva sua mensagem aqui..."
-                                id="msgInput">
-                            <button class="btn-send" onclick="sendMessage()">
+                    <div class="chat-input-area">
+                        <div class="quick-actions">
+                            <button class="quick-action-btn" onclick="setQuickMessage('Olá! Como posso ajudar?')">👋
+                                Olá!</button>
+                            <button class="quick-action-btn"
+                                onclick="setQuickMessage('Nossos planos começam a partir de R$ 97,00 mensais.\nNossos planos começam a partir de R$ 291,00 por 03 meses.\nNossos planos começam a partir de R$ 1.164,00 anual. com desconto em ate 12 vezes.')">📋
+                                Ver planos</button>
+                            <button class="quick-action-btn"
+                                onclick="setQuickMessage('Pode realizar o pagamento via PIX para a chave: pix@automacoescomerciais.com.br')">💳
+                                Enviar Chave PIX</button>
+                            <button class="quick-action-btn" onclick="sendPixQRCode()">📷
+                                Enviar QR Code PIX</button>
+                            <button class="quick-action-btn text-danger" onclick="resolveCurrentConversation()">
+                                <i class="fas fa-times-circle me-1"></i> Encerrar Atendimento</button>
+                        </div>
+
+                        <div class="input-wrapper" style="position: relative;">
+                            <div class="input-tools">
+                                <button class="tool-btn" id="emojiBtn" title="Emoji" onclick="toggleEmojiPicker()">
+                                    <i class="far fa-smile"></i>
+                                </button>
+                                <div id="emojiPicker" class="emoji-picker" style="display: none;">
+                                    <div class="emoji-grid">
+                                        <span onclick="insertEmoji('😀')">😀</span>
+                                        <span onclick="insertEmoji('😂')">😂</span>
+                                        <span onclick="insertEmoji('😍')">😍</span>
+                                        <span onclick="insertEmoji('🤔')">🤔</span>
+                                        <span onclick="insertEmoji('👍')">👍</span>
+                                        <span onclick="insertEmoji('👏')">👏</span>
+                                        <span onclick="insertEmoji('🙏')">🙏</span>
+                                        <span onclick="insertEmoji('❤️')">❤️</span>
+                                        <span onclick="insertEmoji('🔥')">🔥</span>
+                                        <span onclick="insertEmoji('✅')">✅</span>
+                                        <span onclick="insertEmoji('⭐')">⭐</span>
+                                        <span onclick="insertEmoji('💰')">💰</span>
+                                        <span onclick="insertEmoji('📞')">📞</span>
+                                        <span onclick="insertEmoji('📧')">📧</span>
+                                        <span onclick="insertEmoji('🎉')">🎉</span>
+                                        <span onclick="insertEmoji('💼')">💼</span>
+                                    </div>
+                                </div>
+                                <button class="tool-btn" title="Anexar arquivo"
+                                    onclick="document.getElementById('fileInput').click()">
+                                    <i class="fas fa-paperclip"></i>
+                                </button>
+                                <input type="file" id="fileInput" style="display: none;"
+                                    onchange="handleFileSelect(this)">
+                            </div>
+
+                            <textarea class="message-input" placeholder="Digite sua mensagem..." id="messageInput"
+                                rows="1"></textarea>
+
+                            <div class="recording-overlay" id="recordingOverlay">
+                                <div class="record-pulse"></div>
+                                <div class="record-timer" id="recordTimer">00:00</div>
+                                <div class="small text-muted">Gravando áudio...</div>
+                                <div class="record-cancel" onclick="cancelRecording()">
+                                    <i class="fas fa-times me-1"></i> Cancelar
+                                </div>
+                            </div>
+
+                            <button class="tool-btn" id="recordBtn" title="Gravar áudio" onclick="toggleRecording()">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+
+                            <button class="send-btn" id="sendBtn">
                                 <i class="fas fa-paper-plane"></i>
                             </button>
                         </div>
                     </div>
                 </div>
+
+                <!-- Contact Info Sidebar -->
+                <div class="contact-sidebar" id="contactSidebar" style="display: none;">
+                    <div class="sidebar-section text-center">
+                        <img src="" class="contact-avatar mb-2" id="sidebarAvatar" style="width: 80px; height: 80px;">
+                        <h6 class="fw-bold mb-1" id="sidebarName">-</h6>
+                        <p class="text-muted small mb-0" id="sidebarInstance">-</p>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h6>Informações de Contato</h6>
+                        <div class="contact-info-item">
+                            <label>WhatsApp</label>
+                            <div class="value">+55 11 99999-9999</div>
+                        </div>
+                        <div class="contact-info-item">
+                            <label>Email</label>
+                            <div class="value">joao@email.com</div>
+                        </div>
+                        <div class="contact-info-item">
+                            <label>Empresa</label>
+                            <div class="value">Tech Solutions LTDA</div>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h6>Tags</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="tag-badge">Premium</span>
+                            <span class="tag-badge">Suporte</span>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h6>Conversas Anteriores</h6>
+                        <div class="text-muted small">
+                            <div class="mb-2">
+                                <i class="fas fa-comment me-2"></i> 3 conversas
+                            </div>
+                            <div>
+                                <i class="fas fa-clock me-2"></i> Última: Ontem
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script>
-        // Theme Toggle
-        const toggleSwitch = document.querySelector('#darkModeSwitch');
-        const body = document.body;
-        const wrapper = document.getElementById("wrapper");
+        const socket = io();
+        let conversations = [];
+        let instances = [];
+        let currentConversation = null;
+        let activeInstance = null;
+        let currentTab = 'active'; // 'active' ou 'resolved'
 
-        if (localStorage.getItem('theme') === 'dark') {
-            body.setAttribute('data-theme', 'dark');
-            toggleSwitch.checked = true;
-        }
-
-        function toggleTheme() {
-            const theme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-            body.setAttribute('data-theme', theme);
-            localStorage.setItem('theme', theme);
-            toggleSwitch.checked = (theme === 'dark');
-        }
-
-        document.getElementById("menu-toggle").onclick = () => wrapper.classList.toggle("sb-sidenav-toggled");
-
-        // Active Link
-        const currentPath = window.location.pathname;
-        document.querySelectorAll('.list-group-item').forEach(link => {
-            if (link.getAttribute('href') === currentPath) link.classList.add('active');
+        // Listen for socket events
+        socket.on('chat:message', (data) => {
+            console.log('[Socket] New message received:', data);
+            // Se for para a conversa atual, renderiza a mensagem
+            if (currentConversation && currentConversation.id === data.conversationId) {
+                if (!currentConversation.messages) currentConversation.messages = [];
+                currentConversation.messages.push(data.message);
+                renderMessages();
+                scrollToBottom();
+            }
+            // Atualiza a lista de conversas
+            loadConversations();
         });
 
-        // Chat Logic
-        const msgArea = document.getElementById('msgArea');
-        const msgInput = document.getElementById('msgInput');
+        socket.on('ticket-update', (data) => {
+            console.log('[Socket] Ticket updated:', data);
+            loadConversations();
+        });
 
-        function sendMessage() {
-            const text = msgInput.value.trim();
-            if (!text) return;
+        socket.on('instance-status', (data) => {
+            console.log('[Socket] Instance status updated:', data);
+            loadInstances();
+        });
 
-            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const msgHtml = `
-                <div class="message-bubble message-sent shadow-sm">
-                    ${text}
-                    <div class="message-time">${now} <i class="fas fa-check ms-1"></i></div>
+        let mediaRecorder;
+        let audioChunks = [];
+        let recordStartTime;
+        let recordTimerInterval;
+
+        // Toggle Audio Recording
+        async function toggleRecording() {
+            if (mediaRecorder && mediaRecorder.state === "recording") {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+                    const reader = new FileReader();
+                    reader.readAsDataURL(audioBlob);
+                    reader.onloadend = () => {
+                        const base64Audio = reader.result.split(',')[1];
+                        sendMediaMessage(base64Audio, 'audio', 'audio/mp3');
+                    };
+
+                    // Stop all streams
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorder.start();
+
+                // UI Update
+                document.getElementById('recordingOverlay').classList.add('active');
+                document.getElementById('recordBtn').classList.add('text-danger');
+                recordStartTime = Date.now();
+                updateRecordTimer();
+                recordTimerInterval = setInterval(updateRecordTimer, 1000);
+
+            } catch (err) {
+                console.error("Erro ao acessar microfone:", err);
+                alert("Não foi possível acessar o microfone. Verifique as permissões.");
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+                clearInterval(recordTimerInterval);
+                document.getElementById('recordingOverlay').classList.remove('active');
+                document.getElementById('recordBtn').classList.remove('text-danger');
+            }
+        }
+
+        function cancelRecording() {
+            if (mediaRecorder) {
+                mediaRecorder.onstop = null; // Don't trigger sending
+                mediaRecorder.stop();
+                clearInterval(recordTimerInterval);
+                document.getElementById('recordingOverlay').classList.remove('active');
+                document.getElementById('recordBtn').classList.remove('text-danger');
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        function updateRecordTimer() {
+            const elapsed = Math.floor((Date.now() - recordStartTime) / 1000);
+            const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const secs = (elapsed % 60).toString().padStart(2, '0');
+            document.getElementById('recordTimer').textContent = `${mins}:${secs}`;
+        }
+
+        // File Selection Handling
+        async function handleFileSelect(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async () => {
+                const base64Media = reader.result.split(',')[1];
+                let type = 'document';
+                if (file.type.startsWith('image/')) type = 'image';
+                if (file.type.startsWith('video/')) type = 'video';
+
+                sendMediaMessage(base64Media, type, file.type, file.name);
+            };
+            input.value = ''; // Reset
+        }
+
+        async function sendMediaMessage(media, type, mimetype, filename = '') {
+            if (!currentConversation) return;
+
+            try {
+                const res = await fetch(`/api/chat/conversations/${currentConversation.id}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        media: media,
+                        mediaType: type,
+                        mimetype: mimetype,
+                        message: filename
+                    })
+                });
+
+                if (res.ok) {
+                    console.log(`${type} enviado com sucesso`);
+                }
+            } catch (e) {
+                console.error(`Erro ao enviar ${type}:`, e);
+            }
+        }
+
+        // Menu toggle
+        document.getElementById("menu-toggle").onclick = () => {
+            document.getElementById("wrapper").classList.toggle("sb-sidenav-toggled");
+        };
+
+        function switchChatTab(tab, btn) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderConversations();
+        }
+
+        function setQuickMessage(text) {
+            const input = document.getElementById('messageInput');
+            input.value = text;
+            input.focus();
+            // Trigger input event to expand textarea
+            input.dispatchEvent(new Event('input'));
+        }
+
+        // Emoji Picker Functions
+        function toggleEmojiPicker() {
+            const picker = document.getElementById('emojiPicker');
+            if (picker) {
+                picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+
+        function insertEmoji(emoji) {
+            const input = document.getElementById('messageInput');
+            if (input) {
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                input.value = input.value.substring(0, start) + emoji + input.value.substring(end);
+                input.selectionStart = input.selectionEnd = start + emoji.length;
+                input.focus();
+                input.dispatchEvent(new Event('input'));
+            }
+            // Fechar o picker após inserir
+            document.getElementById('emojiPicker').style.display = 'none';
+        }
+
+        // Fechar emoji picker ao clicar fora
+        document.addEventListener('click', (e) => {
+            const picker = document.getElementById('emojiPicker');
+            const btn = document.getElementById('emojiBtn');
+            if (picker && btn && !picker.contains(e.target) && !btn.contains(e.target)) {
+                picker.style.display = 'none';
+            }
+        });
+
+        // Função para enviar QR Code PIX como imagem
+        async function sendPixQRCode() {
+            if (!currentConversation) {
+                alert('Selecione uma conversa primeiro');
+                return;
+            }
+
+            try {
+                // Buscar a imagem do QR Code e converter para Base64
+                const response = await fetch('/assets/img/pix-qrcode.png');
+                const blob = await response.blob();
+
+                const reader = new FileReader();
+                reader.readAsDataURL(blob);
+                reader.onloadend = async () => {
+                    const base64Image = reader.result.split(',')[1];
+
+                    // Enviar a imagem com a legenda
+                    const res = await fetch(`/api/chat/conversations/${currentConversation.id}/messages`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            media: base64Image,
+                            mediaType: 'image',
+                            mimetype: 'image/png',
+                            message: 'Escaneie o QR Code para realizar o pagamento via PIX.'
+                        })
+                    });
+
+                    if (res.ok) {
+                        console.log('[CHAT] QR Code PIX enviado com sucesso');
+                    } else {
+                        alert('Erro ao enviar QR Code');
+                    }
+                };
+            } catch (error) {
+                console.error('Erro ao enviar QR Code PIX:', error);
+                alert('Erro ao enviar QR Code PIX');
+            }
+        }
+
+        async function resolveCurrentConversation() {
+            if (!currentConversation) return;
+            if (!confirm(`Deseja marcar a conversa com ${currentConversation.customerName} como RESOLVIDA?`)) return;
+
+            try {
+                // Endpoint de tickets para fechar
+                const res = await fetch(`/api/tickets/${currentConversation.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'FECHADO' })
+                });
+
+                if (res.ok) {
+                    loadConversations();
+                    currentConversation = null;
+                    document.getElementById('messagesArea').innerHTML = '<div class="text-center py-5 text-muted small">Conversa resolvida com sucesso!</div>';
+                }
+            } catch (e) {
+                console.error("Erro ao resolver conversa:", e);
+            }
+        }
+
+        // Load Instances
+        async function loadInstances() {
+            try {
+                const res = await fetch('/api/chat/instances');
+                const data = await res.json();
+                if (data.success) {
+                    instances = data.instances;
+                    renderInstances();
+                }
+            } catch (e) {
+                console.error("Erro ao carregar instâncias:", e);
+            }
+        }
+
+        function renderInstances() {
+            const sidebar = document.getElementById('inboxSidebar');
+            let html = `
+                <div class="inbox-item ${!activeInstance ? 'active' : ''}" title="Todas as Caixas" onclick="filterByInstance(null)">
+                    <i class="fas fa-layer-group text-muted"></i>
                 </div>
             `;
 
-            msgArea.insertAdjacentHTML('beforeend', msgHtml);
-            msgInput.value = '';
-            msgArea.scrollTop = msgArea.scrollHeight;
-
-            // Auto-reply mock
-            setTimeout(() => {
-                const replies = ["Entendido!", "Vou verificar para você.", "Só um momento, por favor.", "Opa! Já estamos processando."];
-                const reply = replies[Math.floor(Math.random() * replies.length)];
-                const replyHtml = `
-                    <div class="message-bubble message-received shadow-sm">
-                        ${reply}
-                        <div class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            instances.forEach(inst => {
+                html += `
+                    <div class="inbox-item ${activeInstance === inst.name ? 'active' : ''}" 
+                         title="${inst.name}" onclick="filterByInstance('${inst.name}')">
+                        <img src="${inst.avatar}">
+                        <div class="inbox-status ${inst.status}"></div>
                     </div>
                 `;
-                msgArea.insertAdjacentHTML('beforeend', replyHtml);
-                msgArea.scrollTop = msgArea.scrollHeight;
-            }, 1000);
+            });
+
+            sidebar.innerHTML = html;
         }
 
-        msgInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
+        function filterByInstance(instanceName) {
+            activeInstance = instanceName;
+            renderInstances();
+            loadConversations();
+        }
+
+        // Load conversations from API
+        async function loadConversations() {
+            try {
+                const res = await fetch('/api/chat/conversations');
+                const data = await res.json();
+
+                if (data.success) {
+                    // Filtragem por Instância
+                    let filtered = activeInstance
+                        ? data.conversations.filter(c => c.instance === activeInstance)
+                        : data.conversations;
+
+                    // Filtragem por Aba (Status)
+                    if (currentTab === 'active') {
+                        conversations = filtered.filter(c => c.status !== 'FECHADO' && c.status !== 'RESOLVIDO');
+                    } else {
+                        conversations = filtered.filter(c => c.status === 'FECHADO' || c.status === 'RESOLVIDO');
+                    }
+
+                    // Atualizar contador da Caixa de Entrada
+                    const activeCount = data.conversations.filter(c => c.status !== 'FECHADO' && c.status !== 'RESOLVIDO').length;
+                    document.getElementById('activeCount').textContent = activeCount;
+
+                    renderConversations();
+
+                    if (conversations.length > 0 && !currentConversation) {
+                        selectConversation(conversations[0].id);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+            }
+        }
+
+        // Render conversations list
+        function renderConversations() {
+            const list = document.getElementById('conversationsList');
+
+            if (conversations.length === 0) {
+                list.innerHTML = '<div class="text-center py-5 text-muted small">Nenhuma conversa encontrada</div>';
+                return;
+            }
+
+            list.innerHTML = conversations.map(conv => `
+                <div class="conversation-item ${conv.unread ? 'unread' : ''} ${currentConversation?.id === conv.id ? 'active' : ''}" 
+                     onclick="selectConversation('${conv.id}')">
+                    <div class="conversation-header">
+                        <span class="conversation-name">${conv.contactName}</span>
+                        <span class="conversation-time">${formatTime(conv.timestamp)}</span>
+                    </div>
+                    <div class="conversation-preview">${conv.lastMessage}</div>
+                    <div class="conversation-meta">
+                        <span class="tag-badge" style="font-size: 0.65rem;">${conv.instance}</span>
+                        <span class="priority-badge priority-${conv.priority}">${conv.priority}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Select conversation
+        async function selectConversation(id) {
+            try {
+                const res = await fetch(`/api/chat/conversations/${id}`);
+                const data = await res.json();
+
+                if (data.success) {
+                    currentConversation = data.conversation;
+
+                    // Show Chat Area
+                    document.getElementById('chatMainArea').style.display = 'flex';
+                    document.getElementById('contactSidebar').style.display = 'block';
+
+                    // Update UI Header
+                    document.getElementById('currentContactName').textContent = currentConversation.customerName;
+                    document.getElementById('currentAvatar').src = currentConversation.contact?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentConversation.customerName)}&background=3b82f6&color=fff`;
+                    document.getElementById('currentStatus').innerHTML = `<i class="fas fa-circle text-success" style="font-size: 0.5rem;"></i> Online • ${currentConversation.instance || 'WhatsApp'}`;
+
+                    // Update Sidebar Info
+                    updateContactSidebar(currentConversation);
+
+                    renderMessages();
+                    renderConversations();
+                    scrollToBottom();
+                }
+            } catch (e) {
+                console.error("Erro ao selecionar conversa:", e);
+            }
+        }
+
+        function updateContactSidebar(ticket) {
+            const sidebar = document.querySelector('.contact-sidebar');
+            const instanceName = ticket.instance || 'WhatsApp';
+            const customerPhone = ticket.customerPhone || ticket.contact?.number || 'Não informado';
+            const ticketStatus = ticket.status || 'ABERTO';
+
+            sidebar.innerHTML = `
+                <div class="sidebar-section text-center">
+                    <img src="${ticket.contact?.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(ticket.customerName)}"
+                        class="contact-avatar mb-2" style="width: 80px; height: 80px;">
+                    <h6 class="fw-bold mb-1">${ticket.customerName || 'Cliente'}</h6>
+                    <p class="text-muted small mb-0">${instanceName}</p>
+                </div>
+
+                <div class="sidebar-section">
+                    <h6>Informações de Contato</h6>
+                    <div class="contact-info-item">
+                        <label>WhatsApp</label>
+                        <div class="value">${customerPhone}</div>
+                    </div>
+                    <div class="contact-info-item">
+                        <label>Status Ticket</label>
+                        <div class="value"><span class="badge bg-primary">${ticketStatus}</span></div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h6>Instância</h6>
+                    <div class="value small text-muted">${instanceName}</div>
+                </div>
+            `;
+        }
+
+        // Render messages history
+        function renderMessages() {
+            const area = document.getElementById('messagesArea');
+            if (!currentConversation.messages || currentConversation.messages.length === 0) {
+                area.innerHTML = '<div class="text-center py-5 text-muted">Inicie uma conversa</div>';
+                return;
+            }
+
+            let html = '';
+            let lastDate = null;
+
+            currentConversation.messages.forEach(msg => {
+                const date = new Date(msg.timestamp).toDateString();
+                if (date !== lastDate) {
+                    html += `<div class="message-timestamp"><span class="timestamp-badge">${formatDate(msg.timestamp)}</span></div>`;
+                    lastDate = date;
+                }
+
+                const isAgent = msg.type === 'outgoing';
+                const avatar = isAgent ? '/assets/img/avatar-support.png' : currentConversation.contact?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentConversation.customerName)}`;
+
+                const bubbleHtml = getMessageBubbleHtml(msg);
+
+                html += `
+                    <div class="message ${isAgent ? 'outgoing' : 'incoming'}">
+                        <img src="${avatar}" class="message-avatar">
+                        <div class="message-content">
+                            ${bubbleHtml}
+                            <div class="message-time">
+                                ${formatTimeShort(msg.timestamp)} 
+                                ${isAgent ? '<i class="fas fa-check-double text-primary ms-1" style="font-size: 0.6rem;"></i>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            area.innerHTML = html;
+        }
+
+        // Helper function for media rendering
+        function getMessageBubbleHtml(msg) {
+            const isAgent = msg.type === 'outgoing';
+
+            if (msg.mediaType === 'image') {
+                return `
+                    <div class="message-bubble p-1 shadow-sm" style="max-width: 300px; background: ${isAgent ? '#3b82f6' : 'white'};">
+                        <img src="${msg.mediaUrl}" class="img-fluid rounded mb-1" style="cursor: pointer; max-height: 250px;" onclick="window.open('${msg.mediaUrl}')">
+                        ${msg.text ? `<div class="px-2 py-1 small ${isAgent ? 'text-white' : ''}">${msg.text}</div>` : ''}
+                    </div>
+                `;
+            }
+            if (msg.mediaType === 'audio') {
+                return `
+                    <div class="message-bubble p-2">
+                        <audio src="${msg.mediaUrl}" controls style="height: 32px; width: 220px;"></audio>
+                    </div>
+                `;
+            }
+            if (msg.mediaType === 'video') {
+                return `
+                    <div class="message-bubble p-1 shadow-sm" style="max-width: 300px; background: ${isAgent ? '#3b82f6' : 'white'};">
+                        <video src="${msg.mediaUrl}" controls class="img-fluid rounded" style="max-height: 250px;"></video>
+                        ${msg.text ? `<div class="px-2 py-1 small ${isAgent ? 'text-white' : ''}">${msg.text}</div>` : ''}
+                    </div>
+                `;
+            }
+            if (msg.mediaType === 'document') {
+                return `
+                    <div class="message-bubble p-2">
+                        <a href="${msg.mediaUrl}" target="_blank" class="text-decoration-none d-flex align-items-center ${isAgent ? 'text-white' : 'text-primary'}">
+                            <i class="fas fa-file-alt fa-2x me-2"></i>
+                            <div class="overflow-hidden">
+                                <div class="text-truncate fw-bold" style="max-width: 150px;">${msg.text || 'Arquivo'}</div>
+                                <div style="font-size: 0.7rem; opacity: 0.8;">Clique para baixar</div>
+                            </div>
+                        </a>
+                    </div>
+                `;
+            }
+            return `<div class="message-bubble">${msg.text}</div>`;
+        }
+
+        // Send message to API
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+
+            if (!text || !currentConversation) return;
+
+            try {
+                const res = await fetch(`/api/chat/conversations/${currentConversation.id}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    input.value = '';
+                    input.style.height = 'auto';
+                    // Mensagem será adicionada via Socket.IO
+                } else {
+                    alert('Erro ao enviar: ' + (data.error || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+            }
+        }
+
+
+        // Socket.IO - Receive messages in real-time
+        socket.on('chat:message', (data) => {
+            console.log('[SOCKET] Recebida mensagem:', data);
+
+            if (data.conversationId === currentConversation?.id?.toString()) {
+                const isAgent = data.message.type === 'outgoing';
+                const avatar = isAgent ? '/assets/img/avatar-support.png' : currentConversation.contact?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentConversation.customerName)}`;
+                const bubbleHtml = getMessageBubbleHtml(data.message);
+
+                const msgHtml = `
+                    <div class="message ${isAgent ? 'outgoing' : 'incoming'}">
+                        <img src="${avatar}" class="message-avatar">
+                        <div class="message-content">
+                            ${bubbleHtml}
+                            <div class="message-time">${formatTimeShort(data.message.timestamp)}</div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('messagesArea').insertAdjacentHTML('beforeend', msgHtml);
+                scrollToBottom();
+            }
+
+            // Sync with sidebar
+            loadConversations();
         });
 
-        // Auto scroll to bottom
-        msgArea.scrollTop = msgArea.scrollHeight;
+        function scrollToBottom() {
+            const area = document.getElementById('messagesArea');
+            if (area) area.scrollTop = area.scrollHeight;
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            if (date.toDateString() === today.toDateString()) {
+                return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            } else if (date.toDateString() === yesterday.toDateString()) {
+                return 'Ontem';
+            } else {
+                return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            }
+        }
+
+        function formatTimeShort(timestamp) {
+            return new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function formatDate(timestamp) {
+            const date = new Date(timestamp);
+            const today = new Date();
+            if (date.toDateString() === today.toDateString()) return 'Hoje';
+            return date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+        }
+
+        // Search conversations
+        document.getElementById('searchConversations').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            renderConversationsFiltered(query);
+        });
+
+        function renderConversationsFiltered(query) {
+            const list = document.getElementById('conversationsList');
+            const filtered = conversations.filter(c =>
+                (c.contactName && c.contactName.toLowerCase().includes(query)) ||
+                (c.lastMessage && c.lastMessage.toLowerCase().includes(query))
+            );
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<div class="text-center py-5 text-muted small">Nenhuma conversa encontrada</div>';
+                return;
+            }
+
+            list.innerHTML = filtered.map(conv => `
+                <div class="conversation-item ${conv.unread ? 'unread' : ''} ${currentConversation?.id === conv.id ? 'active' : ''}" 
+                     onclick="selectConversation('${conv.id}')">
+                    <div class="conversation-header">
+                        <span class="conversation-name">${conv.contactName}</span>
+                        <span class="conversation-time">${formatTime(conv.timestamp)}</span>
+                    </div>
+                    <div class="conversation-preview">${conv.lastMessage}</div>
+                    <div class="conversation-meta">
+                        <span class="tag-badge" style="font-size: 0.65rem;">${conv.instance}</span>
+                        <span class="priority-badge priority-${conv.priority}">${conv.priority}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function init() {
+            console.log('[CHAT] Inicializando...');
+            await loadInstances();
+            await loadConversations();
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            init();
+
+            // Send button click
+            const sendBtn = document.getElementById('sendBtn');
+            if (sendBtn) {
+                sendBtn.addEventListener('click', () => {
+                    console.log('[CHAT] Botão enviar clicado');
+                    sendMessage();
+                });
+            }
+
+            // Enter to send
+            const msgInput = document.getElementById('messageInput');
+            if (msgInput) {
+                msgInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        console.log('[CHAT] Enter pressionado');
+                        sendMessage();
+                    }
+                });
+
+                // Auto-expand textarea
+                msgInput.addEventListener('input', function () {
+                    this.style.height = 'auto';
+                    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+                });
+            }
+        });
+
+        setInterval(loadConversations, 60000); // Sync every minute
     </script>
+
 </body>
 
 </html>

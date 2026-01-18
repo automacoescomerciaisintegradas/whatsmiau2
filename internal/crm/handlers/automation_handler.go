@@ -50,7 +50,7 @@ func (h *AutomationHandler) GetAutomationRule(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	_, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		respondError(w, http.StatusBadRequest, "Invalid rule ID")
 		return
@@ -63,12 +63,14 @@ func (h *AutomationHandler) GetAutomationRule(w http.ResponseWriter, r *http.Req
 // ListAutomationRules lista regras de automação
 // GET /api/crm/automation/rules
 func (h *AutomationHandler) ListAutomationRules(w http.ResponseWriter, r *http.Request) {
-	enabledStr := r.URL.Query().Get("enabled")
-	var enabled *bool
-	if enabledStr != "" {
-		enabledVal := enabledStr == "true"
-		enabled = &enabledVal
-	}
+	// enabledStr := r.URL.Query().Get("enabled")
+	/*
+		var enabled *bool
+		if enabledStr != "" {
+			enabledVal := enabledStr == "true"
+			enabled = &enabledVal
+		}
+	*/
 
 	// Listar regras (implementação futura)
 	respondError(w, http.StatusNotImplemented, "List automation rules not implemented yet")
@@ -83,7 +85,7 @@ func (h *AutomationHandler) UpdateAutomationRule(w http.ResponseWriter, r *http.
 		return
 	}
 
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	_, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		respondError(w, http.StatusBadRequest, "Invalid rule ID")
 		return
@@ -108,7 +110,7 @@ func (h *AutomationHandler) DeleteAutomationRule(w http.ResponseWriter, r *http.
 		return
 	}
 
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	_, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		respondError(w, http.StatusBadRequest, "Invalid rule ID")
 		return
@@ -125,7 +127,7 @@ func (h *AutomationHandler) TriggerAutomation(w http.ResponseWriter, r *http.Req
 		RuleID int64 `json:"rule_id"`
 		LeadID int64 `json:"lead_id"`
 	}
-	
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respondError(w, http.StatusBadRequest, "Invalid request body")
 		return
@@ -136,15 +138,3 @@ func (h *AutomationHandler) TriggerAutomation(w http.ResponseWriter, r *http.Req
 }
 
 // Helper functions
-func respondJSON(w http.ResponseWriter, status int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
-}
-
-func respondError(w http.ResponseWriter, status int, message string) {
-	respondJSON(w, status, map[string]interface{}{
-		"success": false,
-		"error":   message,
-	})
-}
