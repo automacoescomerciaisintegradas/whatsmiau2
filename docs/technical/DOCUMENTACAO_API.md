@@ -299,8 +299,15 @@ Obtém metadados de um canal.
 
 Para suporte técnico ou dúvidas sobre a integração, entre em contato com nossa equipe.
 
-**Desenvolvido por:**  
-**Automações Comerciais Integradas! ⚙️**  
+**Desenvolvido por:**
+**Automações Comerciais Integradas! ⚙️**
+📞 **Contato e Suporte**
+CANAL
+link canal https://whatsapp.com/channel/0029Vb7MgPz5kg767iWItk42
+
+[**Saiba Mais!!!!**]
+https://wa.me/558894227586
+
 📧 [contato@automacoescomerciais.com.br](mailto:contato@automacoescomerciais.com.br)
 
 © 2025 Automações Comerciais Integradas. Todos os direitos reservados.

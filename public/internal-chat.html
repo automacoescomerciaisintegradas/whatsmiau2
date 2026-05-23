@@ -686,8 +686,10 @@
                             <strong class="d-none d-md-inline">Admin</strong>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Perfil</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-credit-card me-2"></i> Assinatura</a>
+                            <li><a class="dropdown-item" href="/profile.html"><i class="fas fa-user me-2"></i>
+                                    Perfil</a></li>
+                            <li><a class="dropdown-item" href="/subscription.html"><i
+                                        class="fas fa-credit-card me-2"></i> Assinatura</a>
                             </li>
                             <li>
                                 <hr class="dropdown-divider">
@@ -1136,9 +1138,12 @@
 
             try {
                 // Endpoint de tickets para fechar
-                const res = await fetch(`/api/tickets/${currentConversation.id}`, {
+                const res = await fetch(`/v1/crm/tickets/${currentConversation.id}`, {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
                     body: JSON.stringify({ status: 'FECHADO' })
                 });
 

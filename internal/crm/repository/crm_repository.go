@@ -29,6 +29,12 @@ type CRMRepository interface {
 	UpdatePaymentStatus(id int64, status string, paidAt *string) error
 	GetPaymentByMPID(mpPaymentID string) (*models.Payment, error)
 	GetPaymentStats() (*models.PaymentStats, error)
+
+	// Tickets
+	CreateTicket(ticket *models.Ticket) error
+	ListTickets() ([]*models.Ticket, error)
+	UpdateTicketStatus(id int64, status string) error
+	DeleteTicket(id int64) error
 }
 
 // SQLiteCRMRepository implementação SQLite do CRMRepository
@@ -384,4 +390,57 @@ func (r *SQLiteCRMRepository) GetPaymentStats() (*models.PaymentStats, error) {
 	r.db.QueryRow("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'pending'").Scan(&stats.PendingAmount)
 
 	return stats, nil
+}
+
+// CreateTicket cria novo ticket
+func (r *SQLiteCRMRepository) CreateTicket(ticket *models.Ticket) error {
+	query := `
+		INSERT INTO tickets (customer_name, customer_phone, subject, status, priority)
+		VALUES (?, ?, ?, ?, ?)
+	`
+	result, err := r.db.Exec(query, ticket.CustomerName, ticket.CustomerPhone, ticket.Subject, ticket.Status, ticket.Priority)
+	if err != nil {
+		return err
+	}
+	id, _ := result.LastInsertId()
+	ticket.ID = id
+	return nil
+}
+
+// ListTickets lista todos os tickets
+func (r *SQLiteCRMRepository) ListTickets() ([]*models.Ticket, error) {
+	query := `SELECT * FROM tickets ORDER BY updated_at DESC`
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	tickets := []*models.Ticket{}
+	for rows.Next() {
+		t := &models.Ticket{}
+		err := rows.Scan(
+			&t.ID, &t.CustomerName, &t.CustomerPhone, &t.Subject,
+			&t.Status, &t.Priority, &t.LastActivity, &t.CreatedAt, &t.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		tickets = append(tickets, t)
+	}
+	return tickets, nil
+}
+
+// UpdateTicketStatus atualiza status do ticket
+func (r *SQLiteCRMRepository) UpdateTicketStatus(id int64, status string) error {
+	query := `UPDATE tickets SET status = ?, updated_at = CURRENT_TIMESTAMP, last_activity = CURRENT_TIMESTAMP WHERE id = ?`
+	_, err := r.db.Exec(query, status, id)
+	return err
+}
+
+// DeleteTicket deleta ticket
+func (r *SQLiteCRMRepository) DeleteTicket(id int64) error {
+	query := `DELETE FROM tickets WHERE id = ?`
+	_, err := r.db.Exec(query, id)
+	return err
 }

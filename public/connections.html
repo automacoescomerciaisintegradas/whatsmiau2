@@ -33,7 +33,7 @@
                 </a>
 
                 <a href="/connections" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fas fa-wifi me-2"></i> ConexÃµes
+                    <i class="fas fa-wifi me-2"></i> Conexões
                 </a>
 
                 <a href="/disparador" class="list-group-item list-group-item-action bg-transparent">
@@ -70,115 +70,116 @@
                     <i class="fas fa-cog me-2"></i> Configurações
                 </a>
 
-                </div>
-
-                <a href="/logout" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
-                    <i class="fas fa-sign-out-alt me-2"></i> Sair
-                </a>
             </div>
+
+            <a href="/logout" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
+                <i class="fas fa-sign-out-alt me-2"></i> Sair
+            </a>
         </div>
+    </div>
 
-        <!-- Page Content -->
-        <div id="page-content-wrapper">
+    <!-- Page Content -->
+    <div id="page-content-wrapper">
 
-            <nav class="navbar navbar-expand-lg navbar-custom px-4">
-                <div class="d-flex align-items-center w-100 justify-content-between">
-                    <button class="btn btn-outline-secondary" id="menu-toggle">
-                        <i class="fas fa-bars"></i>
-                    </button>
+        <nav class="navbar navbar-expand-lg navbar-custom px-4">
+            <div class="d-flex align-items-center w-100 justify-content-between">
+                <button class="btn btn-outline-secondary" id="menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
 
-                    <div class="dropdown">
-                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark"
-                            id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
-                            <img src="/assets/img/avatar-support.png" alt="user" width="32" height="32"
-                                class="rounded-circle me-2 bg-light p-1">
-                            <strong class="d-none d-md-inline">Admin</strong>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="dropdownUser1">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Perfil</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-credit-card me-2"></i> Assinatura</a>
-                            </li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li><a class="dropdown-item text-danger" href="/logout"><i
-                                        class="fas fa-sign-out-alt me-2"></i> Sair</a></li>
-                        </ul>
-                    </div>
+                <div class="dropdown">
+                    <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle text-dark"
+                        id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="/assets/img/avatar-support.png" alt="user" width="32" height="32"
+                            class="rounded-circle me-2 bg-light p-1">
+                        <strong class="d-none d-md-inline">Admin</strong>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="dropdownUser1">
+                        <li><a class="dropdown-item" href="/profile.html"><i class="fas fa-user me-2"></i> Perfil</a>
+                        </li>
+                        <li><a class="dropdown-item" href="/subscription.html"><i class="fas fa-credit-card me-2"></i>
+                                Assinatura</a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>
+                                Sair</a></li>
+                    </ul>
                 </div>
-            </nav>
+            </div>
+        </nav>
 
-            <div class="responsive-container">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h2 class="fw-bold text-dark">Gerenciar Conexões</h2>
-                        <p class="text-muted">Conecte seus canais de WhatsApp, Instagram ou Facebook.</p>
-                    </div>
-                    <button class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal"
-                        data-bs-target="#modalChoice">
-                        <i class="fas fa-plus me-2"></i> Nova Conexão
-                    </button>
+        <div class="responsive-container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold text-dark">Gerenciar Conexões</h2>
+                    <p class="text-muted">Conecte seus canais de WhatsApp, Instagram ou Facebook.</p>
                 </div>
+                <button class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#modalChoice">
+                    <i class="fas fa-plus me-2"></i> Nova Conexão
+                </button>
+            </div>
 
-                <div class="row mb-4">
-                    <div class="col-md-4">
-                        <div class="card border-0 shadow-sm p-3 border-start border-4 border-success">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <span class="text-muted small text-uppercase fw-bold">Online</span>
-                                    <h3 class="mb-0" id="count-online">0 Instâncias</h3>
-                                </div>
-                                <div class="bg-success bg-opacity-10 p-3 rounded-circle text-success"
-                                    style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-check-circle fa-lg"></i>
-                                </div>
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm p-3 border-start border-4 border-success">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="text-muted small text-uppercase fw-bold">Online</span>
+                                <h3 class="mb-0" id="count-online">0 Instâncias</h3>
                             </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card border-0 shadow-sm p-3 border-start border-4 border-danger">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <span class="text-muted small text-uppercase fw-bold">Desconectado</span>
-                                    <h3 class="mb-0" id="count-offline">0 Instâncias</h3>
-                                </div>
-                                <div class="bg-danger bg-opacity-10 p-3 rounded-circle text-danger"
-                                    style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-exclamation-triangle fa-lg"></i>
-                                </div>
+                            <div class="bg-success bg-opacity-10 p-3 rounded-circle text-success"
+                                style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-check-circle fa-lg"></i>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-white py-3 border-bottom border-light">
-                        <h5 class="mb-0 fw-bold">Instâncias Ativas</h5>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table align-middle table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th scope="col" class="ps-4">Canal</th>
-                                    <th scope="col">Nome da Sessão</th>
-                                    <th scope="col">Status</th>
-                                    <th scope="col">Última Atividade</th>
-                                    <th scope="col" class="text-end pe-4">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="instances-table-body">
-                                <tr>
-                                    <td colspan="5" class="text-center py-5">
-                                        <div class="spinner-border text-primary" role="status"></div>
-                                        <div class="mt-2 text-muted">Carregando instâncias...</div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm p-3 border-start border-4 border-danger">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="text-muted small text-uppercase fw-bold">Desconectado</span>
+                                <h3 class="mb-0" id="count-offline">0 Instâncias</h3>
+                            </div>
+                            <div class="bg-danger bg-opacity-10 p-3 rounded-circle text-danger"
+                                style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-exclamation-triangle fa-lg"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 border-bottom border-light">
+                    <h5 class="mb-0 fw-bold">Instâncias Ativas</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col" class="ps-4">Canal</th>
+                                <th scope="col">Nome da Sessão</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Última Atividade</th>
+                                <th scope="col" class="text-end pe-4">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="instances-table-body">
+                            <tr>
+                                <td colspan="5" class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status"></div>
+                                    <div class="mt-2 text-muted">Carregando instâncias...</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
+    </div>
     </div>
 
     <!-- Modal: Choice -->
@@ -336,7 +337,9 @@
         async function fetchInstances() {
             const tableBody = document.getElementById('instances-table-body');
             try {
-                const res = await fetch('/api/instance/fetchInstances');
+                const res = await fetch('/v1/instance/fetchInstances', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
                 const instances = await res.json();
                 renderTable(instances);
             } catch (e) {
@@ -432,9 +435,12 @@
 
             try {
                 // Create instance
-                await fetch('/api/instance/create', {
+                await fetch('/v1/instance/create', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
                     body: JSON.stringify({ instanceName: name })
                 });
 
@@ -455,7 +461,9 @@
 
         function startPolling(name) {
             const it = setInterval(async () => {
-                const res = await fetch(`/api/instance/connectionState/${name}`);
+                const res = await fetch(`/v1/instance/connectionState/${name}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
                 const data = await res.json();
                 if (data.instance?.status === 'connected') {
                     clearInterval(it);
@@ -468,13 +476,19 @@
 
         async function disconnectInstance(name) {
             if (!confirm(`Deseja desconectar a instância ${name}?`)) return;
-            await fetch(`/api/instance/logout/${name}`, { method: 'DELETE' });
+            await fetch(`/v1/instance/logout/${name}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+            });
             fetchInstances();
         }
 
         async function deleteInstance(name) {
             if (!confirm(`Deseja deletar permanentemente a instância ${name}?`)) return;
-            await fetch(`/api/instance/delete/${name}`, { method: 'DELETE' });
+            await fetch(`/v1/instance/delete/${name}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+            });
             fetchInstances();
         }
 

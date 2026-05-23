@@ -1,7 +1,7 @@
 # Test CRM API
 $headers = @{
     "Content-Type" = "application/json"
-    "apikey"       = "2wtLvtb20wXePp8D9uRhm55aCjINiciO"
+    "apikey"       = "your-api-key-here"
 }
 
 $body = @{

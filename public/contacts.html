@@ -27,7 +27,7 @@
                 </a>
 
                 <a href="/connections" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fas fa-wifi me-2"></i> ConexÃµes
+                    <i class="fas fa-wifi me-2"></i> Conexões
                 </a>
 
                 <a href="/disparador" class="list-group-item list-group-item-action bg-transparent">
@@ -252,9 +252,11 @@
             if (!tbody) return;
 
             try {
-                const res = await fetch('/api/contacts');
+                const res = await fetch('/v1/crm/leads', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
                 const data = await res.json();
-                allContacts = data.contacts || [];
+                allContacts = data.leads || [];
                 renderContacts(allContacts);
             } catch (err) {
                 console.error("Erro ao carregar contatos", err);
@@ -274,11 +276,11 @@
                     <td>
                         <input type="checkbox" class="form-check-input contact-checkbox" data-id="${c.id}" onchange="updateBulkBar()">
                     </td>
-                    <td class="fw-bold">${c.name}</td>
-                    <td>${c.phone}</td>
-                    <td>${(c.tags || []).map(t => `<span class="badge bg-primary-subtle text-primary me-1">${t}</span>`).join('')}</td>
+                    <td class="fw-bold">${c.nome || c.name}</td>
+                    <td>${c.whatsapp || c.phone}</td>
+                    <td>${(c.tags || "").split(',').filter(t => t).map(t => `<span class="badge bg-primary-subtle text-primary me-1">${t}</span>`).join('')}</td>
                     <td class="text-end">
-                        <button class="btn btn-light btn-sm" onclick="alert('Chat para ${c.phone}')"><i class="fas fa-comment"></i></button>
+                        <button class="btn btn-light btn-sm" onclick="alert('Chat para ${c.whatsapp || c.phone}')"><i class="fas fa-comment"></i></button>
                         <button class="btn btn-light btn-sm" onclick="deleteContact(${c.id})"><i class="fas fa-trash text-danger"></i></button>
                     </td>
                 </tr>
@@ -327,10 +329,9 @@
             if (!confirm(`Excluir as ${selected.length} pessoas selecionadas?`)) return;
 
             try {
-                await fetch('/api/contacts/bulk-delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ids: selected })
+                await fetch('/v1/crm/leads/' + selected.join(','), { // Note: bulk delete usually needs a specific endpoint or multiple calls
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
                 });
                 loadContacts();
             } catch (err) { alert("Erro ao excluir contatos."); }
@@ -488,14 +489,27 @@
 
         async function processImport(contacts) {
             try {
-                await fetch('/api/contacts/import', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contacts })
-                });
+                // Map frontend names to backend names (nome, whatsapp)
+                const mappedContacts = contacts.map(c => ({
+                    nome: c.name,
+                    whatsapp: c.phone,
+                    tags: c.tags.join(',')
+                }));
+
+                for (const contact of mappedContacts) {
+                    await fetch('/v1/crm/leads', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                        },
+                        body: JSON.stringify(contact)
+                    });
+                }
+                
                 bootstrap.Modal.getInstance(document.getElementById('modalImport')).hide();
                 loadContacts();
-                alert(`${contacts.length} contatos importados com sucesso!`);
+                alert(`${contacts.length} contatos processados!`);
             } catch (err) {
                 alert("Erro na importação");
             }

@@ -1,4 +1,4 @@
-$headers = @{ "apikey" = "2wtLvtb20wXePp8D9uRhm55aCjINiciO" }
+$headers = @{ "apikey" = "your-api-key-here" }
 $body = @{ "instanceName" = "minha-instancia" }
 try {
     $response = Invoke-RestMethod -Uri "http://localhost:8085/v1/instance/create" -Method Post -Headers $headers -Body ($body | ConvertTo-Json) -ContentType "application/json"

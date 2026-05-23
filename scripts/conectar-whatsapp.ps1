@@ -5,7 +5,7 @@
 param(
     [string]$Instance = "minha-instancia",
     [string]$ApiUrl = "http://localhost:8085",
-    [string]$ApiKey = "2wtLvtb20wXePp8D9uRhm55aCjINiciO",
+    [string]$ApiKey = "your-api-key-here",
     [string]$Method = "qr"  # "qr" ou "code"
 )
 

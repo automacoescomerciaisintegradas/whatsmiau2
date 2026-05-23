@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste Subscription Page</title>
+</head>
+<body>
+    <h1>Testando Subscription Page</h1>
+    <p>Token obtido: <span id="token-display">carregando...</span></p>
+    <button onclick="testSubscription()">Testar Subscription</button>
+    <button onclick="testSimpleSubscription()">Testar Subscription Simples</button>
+    <div id="result"></div>
+
+    <script>
+        // Token obtido do login
+        const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3RlMkB3aGF0cy5jb20iLCJleHAiOjE3NjkyMTg2MzYsInVzZXJfaWQiOjN9.KpdRuPK2b3mx6UmJeSYXruytNZANdfx1dPC6SafMjlQ";
+
+        document.getElementById('token-display').textContent = TOKEN.substring(0, 20) + '...';
+
+        function testSubscription() {
+            // Simular ter o token no localStorage
+            localStorage.setItem('authToken', TOKEN);
+
+            // Abrir a página de subscription
+            window.open('http://localhost:8085/subscription.html', '_blank');
+            document.getElementById('result').innerHTML = '<div style="color: green;">✅ Página subscription.html aberta em nova aba!</div>';
+        }
+
+        function testSimpleSubscription() {
+            // A página simples não precisa de token
+            window.open('http://localhost:8085/subscription-simple.html', '_blank');
+            document.getElementById('result').innerHTML = '<div style="color: green;">✅ Página subscription-simple.html aberta em nova aba!</div>';
+        }
+
+        // Teste automático dos endpoints da API
+        async function testAPI() {
+            const result = document.getElementById('result');
+
+            try {
+                // Testar endpoint de planos (requer auth)
+                const plansResponse = await fetch('http://localhost:8085/v1/plans', {
+                    headers: {
+                        'Authorization': `Bearer ${TOKEN}`
+                    }
+                });
+
+                if (plansResponse.ok) {
+                    result.innerHTML += '<br><div style="color: green;">✅ API /v1/plans: OK</div>';
+                } else {
+                    result.innerHTML += '<br><div style="color: red;">❌ API /v1/plans: ' + plansResponse.status + '</div>';
+                }
+
+                // Testar endpoint de subscription/me
+                const subResponse = await fetch('http://localhost:8085/v1/subscription/me', {
+                    headers: {
+                        'Authorization': `Bearer ${TOKEN}`
+                    }
+                });
+
+                result.innerHTML += '<br><div style="color: green;">✅ API /v1/subscription/me: ' + subResponse.status + '</div>';
+
+            } catch (error) {
+                result.innerHTML += '<br><div style="color: red;">❌ Erro na API: ' + error.message + '</div>';
+            }
+        }
+
+        // Executar teste da API automaticamente
+        testAPI();
+    </script>
+</body>
+</html>

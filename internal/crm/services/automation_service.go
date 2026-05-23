@@ -11,14 +11,14 @@ import (
 	"whatsmiau2/internal/crm/repository"
 	"whatsmiau2/internal/whatsapp"
 
-	"go.mau.fi/whatsmeow/types"
 	waProto "go.mau.fi/whatsmeow/binary/proto"
+	"go.mau.fi/whatsmeow/types"
 )
 
 // AutomationService gerencia as regras de automação
 type AutomationService struct {
-	repo     repository.AutomationRepository
-	manager  *whatsapp.Manager
+	repo    repository.AutomationRepository
+	manager *whatsapp.Manager
 }
 
 // NewAutomationService cria novo serviço de automação
@@ -207,15 +207,15 @@ func (s *AutomationService) executeUpdateLeadAction(action *models.AutomationAct
 
 	// Atualizar campos do lead com base nos dados recebidos
 	updates := &models.UpdateLeadRequest{}
-	
+
 	if status, ok := updateData["status"].(string); ok {
 		updates.Status = &status
 	}
-	
+
 	if temperatura, ok := updateData["temperatura"].(string); ok {
 		updates.Temperatura = &temperatura
 	}
-	
+
 	if observacoes, ok := updateData["observacoes"].(string); ok {
 		updates.Observacoes = &observacoes
 	}

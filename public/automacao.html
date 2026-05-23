@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>if (!localStorage.getItem('authToken')) window.location.href = '/login.html';</script>
     <title>Automação - WhatsMiau2</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -1824,6 +1825,8 @@
         loadData();
 
     </script>
+    <!-- Access Check -->
+    <script src="/assets/js/check_access.js"></script>
 </body>
 
 </html>

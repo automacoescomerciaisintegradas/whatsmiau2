@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
+	"time"
 
 	"whatsmiau2/internal/config"
 	"whatsmiau2/internal/database"
@@ -415,25 +417,66 @@ func (c *Client) PairPhone(phone string) (string, error) {
 	}
 
 	// Ensure client is connected to WebSocket
-	if !c.WA.IsConnected() {
-		err := c.WA.Connect()
-		if err != nil {
-			return "", fmt.Errorf("failed to connect: %w", err)
+	ensureConnected := func() error {
+		if c.WA.IsConnected() {
+			return nil
 		}
+
+		if err := c.WA.Connect(); err != nil {
+			return fmt.Errorf("failed to connect: %w", err)
+		}
+
+		// Wait for websocket to actually come online before requesting pairing
+		deadline := time.Now().Add(10 * time.Second)
+		for time.Now().Before(deadline) {
+			if c.WA.IsConnected() {
+				// ADDED: Wait a bit for the Noise handshake to finish
+				// otherwise WhatsApp disconnects us when calling PairPhone immediately
+				time.Sleep(5 * time.Second)
+				return nil
+			}
+			time.Sleep(250 * time.Millisecond)
+		}
+		return fmt.Errorf("websocket did not stabilize in time")
+	}
+
+	if err := ensureConnected(); err != nil {
+		return "", err
 	}
 
 	// Request pairing code
 	// Ensure only numbers
 	cleanPhone := ""
-	for _, c := range phone {
-		if c >= '0' && c <= '9' {
-			cleanPhone += string(c)
+	for _, r := range phone {
+		if r >= '0' && r <= '9' {
+			cleanPhone += string(r)
 		}
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	code, err := c.WA.PairPhone(ctx, cleanPhone, true, whatsmeow.PairClientChrome, "Chrome (Windows)")
 	if err != nil {
+		// Common transient scenario: websocket disconnected during info query.
+		// Reconnect once and retry.
+		if strings.Contains(strings.ToLower(err.Error()), "websocket disconnected") {
+			c.WA.Disconnect()
+			time.Sleep(600 * time.Millisecond)
+			if reconnErr := ensureConnected(); reconnErr == nil {
+				retryCtx, retryCancel := context.WithTimeout(context.Background(), 30*time.Second)
+				defer retryCancel()
+				code, retryErr := c.WA.PairPhone(retryCtx, cleanPhone, true, whatsmeow.PairClientChrome, "Chrome (Windows)")
+				if retryErr == nil {
+					zap.L().Info("Pairing code requested after reconnect retry",
+						zap.String("instanceId", c.InstanceID),
+						zap.String("phone", phone),
+					)
+					return code, nil
+				}
+				return "", retryErr
+			}
+		}
 		return "", err
 	}
 
@@ -443,4 +486,9 @@ func (c *Client) PairPhone(phone string) (string, error) {
 	)
 
 	return code, nil
+}
+
+// GetConfig returns the manager's configuration
+func (m *Manager) GetConfig() *config.Config {
+	return m.config
 }

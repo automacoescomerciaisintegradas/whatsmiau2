@@ -1,0 +1,125 @@
+{
+    "name": "notebooklm-sync",
+    "displayName": "NotebookLM Sync",
+    "description": "Sincroniza workflows e skills do Antigravity com Google NotebookLM",
+    "version": "1.0.0",
+    "publisher": "automacoescomerciaisintegradas",
+    "engines": {
+        "vscode": "^1.74.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "icon": "images/icon.png",
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "main": "./src/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "notebooklm-sync.exportToNotebookLM",
+                "title": "NotebookLM: Exportar Workflows e Skills",
+                "icon": "$(cloud-upload)"
+            },
+            {
+                "command": "notebooklm-sync.importFromNotebookLM",
+                "title": "NotebookLM: Importar Notas",
+                "icon": "$(cloud-download)"
+            },
+            {
+                "command": "notebooklm-sync.openExportFile",
+                "title": "NotebookLM: Abrir Arquivo de Exportação",
+                "icon": "$(file)"
+            },
+            {
+                "command": "notebooklm-sync.showPanel",
+                "title": "NotebookLM: Mostrar Painel",
+                "icon": "$(notebook)"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "notebooklm-sync.exportToNotebookLM",
+                "key": "ctrl+shift+n",
+                "mac": "cmd+shift+n"
+            }
+        ],
+        "menus": {
+            "editor/title": [
+                {
+                    "command": "notebooklm-sync.exportToNotebookLM",
+                    "group": "navigation",
+                    "when": "resourceFilename =~ /\\.(md|yaml|txt)$/"
+                }
+            ]
+        },
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "notebooklm-sync",
+                    "title": "NotebookLM Sync",
+                    "icon": "$(notebook)"
+                }
+            ]
+        },
+        "views": {
+            "notebooklm-sync": [
+                {
+                    "id": "notebooklm-sync.overview",
+                    "name": "Visão Geral"
+                },
+                {
+                    "id": "notebooklm-sync.exports",
+                    "name": "Exportações"
+                },
+                {
+                    "id": "notebooklm-sync.imports",
+                    "name": "Importações"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "NotebookLM Sync",
+            "properties": {
+                "notebooklm-sync.exportPath": {
+                    "type": "string",
+                    "default": ".notebooklm/exports",
+                    "description": "Pasta para arquivos de exportação"
+                },
+                "notebooklm-sync.importPath": {
+                    "type": "string",
+                    "default": ".notebooklm/imports",
+                    "description": "Pasta para monitorar importações do NotebookLM"
+                },
+                "notebooklm-sync.autoExport": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Exportar automaticamente ao salvar workflows"
+                },
+                "notebooklm-sync.includeWorkflows": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Incluir workflows na exportação"
+                },
+                "notebooklm-sync.includeSkills": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Incluir skills/BMad na exportação"
+                },
+                "notebooklm-sync.includeAgents": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Incluir agents na exportação"
+                }
+            }
+        }
+    },
+    "scripts": {
+        "package": "vsce package"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.74.0",
+        "@vscode/vsce": "^2.22.0"
+    }
+}

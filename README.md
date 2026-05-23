@@ -280,4 +280,11 @@ Este projeto está sob a licença MIT.
 
 ## Desenvolvido por
 Automações Comerciais Integradas! ⚙️ - contato@automacoescomerciais.com.br
+
+## Contato e Suporte
+CANAL
+link canal https://whatsapp.com/channel/0029Vb7MgPz5kg767iWItk42
+
+[**Saiba Mais!!!!**]
+https://wa.me/558894227586
 © 2025 Automações Comerciais Integradas. Todos os direitos reservados.

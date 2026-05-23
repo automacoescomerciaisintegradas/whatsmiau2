@@ -10,7 +10,7 @@ Write-Host @"
 
 $INSTANCE = "minha-instancia"
 $API_URL = "http://localhost:8085/v1"
-$API_KEY = "2wtLvtb20wXePp8D9uRhm55aCjINiciO"
+$API_KEY = "your-api-key-here"
 
 # 1. Verificar status atual
 Write-Host "[1/5] Verificando status atual..." -ForegroundColor Yellow

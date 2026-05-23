@@ -6,6 +6,7 @@ let isRunning = false;
 let shouldStop = false;
 let currentTab = 'text';
 let groupModal;
+let INSTANCE_READY = false;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -50,16 +51,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Instance management
 const urlParams = new URLSearchParams(window.location.search);
-let INSTANCE_NAME = urlParams.get('instance') || 'minha-instancia';
+let INSTANCE_NAME =
+    urlParams.get('instance') ||
+    localStorage.getItem('whatsmiau_instance') ||
+    localStorage.getItem('disparador_instance') ||
+    '';
 
 async function checkInstanceStatus() {
     const selector = document.getElementById('instance-selector');
     const statusDot = document.getElementById('instance-status-dot');
+    INSTANCE_READY = false;
 
     try {
-        const res = await fetch(`/api/instance/fetchInstances`);
+        const res = await fetch(`/v1/instance/fetchInstances`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+        });
         const data = await res.json();
         const instances = Array.isArray(data) ? data : (data.instances || []);
+
+        if (instances.length > 0) {
+            const names = instances.map(i => i.instance?.instanceName || i.instance?.name || i.instanceName || i.name || '');
+            if (!INSTANCE_NAME || !names.some(n => n.toLowerCase() === INSTANCE_NAME.toLowerCase())) {
+                INSTANCE_NAME = names[0];
+            }
+        }
 
         if (selector) {
             selector.innerHTML = '';
@@ -74,13 +89,15 @@ async function checkInstanceStatus() {
 
             // If list is empty
             if (instances.length === 0) {
-                selector.innerHTML = '<option value="minha-instancia">SEM INSTÂNCIAS</option>';
+                selector.innerHTML = '<option value="">SEM INSTÂNCIAS</option>';
             }
 
             // Listener for change
             if (!selector.dataset.listener) {
                 selector.addEventListener('change', (e) => {
                     INSTANCE_NAME = e.target.value;
+                    localStorage.setItem('whatsmiau_instance', INSTANCE_NAME);
+                    localStorage.setItem('disparador_instance', INSTANCE_NAME);
                     checkInstanceStatus(); // Refresh status dot
                     log(`Instância alterada para: ${INSTANCE_NAME}`, 'info');
                 });
@@ -102,6 +119,9 @@ async function checkInstanceStatus() {
         const rawStatus = (myInst.instance?.status || myInst.status || 'disconnected').toLowerCase();
 
         if (rawStatus === 'connected' || rawStatus === 'open' || rawStatus === 'conectado') {
+            INSTANCE_READY = true;
+            localStorage.setItem('whatsmiau_instance', INSTANCE_NAME);
+            localStorage.setItem('disparador_instance', INSTANCE_NAME);
             if (statusDot) {
                 statusDot.className = 'badge rounded-circle p-1 bg-success';
                 statusDot.title = "Instância Ativa";
@@ -449,25 +469,40 @@ function updateCount() {
     document.getElementById('target-count').innerText = `${jids.length} destinatários identificados`;
 }
 
+function extractChannelInviteLinks(text) {
+    if (!text) return [];
+    const matches = String(text).match(/(?:https?:\/\/(?:www\.)?whatsapp\.com\/channel\/[A-Za-z0-9]+(?:[^\s,;]*)?|whatsapp:\/\/channel\/[A-Za-z0-9]+)/gi) || [];
+    const clean = matches
+        .map(link => String(link).trim().replace(/[),.;]+$/g, ''))
+        .filter(Boolean);
+    return Array.from(new Set(clean));
+}
+
 function extractJids(text) {
     if (!text) return [];
     const found = new Set();
+    const normalizedText = String(text)
+        .replace(/@lid\s+(\d{10,25})/gi, '$1@lid')
+        .replace(/\blid\s*[:\-]?\s*(\d{10,25})/gi, '$1@lid');
 
     // 1. Regex for full JIDs (case insensitive, replaces c.us with s.whatsapp.net)
-    const jidRegex = /([a-zA-Z0-9.\-_]+@(g\.us|s\.whatsapp\.net|newsletter|c\.us))/gi;
+    const jidRegex = /([a-zA-Z0-9.\-_]+@(g\.us|s\.whatsapp\.net|newsletter|c\.us|lid))/gi;
     let match;
-    while ((match = jidRegex.exec(text)) !== null) {
+    while ((match = jidRegex.exec(normalizedText)) !== null) {
         found.add(match[0].toLowerCase().replace('@c.us', '@s.whatsapp.net'));
     }
 
     // 2. Extraction of phone numbers from messy text
     // Split by common delimiters and clean up
-    const parts = text.split(/[\s,;:\n\r\t|]+/);
+    const parts = normalizedText.split(/[\s,;:\n\r\t|]+/);
     parts.forEach(part => {
         const digits = part.replace(/[^0-9]/g, '');
 
-        // Potential Phone Number (8 to 15 digits)
-        if (digits.length >= 8 && digits.length <= 15) {
+        // Brazilian phones only (avoids LID IDs and other non-phone numeric identifiers)
+        // Accepted:
+        // - local BR with DDD: 10 or 11 digits (auto-prefix 55)
+        // - E164 BR: 55 + DDD + number => 12 or 13 digits
+        if (digits.length === 10 || digits.length === 11 || (digits.startsWith('55') && (digits.length === 12 || digits.length === 13))) {
             let processed = digits;
             // Brazil auto-55
             if ((digits.length === 10 || digits.length === 11) && !digits.startsWith('55')) {
@@ -484,12 +519,75 @@ function extractJids(text) {
     return Array.from(found);
 }
 
-function cleanList() {
+async function resolveChannelLinksToJids(links) {
+    if (!Array.isArray(links) || links.length === 0) {
+        return { resolved: [], unresolved: [] };
+    }
+
+    try {
+        const res = await fetch('/api/whatsmiau2/channels/resolve-links', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            },
+            body: JSON.stringify({
+                instance: INSTANCE_NAME,
+                links
+            })
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok || payload.success === false) {
+            throw new Error(payload.error || `Falha ao resolver links (${res.status})`);
+        }
+        return {
+            resolved: Array.isArray(payload.resolved) ? payload.resolved : [],
+            unresolved: Array.isArray(payload.unresolved) ? payload.unresolved : []
+        };
+    } catch (err) {
+        log(`⚠️ Não foi possível resolver links de canal: ${err.message}`, 'warning');
+        return { resolved: [], unresolved: links.map(link => ({ link, reason: err.message })) };
+    }
+}
+
+async function normalizeTargetListInput() {
+    const inputEl = document.getElementById('target-list');
+    const rawText = inputEl?.value || '';
+    const baseJids = extractJids(rawText);
+    const channelLinks = extractChannelInviteLinks(rawText);
+    const finalSet = new Set(baseJids);
+
+    if (channelLinks.length > 0) {
+        log(`Detectados ${channelLinks.length} link(s) de canal. Tentando converter para @newsletter...`, 'info');
+        const { resolved, unresolved } = await resolveChannelLinksToJids(channelLinks);
+
+        resolved.forEach(item => {
+            if (item?.jid && String(item.jid).endsWith('@newsletter')) {
+                finalSet.add(String(item.jid).toLowerCase());
+            }
+        });
+
+        if (resolved.length > 0) {
+            log(`✅ ${resolved.length} link(s) de canal convertidos para JID @newsletter.`, 'success');
+        }
+        if (unresolved.length > 0) {
+            unresolved.forEach(item => {
+                log(`⚠️ Canal não resolvido: ${item.link} (${item.reason || 'sem detalhe'})`, 'warning');
+            });
+            log('Dica: siga o canal na instância e use o JID @newsletter listado em /channels ou /exportar-contatos.', 'info');
+        }
+    }
+
+    const normalized = Array.from(finalSet);
+    if (inputEl) inputEl.value = normalized.join('\n');
+    updateCount();
+    return normalized;
+}
+
+async function cleanList() {
     window.recordedAudioFile = null; // Clear recording cache
-    const jids = extractJids(document.getElementById('target-list').value);
+    const jids = await normalizeTargetListInput();
     if (jids.length > 0) {
-        document.getElementById('target-list').value = jids.join('\n');
-        updateCount();
         log('Lista limpa e formatada.', 'success');
     } else {
         log('Nenhum JID válido encontrado para formatar.', 'warning');
@@ -548,7 +646,9 @@ async function openGroupSelector() {
     };
 
     try {
-        const response = await fetch(`/api/group/list/${INSTANCE_NAME}`);
+        const response = await fetch(`/v1/group/list/${INSTANCE_NAME}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+        });
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -935,8 +1035,20 @@ function formatFileSize(bytes) {
 // ============================================
 
 async function startDispatch() {
+    await checkInstanceStatus();
+
+    if (!INSTANCE_NAME) {
+        alert('Selecione uma instância antes de disparar.');
+        return;
+    }
+    if (!INSTANCE_READY) {
+        alert(`A instância "${INSTANCE_NAME}" não está conectada. Conecte primeiro em Conexões.`);
+        log(`❌ Instância "${INSTANCE_NAME}" não conectada para disparo.`, 'error');
+        return;
+    }
+
     const delaySec = parseInt(document.getElementById('delay-seconds').value) || 10;
-    const jids = extractJids(document.getElementById('target-list').value);
+    const jids = await normalizeTargetListInput();
 
     // Validation
     if (currentTab === 'text') {
@@ -1052,18 +1164,18 @@ async function startDispatch() {
             let body = { number: jid.includes('@') ? jid : `${jid}@s.whatsapp.net` };
 
             if (currentTab === 'text') {
-                endpoint = `/api/message/sendText/${INSTANCE_NAME}`;
+                endpoint = `/v1/message/sendText/${INSTANCE_NAME}`;
                 body.textMessage = { text: document.getElementById('message-content').value };
             }
             else if (currentTab === 'audio') {
-                endpoint = `/api/message/sendWhatsAppAudio/${INSTANCE_NAME}`;
+                endpoint = `/v1/message/sendWhatsAppAudio/${INSTANCE_NAME}`;
                 body.audioMessage = {
                     audio: mediaUrl || cleanBase64(base64File),
                     ptt: true
                 };
             }
             else if (currentTab === 'media') {
-                endpoint = `/api/message/sendMedia/${INSTANCE_NAME}`;
+                endpoint = `/v1/message/sendMedia/${INSTANCE_NAME}`;
                 body.mediaMessage = {
                     media: mediaUrl || cleanBase64(base64File),
                     mediatype: mimeType.startsWith('image') ? 'image' : (mimeType.startsWith('video') ? 'video' : 'document'),
@@ -1073,7 +1185,7 @@ async function startDispatch() {
                 };
             }
             else if (currentTab === 'video') {
-                endpoint = `/api/message/sendMedia/${INSTANCE_NAME}`;
+                endpoint = `/v1/message/sendMedia/${INSTANCE_NAME}`;
                 body.mediaMessage = {
                     media: cleanBase64(base64File),
                     mediatype: 'video',
@@ -1091,19 +1203,29 @@ async function startDispatch() {
 
             const res = await fetch(endpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                },
                 body: JSON.stringify(body),
                 signal: controller.signal
             });
 
             clearTimeout(timeoutId);
-            const json = await res.json();
+            const rawText = await res.text();
+            let json = {};
+            try {
+                json = rawText ? JSON.parse(rawText) : {};
+            } catch {
+                json = { error: rawText || `HTTP ${res.status}` };
+            }
 
-            if (json.success) {
+            if (res.ok && json.success !== false) {
                 log(`✅ Enviado para ${jid.split('@')[0]}`, 'success');
                 successCount++;
             } else {
-                log(`❌ Erro ${jid.split('@')[0]}: ${json.error}`, 'error');
+                const errMsg = json.error || json.message || json.details?.message || rawText || `HTTP ${res.status}`;
+                log(`❌ Erro ${jid.split('@')[0]}: ${errMsg}`, 'error');
                 errorCount++;
             }
 

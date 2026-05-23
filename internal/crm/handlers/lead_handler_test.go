@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/automacoescomerciaisintegradas/whatsmiau2/internal/crm/models"
+	"whatsmiau2/internal/crm/models"
 )
 
 // MockRepository para testes
@@ -70,20 +70,38 @@ func (m *MockRepository) GetLeadStats() (*models.LeadStats, error) {
 }
 
 // Implementar outros métodos da interface (stubs)
-func (m *MockRepository) CreateMessage(msg *models.Message) error { return nil }
+func (m *MockRepository) CreateMessage(msg *models.Message) error {
+	// Simular criação de mensagem
+	return nil
+}
 func (m *MockRepository) GetMessagesByLead(leadID int64, limit int) ([]*models.Message, error) {
+	// Simular obtenção de mensagens por lead
+	return []*models.Message{}, nil
+}
+func (m *MockRepository) GetMessageStats(leadID int64) (*models.MessageStats, error) {
+	// Simular obtenção de estatísticas de mensagens
+	return &models.MessageStats{}, nil
+}
+func (m *MockRepository) CreatePayment(payment *models.Payment) error {
+	// Simular criação de pagamento
+	return nil
+}
+func (m *MockRepository) GetPayment(id int64) (*models.Payment, error) {
+	// Simular obtenção de pagamento
 	return nil, nil
 }
-func (m *MockRepository) GetMessageStats(leadID int64) (*models.MessageStats, error) { return nil, nil }
-func (m *MockRepository) CreatePayment(payment *models.Payment) error                { return nil }
-func (m *MockRepository) GetPayment(id int64) (*models.Payment, error)               { return nil, nil }
 func (m *MockRepository) UpdatePaymentStatus(id int64, status string, paidAt *string) error {
+	// Simular atualização de status de pagamento
 	return nil
 }
 func (m *MockRepository) GetPaymentByMPID(mpPaymentID string) (*models.Payment, error) {
+	// Simular obtenção de pagamento por ID do Mercado Pago
 	return nil, nil
 }
-func (m *MockRepository) GetPaymentStats() (*models.PaymentStats, error) { return nil, nil }
+func (m *MockRepository) GetPaymentStats() (*models.PaymentStats, error) {
+	// Simular obtenção de estatísticas de pagamento
+	return &models.PaymentStats{}, nil
+}
 
 // Testes
 func TestCreateLead(t *testing.T) {

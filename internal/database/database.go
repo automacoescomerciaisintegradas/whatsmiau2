@@ -54,16 +54,38 @@ func New(cfg *config.Config) (*Database, error) {
 	)
 
 	// Auto migrate models
-	if err := db.AutoMigrate(&models.Instance{}); err != nil {
+	if err := db.AutoMigrate(
+		&models.Instance{},
+		&models.User{},
+		&models.Plan{},
+		&models.Subscription{},
+		&models.Payment{},
+		&models.EnterpriseLead{},
+		// Novos modelos de métricas
+		&models.SessionMetrics{},
+		&models.InstanceStats{},
+		&models.DailyStats{},
+		&models.HourlyStats{},
+	); err != nil {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	zap.L().Info("Database migrations completed")
 
-	return &Database{
+	// Initialize Database struct to call methods
+	dbInstance := &Database{
 		DB:     db,
 		Config: cfg,
-	}, nil
+	}
+
+	// Seed Plans
+	if err := dbInstance.SeedPlans(); err != nil {
+		zap.L().Error("Failed to seed plans", zap.Error(err))
+	} else {
+		zap.L().Info("Plans seeded successfully")
+	}
+
+	return dbInstance, nil
 }
 
 // Close closes the database connection

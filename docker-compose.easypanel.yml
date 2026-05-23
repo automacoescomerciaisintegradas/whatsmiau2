@@ -13,7 +13,7 @@ services:
       - DEBUG_MODE=false
       - REDIS_URL=redis:6379
       - DB_URL=file:/app/data/data.db?_foreign_keys=on
-      - API_KEY=2wtLvtb20wXePp8D9uRhm55aCjINiciO
+      - API_KEY=your-api-key-here
       - CACHE_REDIS_ENABLED=true
     volumes:
       - whatsmeow-data:/app/data
@@ -34,7 +34,7 @@ services:
       - PORT=3002
       # Aponta para o serviço 'api' na porta 8081
       - API_URL=http://api:8081/v1
-      - API_KEY=2wtLvtb20wXePp8D9uRhm55aCjINiciO
+      - API_KEY=your-api-key-here
       - INSTANCE_NAME=minha-instancia
     depends_on:
       - api
