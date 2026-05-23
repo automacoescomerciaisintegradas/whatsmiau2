@@ -584,10 +584,15 @@ app.get("/api/whatsmiau2/groups", async (req, res) => {
       headers: { 'apikey': API_KEY }
     });
 
-    // Return in the format expected by frontend
+    // Return in the format expected by frontend.
+    // Some backends return {groups:[...]}, others return an array directly.
+    const groups = Array.isArray(response.data)
+      ? response.data
+      : (response.data.groups || []);
+
     res.json({
       success: true,
-      data: response.data.groups || []
+      data: groups
     });
   } catch (err) {
     const statusCode = err.response?.status || 500;
