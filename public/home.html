@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>WhatsMiau2 - Automação WhatsApp Premium</title>
     <meta name="description"
         content="Sistema premium de automação para WhatsApp. Chatbots, disparos e integração completa.">
@@ -584,6 +585,121 @@
         .status-dot.offline {
             background: #ef4444;
         }
+
+        /* ===== MODAL CUSTOMIZADO (AUTOMATION) ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: var(--bg-warm);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 1000px;
+            width: 90%;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 2rem;
+            cursor: pointer;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+
+        .close-modal:hover {
+            color: var(--text-white);
+        }
+
+        /* Selectors requested by automation */
+        .pricing-select,
+        #precos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .pricing-option-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .pricing-option-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .pricing-option-card.recommended {
+            border-color: var(--gold);
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .pricing-option-card h3 {
+            color: var(--text-white);
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .pricing-option-card .price {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--gold);
+            margin-bottom: 10px;
+        }
+
+        .cost-table {
+            width: 100%;
+            margin-top: 40px;
+            border-collapse: collapse;
+            color: var(--text-stone);
+            font-size: 0.9rem;
+        }
+
+        .cost-table th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--gold);
+        }
+
+        .cost-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
     </style>
 </head>
 
@@ -607,20 +723,20 @@
                 </div>
 
                 <h1 class="main-title">
-                    Automação<br>
-                    <span class="highlight">WhatsApp</span><br>
-                    Premium
+                    Potencialize a Experiência dos<br>
+                    <span class="highlight">Seus Clientes:</span> Envie<br>
+                    Notificações no WhatsApp
                 </h1>
 
                 <p class="subtitle">
-                    Gerencie instâncias, crie chatbots inteligentes e automatize
-                    seu atendimento com tecnologia de ponta.
+                    Dê um passo à frente na satisfação do cliente! Com nossa API integrada ao seu site,
+                    seus clientes receberão notificações instantâneas no WhatsApp sempre que concluírem uma compra.
                 </p>
 
                 <div class="cta-group">
-                    <a href="pairing.html" class="btn btn-gold">
+                    <button onclick="toggleModal()" class="btn btn-gold">
                         🚀 Começar Agora
-                    </a>
+                    </button>
                     <a href="/docs" class="btn btn-ghost">
                         📚 Documentação →
                     </a>
@@ -629,27 +745,27 @@
 
             <!-- Feature Cards -->
             <div class="feature-grid">
-                <a href="automacao.html" class="feature-card">
+                <a href="/login.html" class="feature-card">
                     <div class="feature-icon">🤖</div>
                     <h3>Automação</h3>
                     <p>Chatbots e respostas automáticas</p>
                 </a>
-                <a href="disparador.html" class="feature-card">
+                <a href="/login.html" class="feature-card">
                     <div class="feature-icon">📤</div>
                     <h3>Disparador</h3>
                     <p>Envios em massa controlados</p>
                 </a>
-                <a href="webhooks.html" class="feature-card">
+                <a href="/login.html" class="feature-card">
                     <div class="feature-icon">🔗</div>
                     <h3>Webhooks</h3>
                     <p>Integração em tempo real</p>
                 </a>
-                <a href="instancias.html" class="feature-card">
+                <a href="/login.html" class="feature-card">
                     <div class="feature-icon">⚙️</div>
                     <h3>Instâncias</h3>
                     <p>Multi-conexões WhatsApp</p>
                 </a>
-                <a href="instagram.html" class="feature-card">
+                <a href="/login.html" class="feature-card">
                     <div class="feature-icon">📸</div>
                     <h3>Instagram</h3>
                     <p>Automação de Directs</p>
@@ -748,7 +864,109 @@
         <span id="statusText">Verificando...</span>
     </div>
 
+
+    <!-- PRICING MODAL -->
+    <div class="modal-overlay" id="pricingModal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="toggleModal()">&times;</button>
+
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h2 style="font-size: 2rem; margin-bottom: 10px;">Nossos Planos</h2>
+                <p style="color: var(--text-muted);">Escolha a opção ideal para escalar sua operação</p>
+            </div>
+
+            <!-- Selector Container id="#precos" / .pricing-select -->
+            <div id="precos" class="pricing-select">
+                <!-- Starter -->
+                <div class="pricing-option-card" onclick="selectPlan('starter')">
+                    <h3>Starter</h3>
+                    <div class="price">R$ 97</div>
+                    <p style="font-size: 0.9rem; color: var(--text-muted);">Essencial para começar</p>
+                </div>
+
+                <!-- Professional -->
+                <div class="pricing-option-card recommended" onclick="selectPlan('professional')">
+                    <div
+                        style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; font-size: 0.7rem; padding: 4px 12px; border-radius: 10px; font-weight: 700;">
+                        RECOMENDADO</div>
+                    <h3>Professional</h3>
+                    <div class="price">R$ 197</div>
+                    <p style="font-size: 0.9rem; color: var(--text-muted);">Para quem quer crescer</p>
+                </div>
+
+                <!-- Scale -->
+                <div class="pricing-option-card" onclick="selectPlan('scale')">
+                    <h3>Scale</h3>
+                    <div class="price">R$ 299</div>
+                    <p style="font-size: 0.9rem; color: var(--text-muted);">Alta performance</p>
+                </div>
+
+                <!-- Enterprise -->
+                <div class="pricing-option-card" onclick="selectPlan('enterprise')">
+                    <h3>Enterprise</h3>
+                    <div class="price">R$ 499</div>
+                    <p style="font-size: 0.9rem; color: var(--text-muted);">Solução completa</p>
+                </div>
+            </div>
+
+            <!-- Cost Table .cost-table -->
+            <table class="cost-table">
+                <thead>
+                    <tr>
+                        <th>Plano</th>
+                        <th>Valor (Mensal)</th>
+                        <th>Detalhes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Starter</td>
+                        <td>R$ 97</td>
+                        <td>Recursos básicos de automação</td>
+                    </tr>
+                    <tr>
+                        <td>Professional</td>
+                        <td>R$ 197</td>
+                        <td>Acesso a disparador e múltiplos usuários</td>
+                    </tr>
+                    <tr>
+                        <td>Scale</td>
+                        <td>R$ 299</td>
+                        <td>Infraestrutura dedicada para alto volume</td>
+                    </tr>
+                    <tr>
+                        <td>Enterprise</td>
+                        <td>R$ 499</td>
+                        <td>API Ilimitada e Suporte VIP</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="text-align: center; margin-top: 40px;">
+                <button class="btn btn-gold" onclick="window.location.href='/register.html'">Criar Conta Grátis</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Modal Control
+        function toggleModal() {
+            const modal = document.getElementById('pricingModal');
+            modal.classList.toggle('active');
+
+            if (modal.classList.contains('active')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        function selectPlan(plan) {
+            // Visualize selection or redirect
+            // For now, redirect to register with plan param
+            window.location.href = `/register.html?plan=${plan}`;
+        }
+
         // ===== SMOOTH PARALLAX EFFECT =====
         class SmoothParallax {
             constructor() {
@@ -874,7 +1092,7 @@
             const text = document.getElementById('statusText');
 
             try {
-                const response = await fetch('/api/whatsmiau2/status', { timeout: 5000 });
+                const response = await fetch('/health', { timeout: 5000 });
                 if (response.ok) {
                     dot.classList.remove('offline');
                     text.textContent = 'API Online';
