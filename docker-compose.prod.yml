@@ -10,7 +10,7 @@ services:
       - DEBUG_MODE=false
       - REDIS_URL=redis:6379
       - DB_URL=file:/app/data/data.db?_foreign_keys=on
-      - API_KEY=2wtLvtb20wXePp8D9uRhm55aCjINiciO
+      - API_KEY=your-api-key-here
       - BASIC_AUTH_USERNAME=admin
       - BASIC_AUTH_PASSWORD=admin123
       - CACHE_REDIS_ENABLED=true
@@ -33,7 +33,7 @@ services:
       - PORT=3002
       # Aponta para o container da API internamente
       - API_URL=http://whatsmiau2:8081
-      - API_KEY=2wtLvtb20wXePp8D9uRhm55aCjINiciO
+      - API_KEY=your-api-key-here
     depends_on:
       - whatsmiau2
     restart: always

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - WhatsMiau2</title>
+
+    <!-- SEO Meta -->
+    <meta name="description" content="Acesse sua conta WhatsMiau2 - Plataforma de automação WhatsApp">
+
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Styles -->
+    <link href="/assets/css/style.css" rel="stylesheet">
+    <link href="/assets/css/auth.css" rel="stylesheet">
+</head>
+
+<body data-theme="light">
+    <!-- Notification Container -->
+    <div id="notification-container" class="notification-container"></div>
+
+    <div class="auth-container">
+        <div class="auth-card">
+            <!-- Logo -->
+            <div class="auth-logo">
+                <div class="auth-logo-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h1>WhatsMiau2</h1>
+                <p>Entre na sua conta para continuar</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form">
+                <!-- Email -->
+                <div class="auth-form-group">
+                    <label for="email">Email</label>
+                    <div class="auth-input-wrapper">
+                        <input type="email" id="email" name="email" class="auth-input" placeholder="seu@email.com"
+                            required autocomplete="email">
+                        <i class="fas fa-envelope input-icon"></i>
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div class="auth-form-group">
+                    <label for="password">Senha</label>
+                    <div class="auth-input-wrapper">
+                        <input type="password" id="password" name="password" class="auth-input" placeholder="••••••••"
+                            required autocomplete="current-password" minlength="6">
+                        <i class="fas fa-lock input-icon"></i>
+                        <button type="button" class="password-toggle" onclick="togglePassword()">
+                            <i class="fas fa-eye" id="password-toggle-icon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Remember Me & Forgot Password -->
+                <div class="auth-checkbox-group">
+                    <label class="auth-checkbox">
+                        <input type="checkbox" id="remember" name="remember">
+                        <span>Lembrar de mim</span>
+                    </label>
+                    <a href="/forgot-password.html" class="auth-forgot-link">Esqueceu a senha?</a>
+                </div>
+
+                <!-- Login Button -->
+                <button type="submit" class="auth-btn auth-btn-primary" id="login-btn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Entrar
+                </button>
+            </form>
+
+            <!-- Register Link -->
+            <div class="auth-footer">
+                Não tem uma conta? <a href="/register.html">Criar conta</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/assets/js/notifications.js"></script>
+    <script src="/assets/js/auth.js"></script>
+    <script>
+        // Toggle Password Visibility
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('password-toggle-icon');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+
+        // Check for existing session
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                // Verify token is still valid
+                verifySession(token);
+            }
+
+            // Apply saved theme
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.body.setAttribute('data-theme', savedTheme);
+            }
+        });
+
+        async function verifySession(token) {
+            try {
+                const response = await fetch('/v1/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    // Token is valid, redirect to profile page
+                    window.location.href = '/profile.html';
+                } else {
+                    // Token expired, clear it
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('user');
+                }
+            } catch (error) {
+                console.log('Session verification failed:', error);
+            }
+        }
+    </script>
+</body>
+
+</html>

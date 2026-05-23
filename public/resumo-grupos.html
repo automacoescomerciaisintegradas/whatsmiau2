@@ -135,8 +135,10 @@
                             <strong class="d-none d-md-inline" id="user-display-name">Admin</strong>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="dropdownUser1">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Perfil</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-credit-card me-2"></i> Assinatura</a>
+                            <li><a class="dropdown-item" href="/profile.html"><i class="fas fa-user me-2"></i>
+                                    Perfil</a></li>
+                            <li><a class="dropdown-item" href="/subscription.html"><i
+                                        class="fas fa-credit-card me-2"></i> Assinatura</a>
                             </li>
                             <li>
                                 <hr class="dropdown-divider">
@@ -737,21 +739,23 @@ _Resumo gerado automaticamente_ 🤖</textarea>
                 }
             } catch (error) {
                 console.error('Erro API Grupos:', error);
-
-                // Fallback / Simulation
-                state.todosGrupos = [
-                    { id: '120363404245749874@g.us', subject: 'Grupo Teste 1', participants: [] },
-                    { id: '120363404245749875@g.us', subject: 'Marketing 2025', participants: [] },
-                    { id: '120363404245749876@g.us', subject: 'Vendas Q1', participants: [] }
-                ];
+                state.todosGrupos = [];
+                state.gruposSelecionados = [];
+                document.getElementById('grupo-id').value = '';
                 renderizarListaGrupos();
-                mostrarStatus('config', 'warning', `⚠️ Erro na API (${error.message}). Exibindo grupos simulados.`);
+                mostrarStatus('config', 'danger', `❌ Erro ao carregar grupos: ${error.message}`);
             }
         }
 
         function renderizarListaGrupos() {
             const listEl = document.getElementById('grupos-lista');
             listEl.innerHTML = '';
+
+            if (!state.todosGrupos.length) {
+                listEl.innerHTML = '<div class="text-center text-muted py-3 small">Nenhum grupo disponível para esta instância.</div>';
+                atualizarContadorGrupos();
+                return;
+            }
 
             state.todosGrupos.forEach(grupo => {
                 const isSelected = state.gruposSelecionados.some(g => g.id === grupo.id);
@@ -826,20 +830,23 @@ _Resumo gerado automaticamente_ 🤖</textarea>
                 }
             } catch (error) {
                 console.error('Erro API Canais:', error);
-
-                // Fallback
-                state.todosCanais = [
-                    { id: '120363404245749899@newsletter', name: 'Ofertas da Semana', subject: 'Ofertas da Semana' }
-                ];
+                state.todosCanais = [];
+                state.canaisSelecionados = [];
                 renderizarListaCanais();
                 const msg = error.message.includes('404') ? 'Funcionalidade não disponível na API.' : error.message;
-                mostrarStatus('config', 'warning', `⚠️ Erro canais: ${msg} (Modo Simulado)`);
+                mostrarStatus('config', 'warning', `⚠️ Erro canais: ${msg}`);
             }
         }
 
         function renderizarListaCanais() {
             const listEl = document.getElementById('canais-lista');
             listEl.innerHTML = '';
+
+            if (!state.todosCanais.length) {
+                listEl.innerHTML = '<div class="text-center text-muted py-3 small">Nenhum canal disponível para esta instância.</div>';
+                atualizarContadorCanais();
+                return;
+            }
 
             state.todosCanais.forEach(canal => {
                 const isSelected = state.canaisSelecionados.some(c => c.id === canal.id);
@@ -924,25 +931,20 @@ _Resumo gerado automaticamente_ 🤖</textarea>
             } catch (error) {
                 console.error("Erro Ranking:", error);
                 statusDiv.className = 'alert alert-danger mt-3';
-                statusDiv.innerHTML = `❌ Erro: ${error.message}. (Usando dados simulados)`;
-
-                // Fallback Simulation
-                const parts = [
-                    { name: 'João Silva (Simulado)', msgs: 128 },
-                    { name: 'Maria Souza', msgs: 95 },
-                    { name: 'Pedro Santos', msgs: 72 },
-                    { name: 'Ana Costa', msgs: 54 },
-                    { name: 'Lucas Oliveira', msgs: 41 }
-                ];
-                state.ranking = parts;
-                state.stats = { totalMessages: 390, activeParticipants: 5 };
-                renderRanking(parts);
+                statusDiv.innerHTML = `❌ Erro ao calcular ranking: ${error.message}`;
+                state.ranking = [];
+                state.stats = { totalMessages: 0, activeParticipants: 0 };
+                renderRanking([]);
             }
         }
 
         function renderRanking(data) {
             const tbody = document.getElementById('ranking-lista');
             tbody.innerHTML = '';
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted py-3">Sem dados para exibir.</td></tr>`;
+                return;
+            }
             data.forEach((p, i) => {
                 const row = `
                     <tr>

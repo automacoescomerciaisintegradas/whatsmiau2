@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_URL = "http://localhost:8085/v1";
-const API_KEY = "2wtLvtb20wXePp8D9uRhm55aCjINiciO";
+const API_KEY = "your-api-key-here";
 
 async function test() {
     try {

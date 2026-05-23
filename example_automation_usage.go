@@ -100,9 +100,9 @@ func listAutomationRules(apiURL, apiKey string) error {
 	return nil
 }
 
-func main() {
+func exampleMain() {
 	apiURL := "http://localhost:8085" // Substitua pela URL do seu servidor
-	apiKey := ""                      // Substitua pela sua chave de API, se houver
+	apiKey := ""                      // Substitua pela sua sua chave de API, se houver
 
 	fmt.Println("🚀 Iniciando demonstração do sistema de automação do WhatsMiau2...")
 

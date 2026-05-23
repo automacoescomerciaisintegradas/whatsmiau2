@@ -168,6 +168,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="pill" href="#agente-call">
+                            <i class="fas fa-phone me-2"></i> Agente Call
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" data-bs-toggle="pill" href="#empresa">
                             <i class="fas fa-building me-2"></i> Empresa
                         </a>
@@ -569,91 +574,201 @@
                         </div>
                     </div>
 
-                    <!-- Empresa -->
-                    <div class="tab-pane fade" id="empresa">
+                    <!-- Agente Call -->
+                    <div class="tab-pane fade" id="agente-call">
                         <div class="row">
                             <div class="col-lg-8">
                                 <div class="card border-0 shadow-sm p-4 mb-4">
-                                    <h5 class="fw-bold mb-4">🏢 Perfil da Empresa</h5>
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-bold">Nome da Empresa</label>
-                                            <input type="text" class="form-control" id="companyName"
-                                                value="Automações Comerciais Integradas">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-bold">E-mail</label>
-                                            <input type="email" class="form-control" id="adminEmail"
-                                                value="contato@automacoescomerciais.com.br">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-bold">WhatsApp</label>
-                                            <input type="text" class="form-control" id="supportPhone"
-                                                value="+55 88 9215-67214">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-bold">Horário</label>
-                                            <input type="text" class="form-control" id="businessHours"
-                                                value="Seg-Sex: 8h às 18h">
-                                        </div>
-                                        <div class="col-md-12">
-                                            <label class="form-label small fw-bold">Endereço</label>
-                                            <input type="text" class="form-control" id="companyAddress"
-                                                placeholder="Endereço completo">
-                                        </div>
-                                        <div class="col-md-12 text-end mt-4">
-                                            <button class="btn btn-primary fw-bold px-4" onclick="saveCompanyProfile()">
-                                                <i class="fas fa-save me-2"></i> Salvar Alterações
-                                            </button>
-                                        </div>
+                                    <h5 class="fw-bold mb-4">📞 Configuração do Agente Call (Dannet)</h5>
+
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">First Message</label>
+                                        <input type="text" class="form-control" id="callFirstMessage"
+                                            value="Olá, [first_name]! Aqui é a Dannet das Automacoes Comerciais Integradas AI. Tudo bem contigo?">
                                     </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">System Prompt / Role</label>
+                                        <textarea class="form-control" id="callSystemPrompt" rows="18"
+                                            style="font-size: 0.85rem;">#Role:
+Você é a Dannet, assistente da Automacoes Comerciais Integradas AI. Você tem um talento único para prospectar clientes, com um diálogo apaixonante para converter leads frios e não qualificados em vendas high-ticket.
+
+#Task:
+Siga esse passo a passo para prospectar o cliente que você está fazendo a ligação:
+1. Inicie a chamada se apresentando e apresentando a empresa que você representa como SDR.
+2. Explique claramente o propósito dessa chamada para o cliente, perguntando se ele está interessado em agendar uma consultoria de IA com o time da Automacoes Comerciais Integradas AI. 
+3. Use vícios de linguagem como: 'hmmm', 'ok', 'tendi' para tornar a conversa mais humanizada.
+4. Se o lead parecer muito hesitante ou distraído, use frases que redirecione o seu foco para a conversa. 
+5. Se o lead demonstrar interesse, faça perguntas adicionais sobre os detalhes do seu negócio. 
+6. Quando finalizar, sempre agradeça ao Lead pelo tempo que ele investiu nessa chamada e deixe-o informado dos próximos passos. 
+7. Sempre tente trazer a conversa de volta para o potencial interesse do lead de agendar uma consultoria com nosso time.
+8. Seja gentil e amigável durante todo o rumo da chamada.
+
+#Context:
+Automacoes Comerciais Integradas AI é uma empresa que presta consultoria de IA para outras empresas...</textarea>
+                                    </div>
+
+                                    <div class="d-flex justify-content-end">
+                                        <button class="btn btn-primary px-4 fw-bold" onclick="saveCallAgentConfig()">
+                                            <i class="fas fa-save me-2"></i> Salvar Agente Call
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="card border-0 shadow-sm p-4 mb-4 bg-light">
+                                    <h6 class="fw-bold mb-3 text-primary"><i class="fas fa-info-circle me-2"></i> Como
+                                        Funciona</h6>
+                                    <p class="small text-muted">
+                                        O Agente Call é projetado para realizar ligações de prospecção (Cold Calls)
+                                        usando inteligência artificial e síntese de voz.
+                                    </p>
+                                    <ul class="small text-muted">
+                                        <li>Qualificação de leads frios</li>
+                                        <li>Agendamento de consultorias</li>
+                                        <li>Humanização com vícios de linguagem</li>
+                                        <li>Coleta de dados do negócio</li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Empresa -->
+                    <div class="tab-pane fade" id="empresa">
+                        <div class="card border-0 shadow-sm p-4">
+                            <h4 class="fw-bold mb-4">🏢 Perfil da Empresa</h4>
+
+                            <form id="companyForm">
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <div class="config-section h-100">
+                                            <h6 class="fw-bold text-primary mb-3"><i
+                                                    class="fas fa-info-circle me-2"></i> Identificação</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-bold">Razão Social / Nome</label>
+                                                <input type="text" class="form-control" id="companyName"
+                                                    value="Automações Comerciais Integradas">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-bold">CNPJ / CPF</label>
+                                                <input type="text" class="form-control" id="companyTaxId"
+                                                    placeholder="00.000.000/0000-00">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="config-section h-100">
+                                            <h6 class="fw-bold text-success mb-3"><i
+                                                    class="fas fa-address-book me-2"></i> Contato Oficial</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-bold">E-mail Administrativo</label>
+                                                <input type="email" class="form-control" id="adminEmail"
+                                                    value="contato@automacoescomerciais.com.br">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-bold">WhatsApp Suporte</label>
+                                                <input type="text" class="form-control" id="supportPhone"
+                                                    value="+55 88 9422-7586">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <div class="config-section">
+                                            <h6 class="fw-bold text-warning mb-3"><i
+                                                    class="fas fa-map-marker-alt me-2"></i> Localização e Horários</h6>
+                                            <div class="row g-3">
+                                                <div class="col-md-8">
+                                                    <label class="form-label small fw-bold">Endereço Completo</label>
+                                                    <input type="text" class="form-control" id="companyAddress"
+                                                        placeholder="Rua, Número, Bairro, Cidade - UF">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label small fw-bold">Horário de
+                                                        Atendimento</label>
+                                                    <input type="text" class="form-control" id="businessHours"
+                                                        value="Seg-Sex: 08:00 às 18:00">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 text-end">
+                                    <button type="button"
+                                        class="btn btn-primary fw-bold px-5 py-2 rounded-pill shadow-sm"
+                                        onclick="saveCompanyProfile()">
+                                        <i class="fas fa-save me-2"></i> SALVAR ALTERAÇÕES
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
                     <!-- Suporte -->
                     <div class="tab-pane fade" id="suporte">
-                        <div class="row">
-                            <div class="col-lg-6">
-                                <div class="card border-0 shadow-sm p-4 mb-4">
-                                    <h5 class="fw-bold mb-4">📞 Contato e Suporte</h5>
+                        <div class="card border-0 shadow-sm p-4 h-100">
+                            <h4 class="fw-bold mb-4">📞 Contato e Suporte</h4>
 
-                                    <div class="mb-3 p-3 bg-light rounded">
-                                        <div class="small fw-bold text-primary mb-1">📱 WhatsApp</div>
-                                        <div class="fw-bold">+55 88 9215-67214</div>
-                                        <div class="small text-muted">Seg-Sex: 8h às 18h</div>
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="config-section h-100">
+                                        <h6 class="fw-bold text-primary mb-3"><i class="fas fa-envelope me-2"></i>
+                                            Canais Digitais</h6>
+                                        <div class="mb-3">
+                                            <strong>Principal:</strong> <a
+                                                href="mailto:contato@automacoescomerciais.com.br"
+                                                class="text-decoration-none">contato@automacoescomerciais.com.br</a>
+                                        </div>
+                                        <div class="mb-3">
+                                            <strong>Telegram:</strong> <a href="https://t.me/+9cdym9gvPQ9iOWNh"
+                                                target="_blank" class="text-decoration-none">Comunidade VIP</a>
+                                        </div>
+                                        <div class="mb-3">
+                                            <strong>WhatsApp:</strong> <a href="https://wa.me/558894227586"
+                                                target="_blank" class="text-decoration-none">+55 88 9422-7586</a>
+                                        </div>
+                                        <div class="mb-3">
+                                            <strong>CANAL:</strong> <a href="https://whatsapp.com/channel/0029Vb7MgPz5kg767iWItk42"
+                                                target="_blank" class="text-decoration-none">Canal VIP</a>
+                                        </div>
+                                        <div class="small text-muted mt-3">
+                                            <i class="fas fa-clock me-1"></i> Resposta em até 4h (Horário Comercial)
+                                        </div>
                                     </div>
-
-                                    <div class="mb-3 p-3 bg-light rounded">
-                                        <div class="small fw-bold text-primary mb-1">📧 E-mail</div>
-                                        <div class="fw-bold">contato@automacoescomerciais.com.br</div>
-                                        <div class="small text-muted">Resposta em até 4h</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="config-section h-100">
+                                        <h6 class="fw-bold text-success mb-3"><i class="fas fa-tools me-2"></i> Tipos de
+                                            Apoio</h6>
+                                        <ul class="list-unstyled small">
+                                            <li class="mb-2">✅ <strong>Suporte Gratuito:</strong> Issues no GitHub e
+                                                Comunidade Telegram</li>
+                                            <li class="mb-2">🚀 <strong>Suporte Premium:</strong> Consultoria
+                                                personalizada e resposta em 2h</li>
+                                            <li class="mb-2">🛠️ <strong>Desenvolvimento:</strong> Funcionalidades sob
+                                                medida</li>
+                                        </ul>
                                     </div>
-
-                                    <a href="https://chat.whatsapp.com/LezpB0nJoQA5v3YUyhmWJR" target="_blank"
-                                        class="btn btn-success w-100 fw-bold mb-2">
-                                        <i class="fab fa-whatsapp me-2"></i> Grupo de Suporte
-                                    </a>
-                                    <a href="https://wa.me/558892156714" target="_blank"
-                                        class="btn btn-outline-primary w-100 fw-bold">
-                                        <i class="fas fa-headset me-2"></i> Falar com Atendente
-                                    </a>
                                 </div>
                             </div>
-                            <div class="col-lg-6">
-                                <div class="card border-0 shadow-sm p-4">
-                                    <h6 class="fw-bold mb-3">🏢 Desenvolvido por</h6>
-                                    <p class="small text-muted mb-2">
-                                        <strong>Automações Comerciais Integradas</strong><br>
-                                        Especialistas em Automação Digital
-                                    </p>
-                                    <hr>
-                                    <p class="small text-muted mb-0">
-                                        © 2025 Automações Comerciais Integradas.<br>
-                                        Todos os direitos reservados.
-                                    </p>
-                                </div>
+
+                            <div
+                                class="mt-4 p-4 bg-dark text-white rounded-3 shadow-sm border border-secondary border-opacity-25">
+                                <h5 class="fw-bold text-warning mb-3">🚀 Comece a Revolução agora!</h5>
+                                <p class="mb-4 small">Os links serão enviados no Grupo VIP - CONEXÃO CLIENTE no
+                                    Whatsapp. Não perca tempo!</p>
+                                <a href="https://wa.me/558894227586" target="_blank"
+                                    class="btn btn-primary fw-bold px-4 py-2 rounded-pill shadow">
+                                    <i class="fab fa-whatsapp me-2"></i> ENTRAR NO GRUPO VIP
+                                </a>
+                            </div>
+
+                            <div class="mt-4 text-center border-top pt-4">
+                                <p class="text-muted small mb-0">
+                                    <strong>Grande abraço, Francisco Queiroz</strong><br>
+                                    <span class="text-primary italic">*Especialista em Automação Inteligente*</span>
+                                </p>
                             </div>
                         </div>
                     </div>

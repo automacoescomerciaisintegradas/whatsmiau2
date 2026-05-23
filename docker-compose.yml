@@ -12,7 +12,7 @@ services:
       - REDIS_PASSWORD=
       - DIALECT_DB=sqlite3
       - DB_URL=file:/app/data/data.db?_foreign_keys=on
-      - API_KEY=2wtLvtb20wXePp8D9uRhm55aCjINiciO
+      - API_KEY=your-api-key-here
       - CONFIG_SESSION_PHONE_VERSION=2.3000.2.2413.51
       - CONFIG_SESSION_PHONE_CLIENT=Chrome
       - CONFIG_SESSION_PHONE_NAME=Chrome (Windows)

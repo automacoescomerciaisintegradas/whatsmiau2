@@ -155,24 +155,28 @@ export const newsletterService = {
 
 // ==================== CONTACTS ====================
 export const contactService = {
-    list: async () => {
-        // TODO: Implement in backend
-        return []
+    list: async (instance) => {
+        const { data } = await api.get(`/api/whatsmiau2/contacts`, {
+            params: { instance }
+        })
+        return data
     },
 
-    create: async (contact) => {
-        // TODO: Implement in backend
-        return contact
+    create: async (contact, instance) => {
+        const { data } = await api.post('/api/whatsmiau2/contacts', { ...contact, instance })
+        return data
     },
 
-    update: async (id, contact) => {
-        // TODO: Implement in backend
-        return contact
+    update: async (id, contact, instance) => {
+        const { data } = await api.put(`/api/whatsmiau2/contacts/${id}`, { ...contact, instance })
+        return data
     },
 
-    delete: async (id) => {
-        // TODO: Implement in backend
-        return true
+    delete: async (id, instance) => {
+        const { data } = await api.delete(`/api/whatsmiau2/contacts/${id}`, {
+            data: { instance }
+        })
+        return data
     },
 
     checkNumber: async (numbers) => {

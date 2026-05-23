@@ -41,14 +41,25 @@
                 <h3 class="fw-bold mb-1">Grupos do WhatsApp</h3>
                 <p class="text-muted">Gerencie seus grupos e crie novas comunidades.</p>
             </div>
-            <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#createGroupModal">
-                <i class="fas fa-plus me-2"></i> Criar Grupo
-            </button>
+            <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center bg-white rounded-pill px-3 py-1 border shadow-sm">
+                    <i class="fas fa-server text-primary me-2" style="font-size: 0.8rem;"></i>
+                    <select id="instance-selector"
+                        class="form-select form-select-sm border-0 bg-transparent fw-bold p-0"
+                        style="font-size: 0.8rem; min-width: 140px; border:none; outline:none; box-shadow:none;">
+                        <option value="">Carregando...</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#createGroupModal">
+                    <i class="fas fa-plus me-2"></i> Criar Grupo
+                </button>
+            </div>
         </div>
     </div>
 
     <!-- Groups List -->
     <div class="card p-4">
+        <div id="groups-feedback" class="mb-3" style="display:none;"></div>
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h5 class="fw-bold mb-0">Seus Grupos</h5>
             <button class="btn btn-outline-secondary btn-sm" onclick="loadGroups()">
@@ -98,35 +109,73 @@
 
 
     <script>
-        const API_BASE = '/api';
+        let INSTANCE_NAME = '';
+
+        async function loadInstances() {
+            const selector = document.getElementById('instance-selector');
+            try {
+                const res = await fetch('/v1/instance/fetchInstances', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+                const data = await res.json();
+                const instances = data.instances || data || [];
+
+                selector.innerHTML = '';
+                instances.forEach(i => {
+                    const name = i.instance?.instanceName || i.name || "Sem Nome";
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name.toUpperCase();
+                    selector.appendChild(opt);
+                });
+
+                if (instances.length > 0) {
+                    INSTANCE_NAME = instances[0].instance?.instanceName || instances[0].name;
+                    loadGroups();
+                } else {
+                    selector.innerHTML = '<option value="">SEM INSTÂNCIA</option>';
+                }
+
+                selector.onchange = (e) => {
+                    INSTANCE_NAME = e.target.value;
+                    loadGroups();
+                };
+            } catch (e) {
+                console.error("Erro ao carregar instâncias", e);
+            }
+        }
 
         async function loadGroups() {
+            if (!INSTANCE_NAME) return;
             const list = document.getElementById('groups-list');
             list.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-primary"></i> Carregando...</div>';
 
             try {
-                const res = await fetch(`${API_BASE}/whatsapp/groups/list`);
+                const res = await fetch(`/v1/group/list/${INSTANCE_NAME}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
                 if (!res.ok) throw new Error('Falha ao carregar grupos');
 
                 const data = await res.json();
+                const groups = Array.isArray(data) ? data : [];
 
-                if (data.length === 0) {
+                if (groups.length === 0) {
                     list.innerHTML = '<div class="text-center py-4 text-muted"><i class="fas fa-users-slash fa-2x mb-2"></i><p>Nenhum grupo encontrado.</p></div>';
                     return;
                 }
 
-                list.innerHTML = data.map(group => `
+                list.innerHTML = groups.map(group => `
                     <div class="list-group-item d-flex align-items-center justify-content-between py-3">
                         <div class="d-flex align-items-center">
                             <div class="group-avatar me-3 bg-light text-primary">
                                 <i class="fas fa-users"></i>
                             </div>
                             <div>
-                                <h6 class="mb-0 fw-bold">${group.name}</h6>
+                                <h6 class="mb-0 fw-bold">${group.name || group.subject}</h6>
                                 <small class="text-muted d-block">
-                                    <i class="fas fa-user-friends me-1"></i> ${group.participants} participantes
+                                    <i class="fas fa-user-friends me-1"></i> ${group.participantCount || 0} participantes
                                     <span class="mx-1">•</span>
-                                    ${new Date(group.created_at).toLocaleDateString('pt-BR')}
+                                    ${group.jid || 'Desconhecido'}
                                 </small>
                             </div>
                         </div>
@@ -137,6 +186,11 @@
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                                 <li><a class="dropdown-item" href="#"><i class="fas fa-info-circle me-2 text-primary"></i>Ver Detalhes</a></li>
                                 <li><a class="dropdown-item" href="#"><i class="fas fa-user-plus me-2 text-secondary"></i>Adicionar Membros</a></li>
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="copyGroupInviteLink('${group.jid || ''}'); return false;">
+                                        <i class="fas fa-link me-2 text-success"></i>Copiar link de convite
+                                    </a>
+                                </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-sign-out-alt me-2"></i>Sair do Grupo</a></li>
                             </ul>
@@ -161,21 +215,27 @@
             btn.disabled = true;
 
             try {
-                const res = await fetch(`${API_BASE}/whatsapp/groups/create`, {
+                const res = await fetch(`/v1/group/create/${INSTANCE_NAME}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, participants })
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify({
+                        title: name,
+                        participants: participants.split(',').map(p => p.trim())
+                    })
                 });
 
                 const data = await res.json();
 
-                if (data.success) {
+                if (res.ok) {
                     bootstrap.Modal.getInstance(document.getElementById('createGroupModal')).hide();
                     document.getElementById('create-group-form').reset();
                     loadGroups(); // Reload list
-                    alert(`✅ ${data.message}`);
+                    alert(`✅ Grupo criado com sucesso!`);
                 } else {
-                    alert(`❌ Erro: ${data.message || 'Falha desconhecida'}`);
+                    alert(`❌ Erro: ${data.details || data.error || 'Falha desconhecida'}`);
                 }
             } catch (err) {
                 alert("Erro de conexão com o servidor");
@@ -185,7 +245,75 @@
             }
         }
 
-        loadGroups();
+        function showGroupsFeedback(type, message) {
+            const box = document.getElementById('groups-feedback');
+            if (!box) return;
+            box.style.display = 'block';
+            box.className = `alert alert-${type} py-2 px-3 mb-3`;
+            box.textContent = message;
+            setTimeout(() => {
+                box.style.display = 'none';
+                box.textContent = '';
+            }, 6000);
+        }
+
+        async function copyTextToClipboard(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+                return true;
+            }
+            const input = document.createElement('textarea');
+            input.value = text;
+            input.setAttribute('readonly', '');
+            input.style.position = 'absolute';
+            input.style.left = '-9999px';
+            document.body.appendChild(input);
+            input.select();
+            const ok = document.execCommand('copy');
+            document.body.removeChild(input);
+            return ok;
+        }
+
+        async function copyGroupInviteLink(groupId) {
+            if (!groupId) {
+                showGroupsFeedback('warning', 'Grupo sem JID válido.');
+                return;
+            }
+            if (!INSTANCE_NAME) {
+                showGroupsFeedback('warning', 'Selecione uma instância antes de buscar o link.');
+                return;
+            }
+
+            try {
+                showGroupsFeedback('info', 'Buscando link de convite...');
+                const url = `/api/group/invite-link?instance=${encodeURIComponent(INSTANCE_NAME)}&group_id=${encodeURIComponent(groupId)}`;
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+                const data = await res.json().catch(() => ({}));
+
+                if (!res.ok) {
+                    const msg = data?.details?.error || data?.message || data?.error || `Erro ${res.status}`;
+                    throw new Error(msg);
+                }
+
+                const inviteLink = data?.results?.link || data?.link || data?.result?.link;
+                if (!inviteLink) {
+                    throw new Error('Resposta sem link de convite.');
+                }
+
+                await copyTextToClipboard(inviteLink);
+                showGroupsFeedback('success', `Link copiado: ${inviteLink}`);
+            } catch (err) {
+                const raw = err?.message || 'Falha ao obter link de convite.';
+                const friendly = /permission/i.test(raw)
+                    ? 'Sem permissão para obter o link desse grupo. Sua instância precisa ser admin.'
+                    : raw;
+                showGroupsFeedback('danger', friendly);
+            }
+        }
+
+        loadInstances();
     </script>
 </body>
 

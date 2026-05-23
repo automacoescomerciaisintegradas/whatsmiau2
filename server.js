@@ -749,6 +749,451 @@ app.get("/api/whatsmiau2/newsletters/:id", async (req, res) => {
   }
 });
 
+function decodeHtmlEntitiesBasic(input) {
+  if (!input) return "";
+  return String(input)
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function normalizeChannelName(input) {
+  return String(input || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function normalizeChannelLink(input) {
+  const raw = String(input || "").trim();
+  if (!raw) return null;
+
+  const codeMatch = raw.match(/(?:https?:\/\/(?:www\.)?whatsapp\.com\/channel\/|whatsapp:\/\/channel\/)([A-Za-z0-9]+)/i);
+  if (!codeMatch) return null;
+
+  const code = codeMatch[1];
+  return `https://www.whatsapp.com/channel/${code}`;
+}
+
+async function resolveChannelLinkToNewsletterJid(link, instanceName) {
+  const normalized = normalizeChannelLink(link);
+  if (!normalized) {
+    return { ok: false, reason: "Link de canal inválido" };
+  }
+
+  // 1) Read channel public page metadata title
+  const page = await axios.get(normalized, {
+    timeout: 12000,
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    }
+  });
+
+  const html = String(page.data || "");
+  const ogTitleMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
+  const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  const rawTitle = ogTitleMatch?.[1] || titleMatch?.[1] || "";
+
+  if (!rawTitle) {
+    return { ok: false, reason: "Não foi possível ler o título do canal no link público" };
+  }
+
+  const channelTitle = decodeHtmlEntitiesBasic(rawTitle).replace(/\s*-\s*WhatsApp channel\s*$/i, "").trim();
+  const targetName = normalizeChannelName(channelTitle);
+
+  // 2) Match against subscribed newsletters in instance
+  const listResponse = await axios.get(`${API_URL}/v1/newsletter/list/${instanceName}`, {
+    headers: { apikey: API_KEY },
+    timeout: 10000
+  });
+  const newsletters = Array.isArray(listResponse.data?.newsletters) ? listResponse.data.newsletters : [];
+
+  if (!newsletters.length) {
+    return {
+      ok: false,
+      reason: "Nenhum canal/newsletter encontrado na instância",
+      channelTitle
+    };
+  }
+
+  const normalizedCandidates = newsletters.map(n => ({
+    jid: n.jid,
+    name: n.name || n.subject || "",
+    key: normalizeChannelName(n.name || n.subject || "")
+  }));
+
+  let matches = normalizedCandidates.filter(n => n.key && n.key === targetName);
+  if (matches.length === 0) {
+    matches = normalizedCandidates.filter(n => n.key && (n.key.includes(targetName) || targetName.includes(n.key)));
+  }
+
+  if (matches.length === 1) {
+    return {
+      ok: true,
+      jid: matches[0].jid,
+      name: matches[0].name,
+      channelTitle
+    };
+  }
+
+  if (matches.length > 1) {
+    return {
+      ok: false,
+      reason: "Mais de um canal corresponde ao link. Faça follow manual e use o JID @newsletter",
+      channelTitle
+    };
+  }
+
+  return {
+    ok: false,
+    reason: "Canal do link não foi encontrado na lista da instância (faça follow antes)",
+    channelTitle
+  };
+}
+
+// Resolve WhatsApp channel links to @newsletter JIDs (best effort)
+app.post("/api/whatsmiau2/channels/resolve-links", async (req, res) => {
+  const { links = [], instance } = req.body || {};
+  const targetInstance = instance || DEFAULT_INSTANCE;
+
+  if (!Array.isArray(links) || links.length === 0) {
+    return res.status(400).json({ success: false, error: "links deve ser uma lista não vazia" });
+  }
+
+  const uniqueLinks = [...new Set(links.map(v => String(v || "").trim()).filter(Boolean))];
+  const resolved = [];
+  const unresolved = [];
+
+  for (const link of uniqueLinks) {
+    try {
+      const result = await resolveChannelLinkToNewsletterJid(link, targetInstance);
+      if (result.ok) {
+        resolved.push({
+          link,
+          jid: result.jid,
+          name: result.name,
+          channelTitle: result.channelTitle
+        });
+      } else {
+        unresolved.push({
+          link,
+          reason: result.reason,
+          channelTitle: result.channelTitle || null
+        });
+      }
+    } catch (err) {
+      unresolved.push({
+        link,
+        reason: err.response?.data?.message || err.message || "Erro ao resolver link"
+      });
+    }
+  }
+
+  return res.json({
+    success: true,
+    instance: targetInstance,
+    resolved,
+    unresolved
+  });
+});
+
+function normalizeExportParticipant(p) {
+  if (!p || typeof p !== "object") return null;
+  const rawJid = p.JID || p.jid || p.id || "";
+  const rawNumber = p.PhoneNumber || p.phoneNumber || p.phone || p.number || "";
+  const number = String(rawNumber || (rawJid ? rawJid.split("@")[0] : "")).replace(/\D/g, "");
+  if (!number) return null;
+  return {
+    jid: rawJid || `${number}@s.whatsapp.net`,
+    number,
+    role: p.role || (p.IsAdmin || p.isAdmin ? "admin" : "member")
+  };
+}
+
+const BR_DDD_MAP = {
+  "11": { uf: "SP", region: "São Paulo e região metropolitana" },
+  "12": { uf: "SP", region: "São José dos Campos e Vale do Paraíba" },
+  "13": { uf: "SP", region: "Santos e Baixada Santista" },
+  "14": { uf: "SP", region: "Bauru e Marília" },
+  "15": { uf: "SP", region: "Sorocaba e Itapetininga" },
+  "16": { uf: "SP", region: "Ribeirão Preto e Franca" },
+  "17": { uf: "SP", region: "São José do Rio Preto" },
+  "18": { uf: "SP", region: "Presidente Prudente e Araçatuba" },
+  "19": { uf: "SP", region: "Campinas e Piracicaba" },
+  "21": { uf: "RJ", region: "Rio de Janeiro e Grande Rio" },
+  "22": { uf: "RJ", region: "Campos dos Goytacazes e Região dos Lagos" },
+  "24": { uf: "RJ", region: "Volta Redonda, Petrópolis e Angra" },
+  "27": { uf: "ES", region: "Vitória e região central/norte" },
+  "28": { uf: "ES", region: "Cachoeiro de Itapemirim e sul do ES" },
+  "31": { uf: "MG", region: "Belo Horizonte e região metropolitana" },
+  "32": { uf: "MG", region: "Juiz de Fora e Zona da Mata" },
+  "33": { uf: "MG", region: "Governador Valadares e leste de MG" },
+  "34": { uf: "MG", region: "Uberlândia e Triângulo Mineiro" },
+  "35": { uf: "MG", region: "Poços de Caldas e sul de MG" },
+  "37": { uf: "MG", region: "Divinópolis e centro-oeste de MG" },
+  "38": { uf: "MG", region: "Montes Claros e norte de MG" },
+  "41": { uf: "PR", region: "Curitiba e região metropolitana" },
+  "42": { uf: "PR", region: "Ponta Grossa e Campos Gerais" },
+  "43": { uf: "PR", region: "Londrina e norte do PR" },
+  "44": { uf: "PR", region: "Maringá e noroeste do PR" },
+  "45": { uf: "PR", region: "Cascavel e oeste do PR" },
+  "46": { uf: "PR", region: "Francisco Beltrão e sudoeste do PR" },
+  "47": { uf: "SC", region: "Joinville, Blumenau e Itajaí" },
+  "48": { uf: "SC", region: "Florianópolis e sul de SC" },
+  "49": { uf: "SC", region: "Chapecó e oeste de SC" },
+  "51": { uf: "RS", region: "Porto Alegre e região metropolitana" },
+  "53": { uf: "RS", region: "Pelotas e Rio Grande" },
+  "54": { uf: "RS", region: "Caxias do Sul e Serra Gaúcha" },
+  "55": { uf: "RS", region: "Santa Maria e noroeste do RS" },
+  "61": { uf: "DF", region: "Brasília e entorno" },
+  "62": { uf: "GO", region: "Goiânia e região central de GO" },
+  "63": { uf: "TO", region: "Palmas e Tocantins" },
+  "64": { uf: "GO", region: "Rio Verde, Itumbiara e sul de GO" },
+  "65": { uf: "MT", region: "Cuiabá e região" },
+  "66": { uf: "MT", region: "Rondonópolis, Sinop e interior de MT" },
+  "67": { uf: "MS", region: "Campo Grande e Mato Grosso do Sul" },
+  "68": { uf: "AC", region: "Rio Branco e Acre" },
+  "69": { uf: "RO", region: "Porto Velho e Rondônia" },
+  "71": { uf: "BA", region: "Salvador e região metropolitana" },
+  "73": { uf: "BA", region: "Ilhéus, Itabuna e sul da BA" },
+  "74": { uf: "BA", region: "Juazeiro e norte da BA" },
+  "75": { uf: "BA", region: "Feira de Santana e interior da BA" },
+  "77": { uf: "BA", region: "Vitória da Conquista e oeste da BA" },
+  "79": { uf: "SE", region: "Aracaju e Sergipe" },
+  "81": { uf: "PE", region: "Recife e região metropolitana" },
+  "82": { uf: "AL", region: "Maceió e Alagoas" },
+  "83": { uf: "PB", region: "João Pessoa e Paraíba" },
+  "84": { uf: "RN", region: "Natal e Rio Grande do Norte" },
+  "85": { uf: "CE", region: "Fortaleza e região metropolitana" },
+  "86": { uf: "PI", region: "Teresina e centro-norte do PI" },
+  "87": { uf: "PE", region: "Petrolina e interior de PE" },
+  "88": { uf: "CE", region: "Sobral, Juazeiro do Norte e interior do CE" },
+  "89": { uf: "PI", region: "Picos e sul do PI" },
+  "91": { uf: "PA", region: "Belém e região metropolitana" },
+  "92": { uf: "AM", region: "Manaus e região central do AM" },
+  "93": { uf: "PA", region: "Santarém e oeste do PA" },
+  "94": { uf: "PA", region: "Marabá e sudeste do PA" },
+  "95": { uf: "RR", region: "Boa Vista e Roraima" },
+  "96": { uf: "AP", region: "Macapá e Amapá" },
+  "97": { uf: "AM", region: "Interior do Amazonas" },
+  "98": { uf: "MA", region: "São Luís e norte do MA" },
+  "99": { uf: "MA", region: "Imperatriz e sul do MA" }
+};
+
+function parseBrazilNumber(input) {
+  let digits = String(input || "").replace(/\D/g, "");
+  digits = digits.replace(/^0+/, "");
+
+  let countryCode = "";
+  let ddd = "";
+  let localNumber = "";
+
+  if (digits.startsWith("55") && digits.length >= 12) {
+    countryCode = "55";
+    ddd = digits.slice(2, 4);
+    localNumber = digits.slice(4);
+  } else if (digits.length >= 10) {
+    countryCode = "55";
+    ddd = digits.slice(0, 2);
+    localNumber = digits.slice(2);
+  } else {
+    return {
+      countryCode: "",
+      ddd: "",
+      uf: "",
+      region: "",
+      localNumber: digits,
+      numberE164: ""
+    };
+  }
+
+  const dddInfo = BR_DDD_MAP[ddd] || { uf: "", region: "DDD não mapeado" };
+  return {
+    countryCode,
+    ddd,
+    uf: dddInfo.uf,
+    region: dddInfo.region,
+    localNumber,
+    numberE164: `${countryCode}${ddd}${localNumber}`
+  };
+}
+
+function normalizeDddToken(token) {
+  let t = String(token || "").replace(/\D/g, "");
+  if (!t) return "";
+  if (t.length === 3 && t.startsWith("0")) t = t.slice(1);
+  if (t.length > 2) t = t.slice(-2);
+  return BR_DDD_MAP[t] ? t : "";
+}
+
+function resolveDddFilterSet(raw) {
+  const value = String(raw || "").trim().toUpperCase();
+  if (!value) return null;
+
+  if (/^[A-Z]{2}$/.test(value)) {
+    const ddds = Object.keys(BR_DDD_MAP).filter(ddd => BR_DDD_MAP[ddd].uf === value);
+    return ddds.length ? new Set(ddds) : null;
+  }
+
+  const tokens = value.split(/[,\s;|/]+/).map(normalizeDddToken).filter(Boolean);
+  return tokens.length ? new Set(tokens) : null;
+}
+
+function buildExportFile(contacts, format) {
+  if (format === "csv") {
+    let c = "\uFEFFOrigem;Numero;JID;Papel\n";
+    c += contacts.map(r => `"${String(r.source || "").replace(/"/g, '""')}";"${r.number}";"${r.jid}";"${r.role}"`).join("\n");
+    return c;
+  }
+  if (format === "csv-numbers") {
+    const seen = new Set();
+    const rows = [];
+
+    contacts.forEach((r) => {
+      const parsed = parseBrazilNumber(String(r?.number || r?.jid || ""));
+      if (!parsed.numberE164 || seen.has(parsed.numberE164)) return;
+      seen.add(parsed.numberE164);
+      rows.push([
+        parsed.countryCode,
+        parsed.ddd,
+        parsed.uf,
+        parsed.region,
+        parsed.localNumber,
+        parsed.numberE164
+      ]);
+    });
+
+    let csv = "\uFEFFPais;DDD;UF;Regiao;NumeroLocal;NumeroE164\n";
+    csv += rows.map(cols => cols.map(v => `"${String(v || "").replace(/"/g, '""')}"`).join(";")).join("\n");
+    return csv;
+  }
+  if (format === "numbers") {
+    const nums = [...new Set(
+      contacts
+        .map(r => parseBrazilNumber(String(r?.number || r?.jid || "")).numberE164)
+        .filter(Boolean)
+    )];
+    return nums.join("\n");
+  }
+  if (format === "json") {
+    return JSON.stringify(contacts, null, 2);
+  }
+  if (format === "vcf") {
+    return contacts.map(r =>
+      `BEGIN:VCARD\nVERSION:3.0\nFN:WA ${r.number}\nTEL;TYPE=CELL:${r.number}\nNOTE:${r.source}\nEND:VCARD`
+    ).join("\n");
+  }
+  return contacts.map(r => `${r.number} (${r.source}) [${r.role}]`).join("\n");
+}
+
+function exportMime(format) {
+  const map = {
+    csv: "text/csv; charset=utf-8",
+    "csv-numbers": "text/csv; charset=utf-8",
+    numbers: "text/plain; charset=utf-8",
+    json: "application/json; charset=utf-8",
+    vcf: "text/vcard; charset=utf-8",
+    txt: "text/plain; charset=utf-8"
+  };
+  return map[format] || "text/plain; charset=utf-8";
+}
+
+function exportExt(format) {
+  const map = { csv: "csv", "csv-numbers": "csv", numbers: "txt", json: "json", vcf: "vcf", txt: "txt" };
+  return map[format] || "txt";
+}
+
+function safeFilePart(input) {
+  return String(input || "contatos").replace(/[^\w\-]/g, "_").slice(0, 40) || "contatos";
+}
+
+// Server-side download endpoint (more reliable on Safari/Tracking Prevention)
+app.get("/api/whatsmiau2/export/contacts", async (req, res) => {
+  const { instance, jid, format = "csv", label, ddd } = req.query;
+  const targetInstance = instance || DEFAULT_INSTANCE;
+
+  if (!jid) {
+    return res.status(400).json({ success: false, error: "jid é obrigatório" });
+  }
+
+  try {
+    const isNewsletter = String(jid).endsWith("@newsletter");
+
+    let response;
+    if (isNewsletter) {
+      response = await axios.get(`${API_URL}/v1/newsletter/${targetInstance}/info`, {
+        params: { jid },
+        headers: { apikey: API_KEY }
+      });
+    } else {
+      response = await axios.get(`${API_URL}/v1/group/info/${targetInstance}`, {
+        params: { jid },
+        headers: { apikey: API_KEY }
+      });
+    }
+
+    const root = response.data || {};
+    const participants =
+      root.Participants ||
+      root.participants ||
+      root.group?.Participants ||
+      root.group?.participants ||
+      [];
+
+    if (!Array.isArray(participants) || participants.length === 0) {
+      return res.status(404).json({ success: false, error: "Nenhum participante encontrado" });
+    }
+
+    const source = label || root.Name || root.subject || root.name || String(jid);
+    const contacts = participants
+      .map(normalizeExportParticipant)
+      .filter(Boolean)
+      .map(p => ({
+        source,
+        jid: p.jid,
+        number: p.number,
+        role: p.role
+      }));
+
+    let filteredContacts = contacts;
+    if (ddd) {
+      const dddFilterSet = resolveDddFilterSet(ddd);
+      if (!dddFilterSet) {
+        return res.status(400).json({ success: false, error: "Filtro DDD inválido. Ex.: 41, 041, 41,42 ou PR." });
+      }
+      filteredContacts = contacts.filter(c => dddFilterSet.has(parseBrazilNumber(c.number).ddd));
+    }
+
+    if (!filteredContacts.length) {
+      return res.status(404).json({ success: false, error: "Nenhum contato encontrado para o DDD informado" });
+    }
+
+    const content = buildExportFile(filteredContacts, String(format));
+    const ext = exportExt(String(format));
+    const fileName = `${safeFilePart(source)}_${new Date().toISOString().slice(0, 10)}.${ext}`;
+
+    res.setHeader("Content-Type", exportMime(String(format)));
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    return res.status(200).send(content);
+  } catch (err) {
+    const statusCode = err.response?.status || 500;
+    const errorData = err.response?.data || { message: err.message };
+    console.error(`[Export Contacts Error] ${statusCode}:`, errorData);
+    return res.status(statusCode).json({
+      success: false,
+      error: err.message,
+      details: errorData
+    });
+  }
+});
+
 
 // Send Text Message (Unified & Fixed)
 app.post("/api/whatsmiau2/send-text", async (req, res) => {
@@ -1496,12 +1941,39 @@ app.get("/api/group/invite-link", async (req, res) => {
       }
     );
 
-    res.json(response.data);
+    const payload = response.data || {};
+    const reportedCode = Number(payload.code || 0);
+    const reportedMessage = String(payload.message || "").trim();
+    const hasEmbeddedError = reportedCode >= 400 || /^error$/i.test(reportedMessage);
+
+    if (hasEmbeddedError) {
+      return res.status(reportedCode || 500).json({
+        code: reportedCode || 500,
+        message: payload.details?.error || payload.error || reportedMessage || "Falha ao obter link do grupo",
+        details: payload.details || payload || null,
+        hint: "Se a instância não for admin do grupo, o WhatsApp bloqueia a leitura do link de convite."
+      });
+    }
+
+    res.json(payload);
   } catch (err) {
-    res.status(err.response?.status || 500).json({
-      code: err.response?.status || 500,
-      message: err.message,
-      details: err.response?.data
+    const networkError = !err.response;
+    const statusCode = err.response?.status || (networkError ? 503 : 500);
+    const upstreamMsg = err.response?.data?.error || err.response?.data?.message;
+    const message = networkError
+      ? "Backend API indisponível ou timeout ao buscar link do grupo"
+      : (upstreamMsg || err.message || "Falha ao obter link do grupo");
+
+    res.status(statusCode).json({
+      code: statusCode,
+      message,
+      details: err.response?.data || null,
+      upstream: {
+        code: err.code || null,
+        target: `${API_URL}/v1/group/invite-link/${instanceName}`,
+        instance: instanceName,
+        group_id
+      }
     });
   }
 });
@@ -1526,12 +1998,39 @@ app.get("/group/invite-link", async (req, res) => {
       }
     );
 
-    res.json(response.data);
+    const payload = response.data || {};
+    const reportedCode = Number(payload.code || 0);
+    const reportedMessage = String(payload.message || "").trim();
+    const hasEmbeddedError = reportedCode >= 400 || /^error$/i.test(reportedMessage);
+
+    if (hasEmbeddedError) {
+      return res.status(reportedCode || 500).json({
+        code: reportedCode || 500,
+        message: payload.details?.error || payload.error || reportedMessage || "Falha ao obter link do grupo",
+        details: payload.details || payload || null,
+        hint: "Se a instância não for admin do grupo, o WhatsApp bloqueia a leitura do link de convite."
+      });
+    }
+
+    res.json(payload);
   } catch (err) {
-    res.status(err.response?.status || 500).json({
-      code: err.response?.status || 500,
-      message: err.message,
-      details: err.response?.data
+    const networkError = !err.response;
+    const statusCode = err.response?.status || (networkError ? 503 : 500);
+    const upstreamMsg = err.response?.data?.error || err.response?.data?.message;
+    const message = networkError
+      ? "Backend API indisponível ou timeout ao buscar link do grupo"
+      : (upstreamMsg || err.message || "Falha ao obter link do grupo");
+
+    res.status(statusCode).json({
+      code: statusCode,
+      message,
+      details: err.response?.data || null,
+      upstream: {
+        code: err.code || null,
+        target: `${API_URL}/v1/group/invite-link/${DEFAULT_INSTANCE}`,
+        instance: DEFAULT_INSTANCE,
+        group_id
+      }
     });
   }
 });

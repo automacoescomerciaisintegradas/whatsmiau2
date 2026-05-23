@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  data_vol:
+    # No seu repositório, vá em packages e pegue a URL para a imagem data_vol
+    # Troque a imagem abaixo para a sua (se não, não vai funcionar)
+    image: ghcr.io/automacoescomerciaisintegradas/dockerlabs_manager-data_vol:latest
+    volumes:
+      - ./data:/data
+    restart: "no" # Runs once to initialize if it's a data container, or use a command to keep alive
+
+  dockerlabs:
+    pull_policy: always
+    # No seu repositório, vá em packages e pegue a URL para a imagem dockerlabs
+    # Troque a imagem abaixo para a sua (se não, não vai funcionar)
+    image: ghcr.io/automacoescomerciaisintegradas/dockerlabs_manager-dockerlabs:latest
+    restart: always
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      - data_vol
+
+  nginx:
+    container_name: nginx
+    hostname: nginx
+    pull_policy: always
+    # No seu repositório, vá em packages e pegue a URL para a imagem nginx
+    # Troque a imagem abaixo para a sua (se não, não vai funcionar)
+    image: ghcr.io/automacoescomerciaisintegradas/dockerlabs_manager-nginx:latest
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    depends_on:
+      - dockerlabs
+
+  certbot:
+    container_name: certbot
+    hostname: certbot
+    pull_policy: always
+    # No seu repositório, vá em packages e pegue a URL para a imagem certbot
+    # Troque a imagem abaixo para a sua (se não, não vai funcionar)
+    image: ghcr.io/automacoescomerciaisintegradas/dockerlabs_manager-certbot:latest
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot

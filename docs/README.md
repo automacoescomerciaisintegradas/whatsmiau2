@@ -196,9 +196,15 @@ whatsmiau2/
 
 ## 📞 Contatos
 
-**Projeto**: WhatsMiau2 CRM  
-**Empresa**: Automações Comerciais Integradas  
+**Projeto**: WhatsMiau2 CRM
+**Empresa**: Automações Comerciais Integradas
 **Email**: contato@automacoescomerciais.com.br
+**Contato e Suporte**:
+CANAL
+link canal https://whatsapp.com/channel/0029Vb7MgPz5kg767iWItk42
+
+[**Saiba Mais!!!!**]
+https://wa.me/558894227586
 
 ---
 

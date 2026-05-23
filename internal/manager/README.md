@@ -69,7 +69,7 @@ import (
 )
 
 func main() {
-    mgr := manager.New("http://localhost:8085/v1", "2wtLvtb20wXePp8D9uRhm55aCjINiciO")
+    mgr := manager.New("http://localhost:8085/v1", "your-api-key-here")
 
     // List instances
     instances, err := mgr.ListInstances()

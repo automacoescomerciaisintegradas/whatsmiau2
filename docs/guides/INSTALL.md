@@ -76,14 +76,14 @@ curl http://localhost:8081/health
 ```powershell
 curl -X POST http://localhost:8081/v1/instance `
   -H "Content-Type: application/json" `
-  -H "apikey: 2wtLvtb20wXePp8D9uRhm55aCjINiciO" `
+  -H "apikey: your-api-key-here" `
   -d '{\"instanceName\": \"teste\", \"qrcode\": true}'
 ```
 
 ### Listar Instâncias
 ```powershell
 curl http://localhost:8081/v1/instance `
-  -H "apikey: 2wtLvtb20wXePp8D9uRhm55aCjINiciO"
+  -H "apikey: your-api-key-here"
 ```
 
 ## 6. Configuração

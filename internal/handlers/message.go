@@ -457,11 +457,12 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 
 // SendReaction sends a reaction to a message
 // POST /v1/message/sendReaction/:instance
-// TODO: Implement reaction support with updated whatsmeow API
 func (h *MessageHandler) SendReaction(c *gin.Context) {
+	// Temporarily returning not implemented until we can properly implement reaction support
+	// with the correct whatsmeow API methods
 	c.JSON(http.StatusNotImplemented, gin.H{
 		"error":   "Not Implemented",
-		"message": "Reaction support coming soon",
+		"message": "Reaction support is not currently available in this version",
 	})
 }
 

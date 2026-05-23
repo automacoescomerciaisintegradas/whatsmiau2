@@ -1,0 +1,155 @@
+{
+    "name": "WhatsMiau2 - Controle de Grupos",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "whatsmiau-groups-events",
+                "options": {}
+            },
+            "name": "Webhook WhatsMiau",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                460,
+                300
+            ],
+            "id": "webhook-trigger"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.body.event }}",
+                            "operation": "equal",
+                            "value2": "group-participants-update"
+                        }
+                    ]
+                }
+            },
+            "name": "É Evento de Grupo?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                680,
+                300
+            ],
+            "id": "filter-event"
+        },
+        {
+            "parameters": {
+                "mode": "json",
+                "json": "={\n  \"grupo_jid\": \"{{ $json.body.data.id }}\",\n  \"participante\": \"{{ $json.body.data.participants[0] }}\",\n  \"acao\": \"{{ $json.body.data.action }}\",\n  \"data\": \"{{ new Date().toISOString() }}\"\n}",
+                "options": {}
+            },
+            "name": "Formatar Dados",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 1,
+            "position": [
+                900,
+                300
+            ],
+            "id": "format-data"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.acao }}",
+                            "operation": "equal",
+                            "value2": "add"
+                        }
+                    ]
+                }
+            },
+            "name": "Entrou ou Saiu?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                1100,
+                300
+            ],
+            "id": "check-action"
+        },
+        {
+            "parameters": {
+                "requestMethod": "POST",
+                "url": "http://whatsmiau2_web:3002/api/whatsmiau2/send-text",
+                "options": {},
+                "bodyParametersUi": {
+                    "parameter": [
+                        {
+                            "name": "number",
+                            "value": "558894227586"
+                        },
+                        {
+                            "name": "text",
+                            "value": "=🚀 *Entrada no Grupo*\n\n📞 *Quem:* {{ $json.participante }}\n👥 *Grupo:* {{ $json.grupo_jid }}\n📅 *Data:* {{ $json.data }}"
+                        },
+                        {
+                            "name": "instance",
+                            "value": "minha-instancia"
+                        }
+                    ]
+                },
+                "headerParametersUi": {
+                    "parameter": [
+                        {
+                            "name": "apikey",
+                            "value": "your-api-key-here"
+                        }
+                    ]
+                }
+            },
+            "name": "Notificar Admin (Entrada)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                1380,
+                200
+            ],
+            "id": "notify-entry"
+        },
+        {
+            "parameters": {
+                "requestMethod": "POST",
+                "url": "http://whatsmiau2_web:3002/api/whatsmiau2/send-text",
+                "options": {},
+                "bodyParametersUi": {
+                    "parameter": [
+                        {
+                            "name": "number",
+                            "value": "558894227586"
+                        },
+                        {
+                            "name": "text",
+                            "value": "=🚪 *Saída do Grupo*\n\n📞 *Quem:* {{ $json.participante }}\n👥 *Grupo:* {{ $json.grupo_jid }}\n📅 *Data:* {{ $json.data }}"
+                        },
+                        {
+                            "name": "instance",
+                            "value": "minha-instancia"
+                        }
+                    ]
+                },
+                "headerParametersUi": {
+                    "parameter": [
+                        {
+                            "name": "apikey",
+                            "value": "your-api-key-here"
+                        }
+                    ]
+                }
+            },
+            "name": "Notificar Admin (Saída)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                1380,
+                400
+            ],
+            "id": "notify-exit"
+        }
+    ]
+}

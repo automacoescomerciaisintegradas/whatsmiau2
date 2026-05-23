@@ -84,6 +84,20 @@ func CreateTables(db *sql.DB) error {
 			FOREIGN KEY (lead_id) REFERENCES leads (id) ON DELETE CASCADE
 		)
 	`)
+	// Create tickets table
+	_, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS tickets (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			customer_name VARCHAR(255) NOT NULL,
+			customer_phone VARCHAR(20) NOT NULL,
+			subject TEXT NOT NULL,
+			status VARCHAR(50) DEFAULT 'NOVO',
+			priority VARCHAR(50) DEFAULT 'MÉDIA',
+			last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
 	if err != nil {
 		return err
 	}

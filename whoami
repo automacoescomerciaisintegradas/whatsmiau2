@@ -1,0 +1,17 @@
+{
+    "permissions": {
+        "allow": [
+            "ALL"
+        ]
+    },
+    "model": "glm-4-plus",
+    "enabledPlugins": {},
+    "alwaysThinkingEnabled": true,
+    "env": {
+        "ZAI_GLM_API_KEY": "02913bd52f164660afbda49dc60f9530.0owQgp33z51F0ipF",
+        "GLM_MODEL": "GLM-4-Plus",
+        "ZAI_BASE_URL": "https://open.bigmodel.cn/api/paas/v4",
+        "API_TIMEOUT_MS": "3000000",
+        "DISABLE_NONESSENTIAL_TRAFFIC": "1"
+    }
+}

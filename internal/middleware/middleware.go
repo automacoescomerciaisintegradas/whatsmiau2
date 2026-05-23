@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"encoding/base64"
 	"fmt"
 	"net/http"
 	"strings"
@@ -9,6 +8,7 @@ import (
 	"whatsmiau2/internal/config"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // AuthMiddleware creates an authentication middleware that supports both API Key and Basic Auth
@@ -40,29 +40,33 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 			}
 		}
 
-		// Try Basic Auth (Authorization: Basic <base64>)
-		auth := c.GetHeader("Authorization")
-		if strings.HasPrefix(auth, "Basic ") && cfg.BasicAuthUsername != "" {
-			payload, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(auth, "Basic "))
-			if err == nil {
-				pair := strings.SplitN(string(payload), ":", 2)
-				if len(pair) == 2 {
-					username := pair[0]
-					password := pair[1]
-					if username == cfg.BasicAuthUsername && password == cfg.BasicAuthPassword {
-						c.Next()
-						return
+		// Try validating as JWT
+		if apiKey != "" && cfg.JWTSecret != "" {
+			token, err := jwt.Parse(apiKey, func(token *jwt.Token) (interface{}, error) {
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+				}
+				return []byte(cfg.JWTSecret), nil
+			})
+
+			if err == nil && token.Valid {
+				if claims, ok := token.Claims.(jwt.MapClaims); ok {
+					// Set user info in context
+					if userID, ok := claims["user_id"].(float64); ok {
+						c.Set("userID", uint(userID))
 					}
+					if email, ok := claims["email"].(string); ok {
+						c.Set("email", email)
+					}
+					c.Next()
+					return
 				}
 			}
 		}
 
-		// No valid authentication found
-		c.Header("WWW-Authenticate", `Basic realm="WhatsApp API"`)
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 			"code":    "UNAUTHORIZED",
-			"message": "Invalid or missing authentication. Use API Key (header: apikey) or Basic Auth.",
-			"results": gin.H{},
+			"message": "Invalid or missing authentication.",
 		})
 	}
 }

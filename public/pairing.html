@@ -537,10 +537,23 @@
 
     <script>
         const API_URL = "/api";
-        const API_KEY = "2wtLvtb20wXePp8D9uRhm55aCjINiciO";
         const urlParams = new URLSearchParams(window.location.search);
         let INSTANCE = urlParams.get('instance') || "minha-instancia";
         let pollingInterval = null;
+
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        function requireAuthOrRedirect() {
+            const token = getAuthToken();
+            if (!token) {
+                const next = encodeURIComponent(window.location.pathname + window.location.search);
+                window.location.href = `/login.html?next=${next}`;
+                return null;
+            }
+            return token;
+        }
 
         // Switch between methods
         function switchMethod(method) {
@@ -566,11 +579,14 @@
 
         // Clear session
         async function limparSessao() {
+            const token = requireAuthOrRedirect();
+            if (!token) return;
+
             showStatus('🔄 Limpando sessão antiga...', 'info');
             try {
-                const response = await fetch(`${API_URL}/instance/logout/${INSTANCE}`, {
+                const response = await fetch(`${API_URL.replace('/api', '/v1')}/instance/${INSTANCE}/logout`, {
                     method: 'DELETE',
-                    headers: { 'apikey': API_KEY }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
 
                 if (response.ok) {
@@ -585,6 +601,9 @@
 
         // Request pairing code
         async function solicitarCodigo() {
+            const token = requireAuthOrRedirect();
+            if (!token) return;
+
             const phoneInput = document.getElementById('phone-input');
             const btn = document.getElementById('btn-get-code');
             const codeDisplay = document.getElementById('code-display');
@@ -603,11 +622,13 @@
             codeDisplay.classList.remove('show');
 
             try {
-                const response = await fetch(`${API_URL}/instance/pairPhone/${INSTANCE}`, {
+                // Usa o endpoint do BFF Node para que o monitor de conexão seja iniciado
+                // e o alerta de segurança seja disparado ao conectar
+                const response = await fetch(`/api/instance/pairPhone/${INSTANCE}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'apikey': API_KEY
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({ phoneNumber: phone })
                 });
@@ -630,7 +651,14 @@
 
             } catch (error) {
                 console.error(error);
-                showStatus('❌ Erro: ' + error.message, 'error');
+                const raw = (error && error.message ? error.message : '').toLowerCase();
+                if (raw.includes('websocket disconnected')) {
+                    showStatus('❌ Conexão do WhatsApp oscilou durante o pareamento. Clique em "Limpar Sessão", aguarde 2 segundos e tente novamente.', 'error');
+                } else if (raw.includes('já possui uma conexão ativa') || raw.includes('sessão salva')) {
+                    showStatus('⚠️ Esta instância já tem sessão. Clique em "Limpar Sessão" antes de gerar novo código.', 'error');
+                } else {
+                    showStatus('❌ Erro: ' + error.message, 'error');
+                }
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-key"></i> Obter Código';
@@ -639,6 +667,9 @@
 
         // Request QR Code
         async function solicitarQRCode() {
+            const token = requireAuthOrRedirect();
+            if (!token) return;
+
             const btn = document.getElementById('btn-get-qr');
             const qrDisplay = document.getElementById('qr-display');
             const qrImage = document.getElementById('qr-image');
@@ -650,7 +681,11 @@
 
             try {
                 showStatus('🔄 Conectando ao backend...', 'info');
-                const response = await fetch(`/api/instance/connect/${INSTANCE}`);
+                const response = await fetch(`/v1/instance/connect/${INSTANCE}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
                 const data = await response.json();
 
                 let base64 = data.base64 || (data.qrcode && data.qrcode.base64);
@@ -675,11 +710,18 @@
 
         // Poll connection status
         function startPolling() {
+            const token = getAuthToken();
+            if (!token) return;
+
             if (pollingInterval) clearInterval(pollingInterval);
 
             pollingInterval = setInterval(async () => {
                 try {
-                    const response = await fetch(`/api/instance/connectionState/${INSTANCE}`);
+                    const response = await fetch(`/v1/instance/connectionState/${INSTANCE}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
                     const data = await response.json();
 
                     if (data.instance?.state === 'open' || data.state === 'open') {
@@ -703,6 +745,8 @@
 
         // Check URL parameters
         window.addEventListener('DOMContentLoaded', () => {
+            if (!requireAuthOrRedirect()) return;
+
             const method = urlParams.get('method');
             if (method === 'qr') {
                 document.querySelectorAll('.method-tab').forEach(tab => tab.classList.remove('active'));

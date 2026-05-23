@@ -11,6 +11,77 @@ const state = {
     currentInstance: null
 };
 
+// Mapa de DDDs brasileiros (67 códigos geográficos em uso)
+const BR_DDD_MAP = {
+    '11': { uf: 'SP', region: 'São Paulo e região metropolitana' },
+    '12': { uf: 'SP', region: 'São José dos Campos e Vale do Paraíba' },
+    '13': { uf: 'SP', region: 'Santos e Baixada Santista' },
+    '14': { uf: 'SP', region: 'Bauru e Marília' },
+    '15': { uf: 'SP', region: 'Sorocaba e Itapetininga' },
+    '16': { uf: 'SP', region: 'Ribeirão Preto e Franca' },
+    '17': { uf: 'SP', region: 'São José do Rio Preto' },
+    '18': { uf: 'SP', region: 'Presidente Prudente e Araçatuba' },
+    '19': { uf: 'SP', region: 'Campinas e Piracicaba' },
+    '21': { uf: 'RJ', region: 'Rio de Janeiro e Grande Rio' },
+    '22': { uf: 'RJ', region: 'Campos dos Goytacazes e Região dos Lagos' },
+    '24': { uf: 'RJ', region: 'Volta Redonda, Petrópolis e Angra' },
+    '27': { uf: 'ES', region: 'Vitória e região central/norte' },
+    '28': { uf: 'ES', region: 'Cachoeiro de Itapemirim e sul do ES' },
+    '31': { uf: 'MG', region: 'Belo Horizonte e região metropolitana' },
+    '32': { uf: 'MG', region: 'Juiz de Fora e Zona da Mata' },
+    '33': { uf: 'MG', region: 'Governador Valadares e leste de MG' },
+    '34': { uf: 'MG', region: 'Uberlândia e Triângulo Mineiro' },
+    '35': { uf: 'MG', region: 'Poços de Caldas e sul de MG' },
+    '37': { uf: 'MG', region: 'Divinópolis e centro-oeste de MG' },
+    '38': { uf: 'MG', region: 'Montes Claros e norte de MG' },
+    '41': { uf: 'PR', region: 'Curitiba e região metropolitana' },
+    '42': { uf: 'PR', region: 'Ponta Grossa e Campos Gerais' },
+    '43': { uf: 'PR', region: 'Londrina e norte do PR' },
+    '44': { uf: 'PR', region: 'Maringá e noroeste do PR' },
+    '45': { uf: 'PR', region: 'Cascavel e oeste do PR' },
+    '46': { uf: 'PR', region: 'Francisco Beltrão e sudoeste do PR' },
+    '47': { uf: 'SC', region: 'Joinville, Blumenau e Itajaí' },
+    '48': { uf: 'SC', region: 'Florianópolis e sul de SC' },
+    '49': { uf: 'SC', region: 'Chapecó e oeste de SC' },
+    '51': { uf: 'RS', region: 'Porto Alegre e região metropolitana' },
+    '53': { uf: 'RS', region: 'Pelotas e Rio Grande' },
+    '54': { uf: 'RS', region: 'Caxias do Sul e Serra Gaúcha' },
+    '55': { uf: 'RS', region: 'Santa Maria e noroeste do RS' },
+    '61': { uf: 'DF', region: 'Brasília e entorno' },
+    '62': { uf: 'GO', region: 'Goiânia e região central de GO' },
+    '63': { uf: 'TO', region: 'Palmas e Tocantins' },
+    '64': { uf: 'GO', region: 'Rio Verde, Itumbiara e sul de GO' },
+    '65': { uf: 'MT', region: 'Cuiabá e região' },
+    '66': { uf: 'MT', region: 'Rondonópolis, Sinop e interior de MT' },
+    '67': { uf: 'MS', region: 'Campo Grande e Mato Grosso do Sul' },
+    '68': { uf: 'AC', region: 'Rio Branco e Acre' },
+    '69': { uf: 'RO', region: 'Porto Velho e Rondônia' },
+    '71': { uf: 'BA', region: 'Salvador e região metropolitana' },
+    '73': { uf: 'BA', region: 'Ilhéus, Itabuna e sul da BA' },
+    '74': { uf: 'BA', region: 'Juazeiro e norte da BA' },
+    '75': { uf: 'BA', region: 'Feira de Santana e interior da BA' },
+    '77': { uf: 'BA', region: 'Vitória da Conquista e oeste da BA' },
+    '79': { uf: 'SE', region: 'Aracaju e Sergipe' },
+    '81': { uf: 'PE', region: 'Recife e região metropolitana' },
+    '82': { uf: 'AL', region: 'Maceió e Alagoas' },
+    '83': { uf: 'PB', region: 'João Pessoa e Paraíba' },
+    '84': { uf: 'RN', region: 'Natal e Rio Grande do Norte' },
+    '85': { uf: 'CE', region: 'Fortaleza e região metropolitana' },
+    '86': { uf: 'PI', region: 'Teresina e centro-norte do PI' },
+    '87': { uf: 'PE', region: 'Petrolina e interior de PE' },
+    '88': { uf: 'CE', region: 'Sobral, Juazeiro do Norte e interior do CE' },
+    '89': { uf: 'PI', region: 'Picos e sul do PI' },
+    '91': { uf: 'PA', region: 'Belém e região metropolitana' },
+    '92': { uf: 'AM', region: 'Manaus e região central do AM' },
+    '93': { uf: 'PA', region: 'Santarém e oeste do PA' },
+    '94': { uf: 'PA', region: 'Marabá e sudeste do PA' },
+    '95': { uf: 'RR', region: 'Boa Vista e Roraima' },
+    '96': { uf: 'AP', region: 'Macapá e Amapá' },
+    '97': { uf: 'AM', region: 'Interior do Amazonas' },
+    '98': { uf: 'MA', region: 'São Luís e norte do MA' },
+    '99': { uf: 'MA', region: 'Imperatriz e sul do MA' }
+};
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     setupTheme();
@@ -126,41 +197,19 @@ async function carregarEstatisticas() {
         const instance = state.currentInstance || 'default';
 
         const [groupsResult, channelsResult] = await Promise.allSettled([
-            fetch(`/api/whatsmiau2/groups?instance=${encodeURIComponent(instance)}`),
-            fetch(`/api/whatsmiau2/newsletters?instance=${encodeURIComponent(instance)}`)
+            fetchGroupsWithFallback(instance),
+            fetchNewslettersWithFallback(instance)
         ]);
 
         if (groupsResult.status === 'fulfilled') {
-            const groupsResponse = groupsResult.value;
-            const groupsData = await groupsResponse.json().catch(() => ({}));
-            if (groupsResponse.ok) {
-                if (Array.isArray(groupsData)) {
-                    state.groups = groupsData;
-                } else if (groupsData.success && Array.isArray(groupsData.data)) {
-                    state.groups = groupsData.data;
-                }
-            } else {
-                console.warn('[Export] Falha ao carregar grupos:', groupsData.error || groupsResponse.status);
-                state.groups = [];
-            }
+            state.groups = groupsResult.value;
         } else {
             console.warn('[Export] Falha de rede ao carregar grupos:', groupsResult.reason?.message || groupsResult.reason);
             state.groups = [];
         }
 
         if (channelsResult.status === 'fulfilled') {
-            const channelsResponse = channelsResult.value;
-            const channelsData = await channelsResponse.json().catch(() => ({}));
-            if (channelsResponse.ok) {
-                if (Array.isArray(channelsData)) {
-                    state.channels = channelsData;
-                } else if (channelsData.success && Array.isArray(channelsData.data)) {
-                    state.channels = channelsData.data;
-                }
-            } else {
-                console.warn('[Export] Falha ao carregar canais:', channelsData.error || channelsResponse.status);
-                state.channels = [];
-            }
+            state.channels = channelsResult.value;
         } else {
             console.warn('[Export] Falha de rede ao carregar canais:', channelsResult.reason?.message || channelsResult.reason);
             state.channels = [];
@@ -206,15 +255,15 @@ function renderGroupCards(items) {
         const safeName = label.replace(/'/g, "\\'").replace(/`/g, '');
 
         const card = document.createElement('div');
-        card.className = 'card border-0 shadow-sm mb-2';
+        card.className = 'card border-0 shadow-sm mb-2 export-preview-item';
         card.id = `group-card-${idx}`;
         card.dataset.jid = jid;
         card.innerHTML = `
-            <div class="card-body py-2 px-3 d-flex align-items-center justify-content-between">
+            <div class="card-body py-3 px-3 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width:0;">
                     <i class="fas ${icon} text-${color}" style="font-size:1.1rem;min-width:18px;"></i>
                     <div style="min-width:0;">
-                        <div class="fw-semibold text-truncate" style="max-width:300px;" title="${label.replace(/"/g, '&quot;')}">${label}</div>
+                        <div class="fw-semibold text-truncate" style="max-width:420px;" title="${label.replace(/"/g, '&quot;')}">${label}</div>
                         <small class="text-muted group-jid" style="font-size:0.72rem;">${jid}</small>
                     </div>
                 </div>
@@ -234,6 +283,9 @@ function renderGroupCards(items) {
                             </a></li>
                             <li><a class="dropdown-item small" href="#" onclick="exportarGrupo(${idx},'csv-numbers');return false;">
                                 <i class="fas fa-list-ol me-2 text-primary"></i>CSV Só Números
+                            </a></li>
+                            <li><a class="dropdown-item small" href="#" onclick="exportarGrupo(${idx},'numbers');return false;">
+                                <i class="fas fa-hashtag me-2 text-dark"></i>Lista Só Números
                             </a></li>
                             <li><a class="dropdown-item small" href="#" onclick="exportarGrupo(${idx},'txt');return false;">
                                 <i class="fas fa-file-alt me-2 text-secondary"></i>TXT
@@ -255,7 +307,7 @@ function renderGroupCards(items) {
 }
 
 // --- Exporta contatos de UM grupo/canal específico ---
-window.exportarGrupo = async function (idx, format) {
+window.exportarGrupo = function (idx, format) {
     const card = document.getElementById(`group-card-${idx}`);
     if (!card) return;
 
@@ -264,57 +316,28 @@ window.exportarGrupo = async function (idx, format) {
     const btnEl = document.getElementById(`btn-export-${idx}`);
     const statusEl = document.getElementById(`status-badge-${idx}`);
     const instance = state.currentInstance || 'default';
+    const dddFilter = getDddFilterValueRaw();
 
     if (btnEl) {
         btnEl.disabled = true;
-        btnEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Buscando...';
+        btnEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Preparando...';
     }
 
-    try {
-        const participants = await fetchParticipantsByJid(jid, instance);
+    const url = `/api/whatsmiau2/export/contacts?instance=${encodeURIComponent(instance)}&jid=${encodeURIComponent(jid)}&format=${encodeURIComponent(format)}&label=${encodeURIComponent(label)}${dddFilter ? `&ddd=${encodeURIComponent(dddFilter)}` : ''}`;
+    triggerDirectDownload(url);
 
-        if (participants.length === 0) {
-            throw new Error('Nenhum participante encontrado neste grupo');
-        }
+    if (statusEl) {
+        statusEl.style.display = 'inline';
+        statusEl.innerHTML = `<span class="badge bg-success ms-1"><i class="fas fa-check me-1"></i>Download iniciado</span>`;
+        setTimeout(() => { statusEl.style.display = 'none'; statusEl.innerHTML = ''; }, 4000);
+    }
 
-        const contacts = participants
-            .map(p => normalizeParticipant(p, label))
-            .filter(Boolean)
-            .map(p => ({
-                source: label,
-                jid: p.jid,
-                number: p.number,
-                role: p.role
-            }))
-            .filter(c => c.number);
-
-        const content = buildFileContent(contacts, format);
-        const safeName = label.replace(/[^\w\-]/g, '_').substring(0, 40);
-        const ext = formatToExt(format);
-        const mime = formatToMime(format);
-
-        downloadFile(content, `${safeName}_${new Date().toISOString().slice(0, 10)}.${ext}`, mime);
-
-        if (statusEl) {
-            statusEl.style.display = 'inline';
-            statusEl.innerHTML = `<span class="badge bg-success ms-1"><i class="fas fa-check me-1"></i>${contacts.length} exportados</span>`;
-            setTimeout(() => { statusEl.style.display = 'none'; statusEl.innerHTML = ''; }, 5000);
-        }
-
-    } catch (error) {
-        console.error('[ExportGrupo]', error);
-        if (statusEl) {
-            statusEl.style.display = 'inline';
-            statusEl.innerHTML = `<span class="badge bg-danger ms-1" title="${error.message}"><i class="fas fa-times me-1"></i>Erro</span>`;
-            setTimeout(() => { statusEl.style.display = 'none'; statusEl.innerHTML = ''; }, 5000);
-        }
-        alert(`Erro ao exportar "${label}":\n${error.message}`);
-    } finally {
+    setTimeout(() => {
         if (btnEl) {
             btnEl.disabled = false;
             btnEl.innerHTML = '<i class="fas fa-download me-1"></i>Exportar';
         }
-    }
+    }, 900);
 };
 
 // --- Exportar TODOS os grupos (botão geral) ---
@@ -339,6 +362,8 @@ async function exportarContatos() {
     }
 
     const instance = state.currentInstance || 'default';
+    const dddFilterRaw = getDddFilterValueRaw();
+    const dddFilterSet = resolveDddFilterSet(dddFilterRaw);
     let allContacts = [];
     let processed = 0;
     let failed = 0;
@@ -374,6 +399,16 @@ async function exportarContatos() {
         return;
     }
 
+    if (dddFilterSet) {
+        allContacts = allContacts.filter(c => dddFilterSet.has(parseBrazilNumber(c.number).ddd));
+    }
+
+    if (allContacts.length === 0) {
+        statusDiv.className = 'alert alert-warning mt-3';
+        statusDiv.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Nenhum contato encontrado para o filtro ${dddFilterRaw || '-'}.`;
+        return;
+    }
+
     const content = buildFileContent(allContacts, format);
     const ext = formatToExt(format);
     const mime = formatToMime(format);
@@ -381,10 +416,63 @@ async function exportarContatos() {
 
     const failMsg = failed > 0 ? ` (${failed} grupo(s) com erro)` : '';
     statusDiv.className = 'alert alert-success mt-3';
-    statusDiv.innerHTML = `<i class="fas fa-check-circle me-2"></i><strong>${allContacts.length}</strong> contatos exportados com sucesso!${failMsg}`;
+    statusDiv.innerHTML = `<i class="fas fa-check-circle me-2"></i><strong>${allContacts.length}</strong> contatos exportados com sucesso!${dddFilterRaw ? ` (Filtro ${dddFilterRaw})` : ''}${failMsg}`;
 }
 
 // --- Helpers ---
+async function fetchGroupsWithFallback(instance) {
+    // 1) Preferred proxy route
+    try {
+        const resp = await fetch(`/api/whatsmiau2/groups?instance=${encodeURIComponent(instance)}`);
+        if (resp.ok) {
+            const payload = await resp.json().catch(() => ({}));
+            const groups = Array.isArray(payload)
+                ? payload
+                : (payload?.success && Array.isArray(payload?.data) ? payload.data : []);
+            if (groups.length > 0) return groups;
+        }
+    } catch (e) {
+        console.warn('[Export] /api groups fallback trigger:', e.message);
+    }
+
+    // 2) Direct backend route fallback
+    const direct = await fetch(`/v1/group/list/${encodeURIComponent(instance)}`, {
+        headers: authHeaders()
+    });
+    if (!direct.ok) {
+        throw new Error(`Falha ao carregar grupos (${direct.status})`);
+    }
+    const directPayload = await direct.json().catch(() => []);
+    return Array.isArray(directPayload) ? directPayload : (directPayload?.groups || []);
+}
+
+async function fetchNewslettersWithFallback(instance) {
+    // 1) Preferred proxy route
+    try {
+        const resp = await fetch(`/api/whatsmiau2/newsletters?instance=${encodeURIComponent(instance)}`);
+        if (resp.ok) {
+            const payload = await resp.json().catch(() => ({}));
+            const channels = Array.isArray(payload)
+                ? payload
+                : (payload?.success && Array.isArray(payload?.data) ? payload.data : []);
+            if (channels.length > 0) return channels;
+        }
+    } catch (e) {
+        console.warn('[Export] /api newsletters fallback trigger:', e.message);
+    }
+
+    // 2) Direct backend route fallback
+    const direct = await fetch(`/v1/newsletter/list/${encodeURIComponent(instance)}`, {
+        headers: authHeaders()
+    });
+    if (!direct.ok) {
+        throw new Error(`Falha ao carregar canais (${direct.status})`);
+    }
+    const directPayload = await direct.json().catch(() => ({}));
+    if (Array.isArray(directPayload)) return directPayload;
+    return Array.isArray(directPayload?.newsletters) ? directPayload.newsletters : [];
+}
+
 function authHeaders() {
     return { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` };
 }
@@ -454,11 +542,35 @@ function buildFileContent(contacts, format) {
         return c;
     }
     if (format === 'csv-numbers') {
+        const seen = new Set();
+        const rows = [];
+
+        contacts.forEach((r) => {
+            const parsed = parseBrazilNumber(String(r?.number || r?.jid || ''));
+            if (!parsed.numberE164 || seen.has(parsed.numberE164)) return;
+            seen.add(parsed.numberE164);
+
+            rows.push([
+                parsed.countryCode,
+                parsed.ddd,
+                parsed.uf,
+                parsed.region,
+                parsed.localNumber,
+                parsed.numberE164
+            ]);
+        });
+
+        let csv = '\uFEFFPais;DDD;UF;Regiao;NumeroLocal;NumeroE164\n';
+        csv += rows.map(cols => cols.map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(';')).join('\n');
+        return csv;
+    }
+    if (format === 'numbers') {
         const nums = [...new Set(
-            contacts.map(r => r.number.replace(/\D/g, ''))
-                .filter(n => n.startsWith('55') && (n.length === 12 || n.length === 13))
+            contacts
+                .map(r => parseBrazilNumber(String(r?.number || r?.jid || '')).numberE164)
+                .filter(Boolean)
         )];
-        return '\uFEFFNumero\n' + nums.join('\n');
+        return nums.join('\n');
     }
     if (format === 'json') {
         return JSON.stringify(contacts, null, 2);
@@ -472,8 +584,46 @@ function buildFileContent(contacts, format) {
     return contacts.map(r => `${r.number} (${r.source}) [${r.role}]`).join('\n');
 }
 
+function parseBrazilNumber(input) {
+    let digits = String(input || '').replace(/\D/g, '');
+    digits = digits.replace(/^0+/, '');
+
+    let countryCode = '';
+    let ddd = '';
+    let localNumber = '';
+
+    if (digits.startsWith('55') && digits.length >= 12) {
+        countryCode = '55';
+        ddd = digits.slice(2, 4);
+        localNumber = digits.slice(4);
+    } else if (digits.length >= 10) {
+        countryCode = '55';
+        ddd = digits.slice(0, 2);
+        localNumber = digits.slice(2);
+    } else {
+        return {
+            countryCode: '',
+            ddd: '',
+            uf: '',
+            region: '',
+            localNumber: digits,
+            numberE164: ''
+        };
+    }
+
+    const dddInfo = BR_DDD_MAP[ddd] || { uf: '', region: 'DDD não mapeado' };
+    return {
+        countryCode,
+        ddd,
+        uf: dddInfo.uf,
+        region: dddInfo.region,
+        localNumber,
+        numberE164: `${countryCode}${ddd}${localNumber}`
+    };
+}
+
 function formatToExt(format) {
-    const map = { csv: 'csv', 'csv-numbers': 'csv', json: 'json', vcf: 'vcf', txt: 'txt' };
+    const map = { csv: 'csv', 'csv-numbers': 'csv', numbers: 'txt', json: 'json', vcf: 'vcf', txt: 'txt' };
     return map[format] || 'txt';
 }
 
@@ -481,6 +631,7 @@ function formatToMime(format) {
     const map = {
         csv: 'text/csv;charset=utf-8',
         'csv-numbers': 'text/csv;charset=utf-8',
+        numbers: 'text/plain;charset=utf-8',
         json: 'application/json',
         vcf: 'text/vcard',
         txt: 'text/plain'
@@ -488,18 +639,85 @@ function formatToMime(format) {
     return map[format] || 'text/plain';
 }
 
+function getDddFilterValueRaw() {
+    const input = document.getElementById('filter-ddd');
+    if (!input) return '';
+    return String(input.value || '').trim().toUpperCase();
+}
+
+function normalizeDddToken(token) {
+    let t = String(token || '').replace(/\D/g, '');
+    if (!t) return '';
+    if (t.length === 3 && t.startsWith('0')) t = t.slice(1);
+    if (t.length > 2) t = t.slice(-2);
+    return BR_DDD_MAP[t] ? t : '';
+}
+
+function resolveDddFilterSet(raw) {
+    const value = String(raw || '').trim().toUpperCase();
+    if (!value) return null;
+
+    // UF ex: PR, SP, RJ
+    if (/^[A-Z]{2}$/.test(value)) {
+        const ddds = Object.keys(BR_DDD_MAP).filter(ddd => BR_DDD_MAP[ddd].uf === value);
+        return ddds.length ? new Set(ddds) : null;
+    }
+
+    // Lista ex: 41,42,43 ou 041;042
+    const tokens = value.split(/[,\s;|/]+/).map(normalizeDddToken).filter(Boolean);
+    return tokens.length ? new Set(tokens) : null;
+}
+
 function downloadFile(content, fileName, mimeType) {
-    const a = document.createElement('a');
     const blob = new Blob([content], { type: mimeType });
+
+    // IE/legacy fallback
+    if (window.navigator && typeof window.navigator.msSaveOrOpenBlob === 'function') {
+        window.navigator.msSaveOrOpenBlob(blob, fileName);
+        return;
+    }
+
     const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
     a.href = url;
     a.download = fileName;
+    a.style.display = 'none';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+
+    try {
+        a.click();
+    } catch (err) {
+        // Safari/WKWebView fallback
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const fallback = document.createElement('a');
+            fallback.href = reader.result;
+            fallback.download = fileName;
+            fallback.style.display = 'none';
+            document.body.appendChild(fallback);
+            fallback.click();
+            document.body.removeChild(fallback);
+        };
+        reader.readAsDataURL(blob);
+    } finally {
+        setTimeout(() => {
+            if (a.parentNode) document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 300);
+    }
+}
+
+function triggerDirectDownload(url) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.style.display = 'none';
+    a.rel = 'noopener';
     document.body.appendChild(a);
     a.click();
     setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }, 0);
+        if (a.parentNode) document.body.removeChild(a);
+    }, 100);
 }
 
 function limparDados() {

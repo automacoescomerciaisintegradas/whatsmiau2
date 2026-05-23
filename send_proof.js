@@ -3,6 +3,13 @@ import axios from 'axios';
 
 const text = `📱 *Canais de Contato*
 
+📞 *Contato e Suporte*
+CANAL
+link canal https://whatsapp.com/channel/0029Vb7MgPz5kg767iWItk42
+
+[**Saiba Mais!!!!**]
+https://wa.me/558894227586
+
 📧 *Email*
 - *Principal*: contato@automacoescomerciais.com.br
 - *Suporte Técnico*: Para dúvidas sobre implementação, bugs e melhorias
@@ -33,7 +40,7 @@ const text = `📱 *Canais de Contato*
 
 const number = "5588921567214";
 const instance = "minha-instancia";
-const apiKey = "2wtLvtb20wXePp8D9uRhm55aCjINiciO";
+const apiKey = "your-api-key-here";
 const url = `http://144.91.118.78:8085/message/sendText/${instance}`;
 
 console.log(`Enviando mensagem para ${number}...`);

@@ -151,7 +151,7 @@
                 </a>
 
                 <a href="/connections" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fas fa-wifi me-2"></i> ConexÃµes
+                    <i class="fas fa-wifi me-2"></i> Conexões
                 </a>
 
                 <a href="/disparador" class="list-group-item list-group-item-action bg-transparent">
@@ -188,88 +188,88 @@
                     <i class="fas fa-cog me-2"></i> Configurações
                 </a>
 
-                </div>
-
-                <a href="/logout" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
-                    <i class="fas fa-sign-out-alt me-2"></i> Sair
-                </a>
             </div>
+
+            <a href="/logout" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
+                <i class="fas fa-sign-out-alt me-2"></i> Sair
+            </a>
         </div>
+    </div>
 
-        <!-- Page Content -->
-        <div id="page-content-wrapper">
+    <!-- Page Content -->
+    <div id="page-content-wrapper">
 
-            <nav class="navbar navbar-expand-lg navbar-custom px-4">
-                <div class="d-flex align-items-center w-100 justify-content-between">
-                    <div class="d-flex align-items-center">
-                        <button class="btn btn-outline-secondary me-3" id="menu-toggle">
-                            <i class="fas fa-bars"></i>
-                        </button>
-                        <h5 class="mb-0 fw-bold">Pipeline de Vendas</h5>
-                    </div>
-                    <button class="btn btn-primary shadow-sm fw-bold px-4" onclick="showAddLead()">
-                        <i class="fas fa-plus me-2"></i> NOVO LEAD
+        <nav class="navbar navbar-expand-lg navbar-custom px-4">
+            <div class="d-flex align-items-center w-100 justify-content-between">
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-outline-secondary me-3" id="menu-toggle">
+                        <i class="fas fa-bars"></i>
                     </button>
+                    <h5 class="mb-0 fw-bold">Pipeline de Vendas</h5>
                 </div>
-            </nav>
+                <button class="btn btn-primary shadow-sm fw-bold px-4" onclick="showAddLead()">
+                    <i class="fas fa-plus me-2"></i> NOVO LEAD
+                </button>
+            </div>
+        </nav>
 
-            <div class="responsive-container">
-                <div class="kanban-board" id="board">
-                    <!-- Column: Novo -->
-                    <div class="kanban-col col-novo" data-status="novo">
-                        <div class="kanban-header">
-                            <h6 class="text-primary">Novos</h6>
-                            <span class="badge bg-primary rounded-pill badge-count">0</span>
-                        </div>
-                        <div class="kanban-list" id="list-novo"></div>
+        <div class="responsive-container">
+            <div class="kanban-board" id="board">
+                <!-- Column: Novo -->
+                <div class="kanban-col col-novo" data-status="novo">
+                    <div class="kanban-header">
+                        <h6 class="text-primary">Novos</h6>
+                        <span class="badge bg-primary rounded-pill badge-count">0</span>
                     </div>
+                    <div class="kanban-list" id="list-novo"></div>
+                </div>
 
-                    <!-- Column: Contato -->
-                    <div class="kanban-col col-contato" data-status="contato">
-                        <div class="kanban-header">
-                            <h6 class="text-warning">Em Contato</h6>
-                            <span class="badge bg-warning rounded-pill badge-count">0</span>
-                        </div>
-                        <div class="kanban-list" id="list-contato"></div>
+                <!-- Column: Contato -->
+                <div class="kanban-col col-contato" data-status="contato">
+                    <div class="kanban-header">
+                        <h6 class="text-warning">Em Contato</h6>
+                        <span class="badge bg-warning rounded-pill badge-count">0</span>
                     </div>
+                    <div class="kanban-list" id="list-contato"></div>
+                </div>
 
-                    <!-- Column: Negociação -->
-                    <div class="kanban-col col-negociacao" data-status="negociacao">
-                        <div class="kanban-header">
-                            <h6 class="text-success">Negociação</h6>
-                            <span class="badge bg-success rounded-pill badge-count">0</span>
-                        </div>
-                        <div class="kanban-list" id="list-negociacao"></div>
+                <!-- Column: Negociação -->
+                <div class="kanban-col col-negociacao" data-status="negociacao">
+                    <div class="kanban-header">
+                        <h6 class="text-success">Negociação</h6>
+                        <span class="badge bg-success rounded-pill badge-count">0</span>
                     </div>
+                    <div class="kanban-list" id="list-negociacao"></div>
+                </div>
 
-                    <!-- Column: Fechado -->
-                    <div class="kanban-col col-fechado" data-status="fechado">
-                        <div class="kanban-header">
-                            <h6 class="text-indigo" style="color: #6366f1;">Fechados</h6>
-                            <span class="badge bg-indigo rounded-pill badge-count"
-                                style="background-color: #6366f1 !important;">0</span>
-                        </div>
-                        <div class="kanban-list" id="list-fechado"></div>
+                <!-- Column: Fechado -->
+                <div class="kanban-col col-fechado" data-status="fechado">
+                    <div class="kanban-header">
+                        <h6 class="text-indigo" style="color: #6366f1;">Fechados</h6>
+                        <span class="badge bg-indigo rounded-pill badge-count"
+                            style="background-color: #6366f1 !important;">0</span>
                     </div>
+                    <div class="kanban-list" id="list-fechado"></div>
+                </div>
 
-                    <!-- Column: Perdido -->
-                    <div class="kanban-col col-perdido" data-status="perdido">
-                        <div class="kanban-header">
-                            <h6 class="text-secondary">Perdidos</h6>
-                            <span class="badge bg-secondary rounded-pill badge-count">0</span>
-                        </div>
-                        <div class="kanban-list" id="list-perdido"></div>
+                <!-- Column: Perdido -->
+                <div class="kanban-col col-perdido" data-status="perdido">
+                    <div class="kanban-header">
+                        <h6 class="text-secondary">Perdidos</h6>
+                        <span class="badge bg-secondary rounded-pill badge-count">0</span>
                     </div>
+                    <div class="kanban-list" id="list-perdido"></div>
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script>
         // API Configuration - Consistent with server.js
-        const API_URL = '/api/leads';
+        const API_URL = '/v1/crm/leads';
 
         // Theme & Sidebar
         const toggleSwitch = document.querySelector('#darkModeSwitch');
@@ -312,7 +312,10 @@
                         try {
                             await fetch(`${API_URL}/${leadId}`, {
                                 method: 'PUT',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                                },
                                 body: JSON.stringify({ status: newStatus })
                             });
                             updateCounts();
@@ -328,7 +331,9 @@
 
         async function fetchLeads() {
             try {
-                const res = await fetch(API_URL);
+                const res = await fetch(API_URL, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
                 const data = await res.json();
                 if (data.success) {
                     renderLeads(data.leads);
@@ -388,7 +393,10 @@
 
             fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                },
                 body: JSON.stringify({ nome: name, whatsapp: phone, status: 'novo', temperatura: 'morno' })
             }).then(() => fetchLeads());
         }

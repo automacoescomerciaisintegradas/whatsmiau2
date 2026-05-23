@@ -2,6 +2,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { MainLayout } from '@components/layout/MainLayout'
 import { Dashboard } from '@features/dashboard/Dashboard'
 import { LandingPage } from '@features/landing/LandingPage'
+import LoginPage from '@features/auth/LoginPage'
+import RegisterPage from '@features/auth/RegisterPage'
+import ProtectedRoute from '@components/ProtectedRoute'
 import './App.css'
 
 // Placeholder components for other routes
@@ -16,11 +19,19 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Rotas de autenticação - sem layout principal */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+
         {/* Landing Page Cinematográfica */}
         <Route path="/" element={<LandingPage />} />
 
         {/* Management Interface */}
-        <Route element={<MainLayout />}>
+        <Route element={
+          <ProtectedRoute>
+            <MainLayout />
+          </ProtectedRoute>
+        }>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/tickets" element={<Placeholder title="Tickets (Conversas)" />} />
           <Route path="/kanban" element={<Placeholder title="Kanban" />} />
