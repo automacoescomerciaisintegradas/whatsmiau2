@@ -7,6 +7,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { generateAudioWithOpenAI, generateSummaryWithGemini } from "./services/ai.js";
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import http from 'http';
 import { Server } from 'socket.io';
 import crypto from 'crypto';
@@ -14,14 +15,17 @@ import crypto from 'crypto';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Server Port (moved to top to fix registerWebhook bug)
+const PORT = process.env.PORT || 3002;
+
 // API URL - No Docker, use service name. Locally, use localhost
 // Docker: http://whatsmiau2:8081/v1
 // Local: http://localhost:8085/v1
 // NOTE: All endpoints require /v1 prefix
 const API_URL = (process.env.API_URL || "http://localhost:8085").replace(/\/v1$/, "");
-const API_KEY = process.env.API_KEY || "2wtLvtb20wXePp8D9uRhm55aCjINiciO";
+const API_KEY = process.env.API_KEY || "your-api-key-here";
 const DEFAULT_INSTANCE = process.env.DEFAULT_INSTANCE || "minha-instancia";
-const DEVELOPER_NUMBER = "558894227586";
+const DEVELOPER_NUMBER = "558894227586@s.whatsapp.net"; // Fixed: JID format
 const ALERT_GROUP_JID = "120363306948488101@g.us";
 
 // Instagram Automation Config
@@ -73,6 +77,15 @@ Responda de forma curta e use emojis.
 const app = express();
 let io = null; // Socket.IO placeholder
 app.use(cors());
+
+// Proxy /v1 to Go Backend
+app.use('/v1', createProxyMiddleware({
+  target: `${API_URL}/v1`,
+  changeOrigin: true,
+  ws: true,
+  logLevel: 'debug'
+}));
+
 app.use(express.json({ limit: '200mb' }));
 app.use(express.urlencoded({ limit: '200mb', extended: true }));
 
@@ -136,7 +149,7 @@ app.get("/logout", (req, res) => res.redirect("/"));
 async function sendAlert(message) {
   console.log(`[ALERT] Tentando enviar alerta: ${message}`);
   try {
-    // Tenta enviar para o privado do desenvolvedor
+    // Tenta enviar para o privado do desenvolvedor (DEVELOPER_NUMBER já está em formato JID)
     await axios.post(`${API_URL}/v1/message/sendText/${DEFAULT_INSTANCE}`, {
       number: DEVELOPER_NUMBER,
       textMessage: { text: `⚠️ *ALERTA WHATSMIAU2*\n\n${message}` }
@@ -166,7 +179,7 @@ async function registerWebhook() {
     const webhookUrl = `http://localhost:${PORT}/api/webhook/instance-status`;
     console.log(`[SETUP] Registrando webhook: ${webhookUrl}`);
     await axios.put(`${API_URL}/v1/instance/webhook/${DEFAULT_INSTANCE}`, {
-      url: webhookUrl
+      webhookUrl: webhookUrl
     }, {
       headers: {
         'apikey': API_KEY,
@@ -175,7 +188,7 @@ async function registerWebhook() {
     });
     console.log(`[SETUP] Webhook registrado com sucesso.`);
   } catch (err) {
-    console.error(`[SETUP ERROR] Falha ao registrar webhook:`, err.message);
+    console.error(`[SETUP ERROR] Falha ao registrar webhook`, describeAxiosError(err));
   }
 }
 
@@ -222,6 +235,31 @@ function normalizeInputToJid(input) {
 function jidToFriendly(jid) {
   if (!jid) return null;
   return jid.replace(/@.*$/, '');
+}
+
+function describeAxiosError(err) {
+  const status = err?.response?.status;
+  const statusText = err?.response?.statusText;
+  const data = err?.response?.data;
+  const method = err?.config?.method?.toUpperCase();
+  const url = err?.config?.url;
+  const timeout = err?.config?.timeout;
+
+  let dataPreview = data;
+  if (typeof data === 'string' && data.length > 300) {
+    dataPreview = `${data.slice(0, 300)}...`;
+  }
+
+  return {
+    message: err?.message || 'Unknown error',
+    code: err?.code,
+    status,
+    statusText,
+    method,
+    url,
+    timeout,
+    data: dataPreview
+  };
 }
 
 /* -------------------------------------------------
@@ -276,10 +314,19 @@ app.post("/api/instance/pairPhone/:instance", async (req, res) => {
 
     res.json(response.data);
   } catch (err) {
-    console.error(`[PAIRING] Error:`, err.response?.data || err.message);
+    const diagnostic = describeAxiosError(err);
+    console.error(`[PAIRING] Error:`, diagnostic);
+    const backendMessage =
+      err.response?.data?.message ||
+      err.response?.data?.error ||
+      err.message ||
+      "Erro ao solicitar código de pareamento";
+
     res.status(err.response?.status || 500).json({
-      error: err.response?.data?.message || err.message,
-      message: 'Erro ao solicitar código de pareamento'
+      error: backendMessage,
+      message: backendMessage,
+      statusCode: err.response?.status || 500,
+      details: err.response?.data || null
     });
   }
 });
@@ -352,14 +399,21 @@ async function sendConnectionAlert(instance, phoneNumber) {
     `WhatsApp → Configurações → Aparelhos conectados`;
 
   try {
+    // Normaliza o número para JID antes de enviar
+    const jid = normalizeInputToJid(phoneNumber);
+    if (!jid) {
+      console.error(`[ALERT] ❌ Número inválido para envio de alerta: ${phoneNumber}`);
+      return;
+    }
+
     await axios.post(`${API_URL}/v1/message/sendText/${instance}`, {
-      number: phoneNumber,
+      number: jid,
       textMessage: { text: alertMessage }
     }, {
       headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' }
     });
 
-    console.log(`[ALERT] ✅ Alerta de conexão enviado para ${phoneNumber}`);
+    console.log(`[ALERT] ✅ Alerta de conexão enviado para ${jid}`);
   } catch (err) {
     console.error(`[ALERT] ❌ Erro ao enviar alerta:`, err.response?.data || err.message);
   }
@@ -426,72 +480,8 @@ app.get("/api/instance/connectionState/:instance", async (req, res) => {
    Webhook Receiver - Connection Events
    ------------------------------------------------- */
 
-// Webhook para receber eventos da API Go (conexão, desconexão, etc.)
-app.post("/api/webhook/instance-status", async (req, res) => {
-  const event = req.body;
-
-  console.log(`[WEBHOOK] Evento recebido:`, JSON.stringify(event).substring(0, 200));
-
-  try {
-    // Verifica se é evento de conexão
-    if (event.event === 'connection.update' || event.event === 'CONNECTION_UPDATE') {
-      const instance = event.instance || event.instanceName;
-      const state = event.state || event.data?.state;
-
-      console.log(`[WEBHOOK] Conexão atualizada: ${instance} -> ${state}`);
-
-      // Se conectou (open), envia mensagem de alerta
-      if (state === 'open' || state === 'connected') {
-        const now = new Date();
-        const dateTime = now.toLocaleString('pt-BR', {
-          timeZone: 'America/Sao_Paulo',
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        });
-
-        // Obtém informações da instância para pegar o número
-        try {
-          const infoResponse = await axios.get(`${API_URL}/v1/instance/info/${instance}`, {
-            headers: { 'apikey': API_KEY }
-          });
-
-          const instanceInfo = infoResponse.data;
-          const ownerNumber = instanceInfo.jid?.split('@')[0] || instanceInfo.owner?.split('@')[0];
-
-          if (ownerNumber) {
-            const alertMessage = `🔐 *ALERTA DE SEGURANÇA*\n\n` +
-              `✅ Seu WhatsApp foi conectado à API WhatsMiau2\n\n` +
-              `📱 *Instância:* ${instance}\n` +
-              `📅 *Data/Hora:* ${dateTime}\n` +
-              `🆔 *ID:* ${instanceInfo.id || 'N/A'}\n\n` +
-              `⚠️ Se você NÃO realizou esta conexão, desconecte imediatamente em:\n` +
-              `WhatsApp → Configurações → Aparelhos conectados`;
-
-            await axios.post(`${API_URL}/v1/message/sendText/${instance}`, {
-              number: ownerNumber,
-              textMessage: { text: alertMessage }
-            }, {
-              headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' }
-            });
-
-            console.log(`[WEBHOOK] Alerta de conexão enviado para ${ownerNumber}`);
-          }
-        } catch (infoErr) {
-          console.error(`[WEBHOOK] Erro ao obter info/enviar alerta:`, infoErr.message);
-        }
-      }
-    }
-
-    res.json({ success: true, received: true });
-  } catch (error) {
-    console.error(`[WEBHOOK] Erro:`, error.message);
-    res.json({ success: false, error: error.message });
-  }
-});
+// REMOVED DUPLICATE: Endpoint /api/webhook/instance-status is defined later in the file (line ~2565)
+// with more complete functionality. This duplicate has been removed to fix webhook conflicts.
 
 // Webhook genérico para qualquer evento
 app.post("/api/webhook/:instance", async (req, res) => {
@@ -499,6 +489,21 @@ app.post("/api/webhook/:instance", async (req, res) => {
   const event = req.body;
 
   console.log(`[WEBHOOK/${instance}] Evento:`, event.event || 'unknown');
+
+  // N8N Forwarding (Group Events)
+  if (event.event === 'group-participants-update') {
+    const N8N_WEBHOOK_URL = "https://n8n.automacoescomerciais.com.br/webhook-test/groups";
+    console.log(`[WEBHOOK] Encaminhando evento de grupo para n8n: ${N8N_WEBHOOK_URL}`);
+    try {
+      // Don't await to avoid blocking response
+      axios.post(N8N_WEBHOOK_URL, {
+        instance,
+        body: event // N8N expects body inside structure often, or just flatten it. Sending full event.
+      }).catch(err => console.error(`[N8N ERROR] Falha ao encaminhar: ${err.message}`));
+    } catch (e) {
+      console.error(`[N8N ERROR] ${e.message}`);
+    }
+  }
 
   // Processa evento de conexão
   if (event.event === 'connection.update' && event.data?.state === 'open') {
@@ -510,17 +515,18 @@ app.post("/api/webhook/:instance", async (req, res) => {
         headers: { 'apikey': API_KEY }
       });
 
-      const ownerNumber = infoResponse.data.jid?.split('@')[0];
+      const ownerJid = infoResponse.data.jid; // Já vem no formato JID correto
 
-      if (ownerNumber) {
+      if (ownerJid) {
         await axios.post(`${API_URL}/v1/message/sendText/${instance}`, {
-          number: ownerNumber,
+          number: ownerJid, // Fixed: usar JID completo
           textMessage: {
             text: `🔐 *CONEXÃO DETECTADA*\n\n✅ Instância: ${instance}\n📅 ${now}\n\n_WhatsMiau2 API_`
           }
         }, {
           headers: { 'apikey': API_KEY }
         });
+        console.log(`[WEBHOOK] Alerta de conexão enviado para ${ownerJid}`);
       }
     } catch (err) {
       console.error(`[WEBHOOK/${instance}] Erro alerta:`, err.message);
@@ -533,20 +539,37 @@ app.post("/api/webhook/:instance", async (req, res) => {
 // WhatsMiau2 API Status
 app.get("/api/whatsmiau2/status", async (req, res) => {
   try {
+    await axios.get(`${API_URL}/health`, { timeout: 5000 });
+  } catch (err) {
+    return res.status(503).json({
+      success: false,
+      apiStatus: "offline",
+      error: "Backend API indisponivel",
+      details: err.message
+    });
+  }
+
+  try {
     const response = await axios.get(`${API_URL}/v1/instance/connectionState/${DEFAULT_INSTANCE}`, {
-      headers: { 'apikey': API_KEY }
+      headers: { 'apikey': API_KEY },
+      timeout: 5000
     });
 
-    res.json({
+    return res.json({
       success: true,
+      apiStatus: "online",
       instance: DEFAULT_INSTANCE,
+      instanceAvailable: true,
       ...response.data
     });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message,
-      details: err.response?.data
+    return res.status(200).json({
+      success: true,
+      apiStatus: "online",
+      instance: DEFAULT_INSTANCE,
+      instanceAvailable: false,
+      warning: "API online, mas status da instancia indisponivel",
+      instanceError: err.response?.data || err.message
     });
   }
 });
@@ -702,9 +725,11 @@ app.get("/api/whatsmiau2/newsletters", async (req, res) => {
 // Get Newsletter Info (Participants logic is different for channels, usually only viewer count, but we check metadata)
 app.get("/api/whatsmiau2/newsletters/:id", async (req, res) => {
   const { id } = req.params;
+  const { instance } = req.query;
+  const targetInstance = instance || DEFAULT_INSTANCE;
   try {
     // Backend: GET /v1/newsletter/:instance/info?jid=...
-    const response = await axios.get(`${API_URL}/v1/newsletter/${DEFAULT_INSTANCE}/info`, {
+    const response = await axios.get(`${API_URL}/v1/newsletter/${targetInstance}/info`, {
       params: { jid: id },
       headers: { 'apikey': API_KEY }
     });
@@ -4084,7 +4109,7 @@ app.all(/^\/api\/.*/, async (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3002;
+// PORT is already defined at the top of the file (line 19)
 const server = http.createServer(app);
 
 // Setup Socket.IO
@@ -4208,11 +4233,16 @@ server.listen(PORT, async () => {
   startFollowUpScheduler();
   startInstagramAutomation();
   let apiWasOnline = true;
-  const EVOLUTION_API_URL = "https://evolution.automacoescomerciais.com.br";
+  const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || "";
   const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || API_KEY;
 
   async function sendAlertFallback(message) {
     // Tenta enviar via Evolution API externa (fallback quando API Go está offline)
+    if (!EVOLUTION_API_URL) {
+      console.warn("[FALLBACK ALERT] EVOLUTION_API_URL não configurada. Fallback externo desativado.");
+      return;
+    }
+
     try {
       await axios.post(`${EVOLUTION_API_URL}/message/sendText/${DEFAULT_INSTANCE}`, {
         number: DEVELOPER_NUMBER,
@@ -4223,7 +4253,11 @@ server.listen(PORT, async () => {
       });
       console.log("[FALLBACK ALERT] Alerta enviado via Evolution API externa.");
     } catch (fallbackErr) {
-      console.error("[FALLBACK ALERT ERROR]", fallbackErr.message);
+      console.error("[FALLBACK ALERT ERROR]", {
+        status: fallbackErr.response?.status,
+        data: fallbackErr.response?.data,
+        message: fallbackErr.message
+      });
     }
   }
 
@@ -4402,6 +4436,86 @@ server.listen(PORT, async () => {
 
 
 
+
+
+  /* -------------------------------------------------
+     GROUP EVENTS API
+     ------------------------------------------------- */
+
+  const GROUP_EVENTS_FILE = path.join(__dirname, 'data', 'group_events.json');
+
+  function loadGroupEvents() {
+    try {
+      if (fs.existsSync(GROUP_EVENTS_FILE)) {
+        return JSON.parse(fs.readFileSync(GROUP_EVENTS_FILE, 'utf-8'));
+      }
+    } catch (e) {
+      console.error('[GROUP EVENTS] Erro ao carregar:', e.message);
+    }
+    return [];
+  }
+
+  function saveGroupEvents(data) {
+    try {
+      const dir = path.dirname(GROUP_EVENTS_FILE);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(GROUP_EVENTS_FILE, JSON.stringify(data, null, 2));
+      return true;
+    } catch (e) {
+      console.error('[GROUP EVENTS] Erro ao salvar:', e.message);
+      return false;
+    }
+  }
+
+  // POST - Save group event
+  app.post('/api/groups/events', (req, res) => {
+    const { grupo_jid, participante, acao, data } = req.body;
+
+    if (!grupo_jid || !participante || !acao) {
+      return res.status(400).json({ success: false, error: 'Dados incompletos' });
+    }
+
+    const events = loadGroupEvents();
+    const newEvent = {
+      id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      grupo_jid,
+      participante,
+      acao,
+      data: data || new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
+
+    events.push(newEvent);
+
+    if (saveGroupEvents(events)) {
+      console.log(`[GROUP EVENTS] Evento salvo: ${acao} em ${grupo_jid}`);
+      res.json({ success: true, event: newEvent });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar evento' });
+    }
+  });
+
+  // GET - List group events
+  app.get('/api/groups/events', (req, res) => {
+    const { grupo_jid, participante, limit } = req.query;
+    let events = loadGroupEvents();
+
+    if (grupo_jid) {
+      events = events.filter(e => e.grupo_jid === grupo_jid);
+    }
+    if (participante) {
+      events = events.filter(e => e.participante === participante);
+    }
+
+    // Sort desc
+    events.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+    if (limit) {
+      events = events.slice(0, parseInt(limit));
+    }
+
+    res.json({ success: true, count: events.length, events });
+  });
 
   /* -------------------------------------------------
      CREDENTIALS API

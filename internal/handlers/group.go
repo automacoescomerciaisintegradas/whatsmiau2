@@ -339,3 +339,76 @@ func (h *GroupHandler) GetGroupInviteLink(c *gin.Context) {
 		},
 	})
 }
+
+// GetGroupByJID returns full group info including participant list with phone numbers.
+// GET /v1/whatsmiau2/groups/:jid?instance=xxx
+// Used by the contact export feature.
+func (h *GroupHandler) GetGroupByJID(c *gin.Context) {
+	jidStr := c.Param("jid")
+	instanceID := c.Query("instance")
+	if instanceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "instance query param required"})
+		return
+	}
+
+	client, err := h.getClient(instanceID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "instance not found"})
+		return
+	}
+
+	if !client.IsConnected() {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "instance is not connected"})
+		return
+	}
+
+	jid, err := types.ParseJID(jidStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "invalid jid: " + jidStr})
+		return
+	}
+
+	ctx := context.Background()
+	info, err := client.WA.GetGroupInfo(ctx, jid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+
+	// Build a participant list with phone numbers and roles
+	type ParticipantOut struct {
+		JID     string `json:"JID"`
+		Number  string `json:"PhoneNumber"`
+		IsAdmin bool   `json:"IsAdmin"`
+		Role    string `json:"role"`
+	}
+
+	parts := make([]ParticipantOut, 0, len(info.Participants))
+	for _, p := range info.Participants {
+		number := p.JID.User // e.g. "558899999999"
+		isAdmin := p.IsAdmin || p.IsSuperAdmin
+		role := "member"
+		if p.IsSuperAdmin {
+			role = "superadmin"
+		} else if p.IsAdmin {
+			role = "admin"
+		}
+		parts = append(parts, ParticipantOut{
+			JID:     p.JID.String(),
+			Number:  number,
+			IsAdmin: isAdmin,
+			Role:    role,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data": gin.H{
+			"JID":              info.JID.String(),
+			"Name":             info.Name,
+			"Subject":          info.Name,
+			"ParticipantCount": len(info.Participants),
+			"Participants":     parts,
+		},
+	})
+}
