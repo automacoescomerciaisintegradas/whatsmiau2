@@ -1,6 +1,9 @@
 package models
 
 import (
+	"os"
+	"whatsmiau2/internal/security/accesspolicy"
+
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -46,12 +49,8 @@ func (u *User) IsAdmin() bool {
 		"fcaqdequeiroz@gmail.com",
 		"contato@automacoescomerciais.com.br",
 	}
-	for _, admin := range admins {
-		if u.Email == admin {
-			return true
-		}
-	}
-	return false
+	configuredAdmins := accesspolicy.ParseAdminEmails(os.Getenv("ADMIN_EMAILS"), admins)
+	return accesspolicy.IsAdminEmail(u.Email, configuredAdmins)
 }
 
 // UserLoginRequest represents the request to login a user

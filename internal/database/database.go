@@ -61,6 +61,7 @@ func New(cfg *config.Config) (*Database, error) {
 		&models.Subscription{},
 		&models.Payment{},
 		&models.EnterpriseLead{},
+		&models.FreeTrialUsage{},
 		// Novos modelos de métricas
 		&models.SessionMetrics{},
 		&models.InstanceStats{},

@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"whatsmiau2/internal/config"
 	"whatsmiau2/internal/crm"
@@ -12,6 +14,7 @@ import (
 	"whatsmiau2/internal/services"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -115,8 +118,33 @@ func (h *SubscriptionHandler) CreateCheckout(c *gin.Context) {
 
 	// Create Pending Subscription
 	provider := "mercadopago"
+	trialClientIP := ""
+	bypassIPGuard := false
 	if plan.Price <= 0 {
 		provider = "free_trial"
+		trialClientIP = normalizeClientIP(c.ClientIP())
+
+		var bypassErr error
+		bypassIPGuard, bypassErr = h.shouldBypassTrialIPGuard(userID)
+		if bypassErr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao validar usuário para teste grátis"})
+			return
+		}
+
+		if trialClientIP != "" && !bypassIPGuard && !h.isTrustedAccessIP(trialClientIP) {
+			used, err := h.hasRecentTrialUsageByIP(trialClientIP)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao validar uso de teste grátis"})
+				return
+			}
+			if used {
+				c.JSON(http.StatusTooManyRequests, gin.H{
+					"error":   "Teste grátis já utilizado por este IP",
+					"message": "Este IP já utilizou o período de teste. Use um plano pago ou solicite liberação do IP na lista confiável.",
+				})
+				return
+			}
+		}
 	}
 
 	sub, err := h.subscriptionSv.CreateSubscription(userID, req.PlanID, provider)
@@ -127,6 +155,12 @@ func (h *SubscriptionHandler) CreateCheckout(c *gin.Context) {
 
 	// Free plans do not require checkout at Mercado Pago
 	if plan.Price <= 0 {
+		if trialClientIP != "" && !bypassIPGuard && !h.isTrustedAccessIP(trialClientIP) {
+			if err := h.recordFreeTrialUsage(userID, req.PlanID, trialClientIP); err != nil {
+				zap.L().Warn("failed to record free trial usage", zap.Error(err), zap.String("client_ip", trialClientIP), zap.Uint("user_id", userID))
+			}
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"subscription_id": sub.ID,
 			"status":          sub.Status,
@@ -168,6 +202,93 @@ func (h *SubscriptionHandler) CreateCheckout(c *gin.Context) {
 		"checkout_url":    checkoutURL,
 		"message":         "Link de pagamento gerado com sucesso.",
 	})
+}
+
+func (h *SubscriptionHandler) shouldBypassTrialIPGuard(userID uint) (bool, error) {
+	var user models.User
+	if err := h.db.DB.First(&user, userID).Error; err != nil {
+		return false, err
+	}
+	return user.IsAdmin(), nil
+}
+
+func normalizeClientIP(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return ""
+	}
+	parsed := net.ParseIP(raw)
+	if parsed == nil {
+		return ""
+	}
+	return parsed.String()
+}
+
+func (h *SubscriptionHandler) isTrustedAccessIP(clientIP string) bool {
+	ip := normalizeClientIP(clientIP)
+	if ip == "" {
+		return false
+	}
+
+	parsedIP := net.ParseIP(ip)
+	if parsedIP == nil {
+		return false
+	}
+
+	for _, candidate := range h.cfg.TrustedAccessIPs {
+		entry := strings.TrimSpace(candidate)
+		if entry == "" {
+			continue
+		}
+
+		// CIDR, ex.: 2804:29b8:5014:a17::/64
+		if strings.Contains(entry, "/") {
+			if _, netBlock, err := net.ParseCIDR(entry); err == nil && netBlock.Contains(parsedIP) {
+				return true
+			}
+			continue
+		}
+
+		allowedIP := net.ParseIP(entry)
+		if allowedIP != nil && allowedIP.Equal(parsedIP) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (h *SubscriptionHandler) hasRecentTrialUsageByIP(clientIP string) (bool, error) {
+	ip := normalizeClientIP(clientIP)
+	if ip == "" {
+		return false, nil
+	}
+
+	query := h.db.DB.Model(&models.FreeTrialUsage{}).Where("client_ip = ?", ip)
+	if h.cfg.FreeTrialIPBlockHours > 0 {
+		windowStart := time.Now().Add(-time.Duration(h.cfg.FreeTrialIPBlockHours) * time.Hour)
+		query = query.Where("created_at >= ?", windowStart)
+	}
+
+	var count int64
+	if err := query.Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (h *SubscriptionHandler) recordFreeTrialUsage(userID, planID uint, clientIP string) error {
+	ip := normalizeClientIP(clientIP)
+	if ip == "" {
+		return nil
+	}
+
+	log := &models.FreeTrialUsage{
+		UserID:   userID,
+		PlanID:   planID,
+		ClientIP: ip,
+	}
+	return h.db.DB.Create(log).Error
 }
 
 // ChangePlan handles plan changes

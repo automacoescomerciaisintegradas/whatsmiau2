@@ -4,6 +4,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"whatsmiau2/internal/security/accesspolicy"
 
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -64,6 +65,10 @@ type Config struct {
 	EvolutionAPIURL   string
 	EvolutionAPIKey   string
 	EvolutionInstance string
+
+	// Free trial abuse guard
+	TrustedAccessIPs      []string
+	FreeTrialIPBlockHours int
 }
 
 // Load reads configuration from environment variables
@@ -127,6 +132,10 @@ func Load() (*Config, error) {
 		EvolutionAPIURL:   getEnv("EVOLUTION_API_URL", ""),
 		EvolutionAPIKey:   getEnv("EVOLUTION_API_KEY", ""),
 		EvolutionInstance: getEnv("EVOLUTION_INSTANCE", "pagamentos"),
+
+		// Free trial abuse guard
+		TrustedAccessIPs:      accesspolicy.ParseTrustedAccessIPs(os.Getenv("TRUSTED_ACCESS_IPS")),
+		FreeTrialIPBlockHours: accesspolicy.ParseFreeTrialBlockHours(os.Getenv("FREE_TRIAL_IP_BLOCK_HOURS"), 24*365*10, 1, 24*365*10),
 	}
 
 	return cfg, nil
