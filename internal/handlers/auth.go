@@ -182,6 +182,43 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
+// ForgotPassword accepts a password recovery request.
+// POST /v1/auth/forgot-password
+func (h *AuthHandler) ForgotPassword(c *gin.Context) {
+	var req struct {
+		Email string `json:"email" binding:"required,email"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Bad Request",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	// Privacy-safe response: never expose if email exists.
+	var user models.User
+	result := h.db.DB.Where("email = ?", req.Email).First(&user)
+	if result.Error != nil && result.Error != gorm.ErrRecordNotFound {
+		zap.L().Error("Database error when processing forgot password", zap.Error(result.Error))
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "Internal Server Error",
+			"message": "Failed to process forgot password request",
+		})
+		return
+	}
+
+	zap.L().Info("Forgot password request received",
+		zap.String("email", req.Email),
+		zap.Bool("userFound", result.Error == nil),
+	)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "If the email exists, recovery instructions have been sent",
+	})
+}
+
 // GetCurrentUser returns information about the currently authenticated user
 // GET /v1/auth/me
 func (h *AuthHandler) GetCurrentUser(c *gin.Context) {

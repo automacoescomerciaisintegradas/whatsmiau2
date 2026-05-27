@@ -308,6 +308,7 @@ func (s *Server) setupRoutes() {
 	{
 		auth.POST("/register", authHandler.Register)
 		auth.POST("/login", authHandler.Login)
+		auth.POST("/forgot-password", authHandler.ForgotPassword)
 		auth.GET("/me", authHandler.GetCurrentUser)
 		auth.DELETE("/me", authHandler.DeleteAccount)
 	}
@@ -315,7 +316,8 @@ func (s *Server) setupRoutes() {
 	// Serve static files (HTML, CSS, JS)
 	s.router.Static("/static", "./")
 	s.router.Static("/assets", "./public/assets")
-	s.router.StaticFile("/", "./public/index.html")
+	// Landing page pública na raiz; dashboard permanece em /dashboard.
+	s.router.StaticFile("/", "./public/home.html")
 	s.router.StaticFile("/index.html", "./public/index.html")
 	s.router.StaticFile("/home", "./public/home.html")
 	s.router.StaticFile("/home.html", "./public/home.html")
