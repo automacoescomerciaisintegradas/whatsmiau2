@@ -6,7 +6,7 @@ import cors from "cors";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { generateAudioWithOpenAI, generateSummaryWithGemini } from "./services/ai.js";
+import { generateAudioWithOpenAI, generateSummaryWithGemini, generateOfferTemplateWithGemini } from "./services/ai.js";
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import http from 'http';
 import { Server } from 'socket.io';
@@ -27,6 +27,10 @@ const API_KEY = process.env.API_KEY || "your-api-key-here";
 const DEFAULT_INSTANCE = process.env.DEFAULT_INSTANCE || "minha-instancia";
 const DEVELOPER_NUMBER = "558894227586@s.whatsapp.net"; // Fixed: JID format
 const ALERT_GROUP_JID = "120363306948488101@g.us";
+const CF_D1_ACCOUNT_ID = process.env.CF_D1_ACCOUNT_ID || "";
+const CF_D1_DATABASE_ID = process.env.CF_D1_DATABASE_ID || "";
+const CF_D1_API_TOKEN = process.env.CF_D1_API_TOKEN || "";
+const CF_D1_LEADS_TABLE = process.env.CF_D1_LEADS_TABLE || "leads_prod";
 
 // Instagram Automation Config
 const INSTAGRAM_CONFIG_PATH = path.join(__dirname, "data", "instagram_automation.json");
@@ -136,8 +140,30 @@ app.get("/internal-chat", (req, res) => res.sendFile(path.join(__dirname, "publi
 app.get("/settings", (req, res) => res.sendFile(path.join(__dirname, "public", "settings.html")));
 app.get("/debug-connections", (req, res) => res.sendFile(path.join(__dirname, "public", "debug-connections.html")));
 app.get("/test-qr", (req, res) => res.sendFile(path.join(__dirname, "public", "test-qr.html")));
-app.get("/instagram", (req, res) => res.sendFile(path.join(__dirname, "public", "instagram.html")));
-app.get("/logout", (req, res) => res.redirect("/"));
+app.get("/logout", (req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.type("html").send(`<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Saindo...</title>
+</head>
+<body>
+  <script>
+    try {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('authToken');
+      sessionStorage.removeItem('user');
+    } catch (e) {}
+    window.location.replace('/home');
+  </script>
+</body>
+</html>`);
+});
 
 /* -------------------------------------------------
    Utility Functions
@@ -1198,7 +1224,8 @@ app.get("/api/whatsmiau2/export/contacts", async (req, res) => {
 // Send Text Message (Unified & Fixed)
 app.post("/api/whatsmiau2/send-text", async (req, res) => {
   const { number, text, instance } = req.body;
-  const instanceName = instance || DEFAULT_INSTANCE;
+  const requestedInstance = (instance || "").toString().trim();
+  const defaultInstance = (DEFAULT_INSTANCE || "").toString().trim();
 
   if (!number || !text) {
     return res.status(400).json({ success: false, error: "Number and text are required" });
@@ -1213,12 +1240,75 @@ app.post("/api/whatsmiau2/send-text", async (req, res) => {
       textMessage: { text: text }
     };
 
-    const response = await axios.post(`${API_URL}/v1/message/sendText/${instanceName}`, payload, {
-      headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' }
-    });
+    const candidates = [requestedInstance, defaultInstance].filter(Boolean);
+    const uniqueCandidates = [...new Set(candidates)];
+    let response = null;
+    let lastError = null;
+    let usedInstance = uniqueCandidates[0] || defaultInstance;
 
-    res.json({ success: true, ...response.data });
+    const sendUsing = async (instName) => {
+      usedInstance = instName;
+      return axios.post(`${API_URL}/v1/message/sendText/${instName}`, payload, {
+        headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' }
+      });
+    };
+
+    for (const instName of uniqueCandidates) {
+      try {
+        response = await sendUsing(instName);
+        break;
+      } catch (err) {
+        lastError = err;
+        if (err?.response?.status === 404) continue;
+        throw err;
+      }
+    }
+
+    if (!response) {
+      try {
+        const discovered = await fetchNormalizedChatInstances();
+        const dynamicCandidates = discovered
+          .filter(inst => inst.name && !uniqueCandidates.includes(inst.name))
+          .sort((a, b) => (b.status === 'online' ? 1 : 0) - (a.status === 'online' ? 1 : 0))
+          .map(inst => inst.name);
+
+        for (const instName of dynamicCandidates) {
+          try {
+            response = await sendUsing(instName);
+            break;
+          } catch (err) {
+            lastError = err;
+            if (err?.response?.status === 404) continue;
+            throw err;
+          }
+        }
+      } catch (_) {
+        // noop: keep lastError and return a normalized failure below
+      }
+    }
+
+    if (!response) {
+      const detail = lastError?.response?.data?.error || lastError?.response?.data?.message || lastError?.message || "Not Found";
+      return res.status(400).json({
+        success: false,
+        error: `Nenhuma instância válida para envio foi encontrada (${uniqueCandidates.join(', ')}). Detalhe: ${detail}.`
+      });
+    }
+
+    res.json({ success: true, instance: usedInstance, ...response.data });
   } catch (err) {
+    const upstreamStatus = err.response?.status || 500;
+    const upstreamMessage = err.response?.data?.message || err.response?.data?.error || err.message || "Erro no envio";
+    const isRateLimited = /error\s*420/i.test(upstreamMessage) || upstreamStatus === 420;
+
+    if (isRateLimited) {
+      return res.status(429).json({
+        success: false,
+        error: "Envio bloqueado temporariamente pela instância/WhatsApp (erro 420). Aguarde e tente novamente com maior intervalo.",
+        details: err.response?.data
+      });
+    }
+
     res.status(500).json({ success: false, error: err.message, details: err.response?.data });
   }
 });
@@ -2419,6 +2509,7 @@ app.get("/api/health", async (req, res) => {
 // Armazenamento temporário de leads (em memória)
 // Para produção, use um banco de dados como SQLite, PostgreSQL, etc.
 let leadsDatabase = [];
+let cloudflareLeadTableInitialized = false;
 
 // Carregar leads do arquivo (persistência simples)
 const LEADS_FILE = path.join(__dirname, 'data', 'leads.json');
@@ -2436,6 +2527,171 @@ function saveLeadsToFile() {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(LEADS_FILE, JSON.stringify(leadsDatabase, null, 2));
 }
+
+function isCloudflareD1Ready() {
+  return !!(CF_D1_ACCOUNT_ID && CF_D1_DATABASE_ID && CF_D1_API_TOKEN);
+}
+
+function isProductionMode() {
+  return (process.env.NODE_ENV || "").toLowerCase() === "production";
+}
+
+function normalizeLeadPayloadForPersistence(rawLead) {
+  const lead = rawLead || {};
+  return {
+    id: lead.id || Date.now(),
+    nome: (lead.nome || lead.name || "Sem nome").toString().trim(),
+    whatsapp: (lead.whatsapp || lead.phone || "").toString().replace(/\D/g, ""),
+    email: (lead.email || "").toString().trim(),
+    localizacao: (lead.localizacao || "").toString().trim(),
+    empresa: (lead.empresa || "").toString().trim(),
+    site: (lead.site || "").toString().trim(),
+    instagram: (lead.instagram || "").toString().trim(),
+    linkedin: (lead.linkedin || "").toString().trim(),
+    valor: Number.parseFloat(lead.valor) || 0,
+    fonte: (lead.fonte || lead.source || "whatsapp").toString().trim(),
+    status: (lead.status || "novo").toString().trim(),
+    temperatura: (lead.temperatura || "quente").toString().trim(),
+    obs: (lead.obs || lead.observacoes || "").toString().trim(),
+    createdAt: lead.createdAt || new Date().toISOString()
+  };
+}
+
+async function runCloudflareD1Query(sql, params = []) {
+  if (!isCloudflareD1Ready()) {
+    throw new Error("Cloudflare D1 não configurado. Defina CF_D1_ACCOUNT_ID, CF_D1_DATABASE_ID e CF_D1_API_TOKEN.");
+  }
+
+  const endpoint = `https://api.cloudflare.com/client/v4/accounts/${CF_D1_ACCOUNT_ID}/d1/database/${CF_D1_DATABASE_ID}/query`;
+  const response = await axios.post(
+    endpoint,
+    { sql, params },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${CF_D1_API_TOKEN}`
+      },
+      timeout: 15000
+    }
+  );
+
+  if (!response.data?.success) {
+    const errorMessage = response.data?.errors?.[0]?.message || "Falha ao executar query no Cloudflare D1.";
+    throw new Error(errorMessage);
+  }
+
+  return response.data;
+}
+
+async function ensureCloudflareLeadsTable() {
+  if (cloudflareLeadTableInitialized) return;
+
+  const createTableSQL = `
+    CREATE TABLE IF NOT EXISTS ${CF_D1_LEADS_TABLE} (
+      id TEXT PRIMARY KEY,
+      nome TEXT,
+      whatsapp TEXT UNIQUE,
+      email TEXT,
+      localizacao TEXT,
+      empresa TEXT,
+      site TEXT,
+      instagram TEXT,
+      linkedin TEXT,
+      valor REAL DEFAULT 0,
+      fonte TEXT,
+      status TEXT,
+      temperatura TEXT,
+      obs TEXT,
+      created_at TEXT,
+      updated_at TEXT
+    );
+  `;
+
+  await runCloudflareD1Query(createTableSQL);
+  cloudflareLeadTableInitialized = true;
+}
+
+async function saveLeadToCloudflareD1(rawLead) {
+  const lead = normalizeLeadPayloadForPersistence(rawLead);
+
+  if (!lead.whatsapp) {
+    throw new Error("WhatsApp é obrigatório para salvar no Cloudflare D1.");
+  }
+
+  await ensureCloudflareLeadsTable();
+
+  const upsertSQL = `
+    INSERT INTO ${CF_D1_LEADS_TABLE} (
+      id, nome, whatsapp, email, localizacao, empresa, site, instagram, linkedin,
+      valor, fonte, status, temperatura, obs, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(whatsapp) DO UPDATE SET
+      nome = excluded.nome,
+      email = excluded.email,
+      localizacao = excluded.localizacao,
+      empresa = excluded.empresa,
+      site = excluded.site,
+      instagram = excluded.instagram,
+      linkedin = excluded.linkedin,
+      valor = excluded.valor,
+      fonte = excluded.fonte,
+      status = excluded.status,
+      temperatura = excluded.temperatura,
+      obs = excluded.obs,
+      updated_at = excluded.updated_at
+  `;
+
+  const nowIso = new Date().toISOString();
+  await runCloudflareD1Query(upsertSQL, [
+    String(lead.id),
+    lead.nome,
+    lead.whatsapp,
+    lead.email,
+    lead.localizacao,
+    lead.empresa,
+    lead.site,
+    lead.instagram,
+    lead.linkedin,
+    lead.valor,
+    lead.fonte,
+    lead.status,
+    lead.temperatura,
+    lead.obs,
+    lead.createdAt || nowIso,
+    nowIso
+  ]);
+
+  return { success: true, lead };
+}
+
+// Rota dedicada para persistir leads no Cloudflare D1 em produção
+app.post('/api/production/leads', async (req, res) => {
+  try {
+    if (!isProductionMode()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Rota disponível apenas em produção (NODE_ENV=production).'
+      });
+    }
+
+    if (!isCloudflareD1Ready()) {
+      return res.status(503).json({
+        success: false,
+        error: 'Cloudflare D1 não configurado. Defina CF_D1_ACCOUNT_ID, CF_D1_DATABASE_ID e CF_D1_API_TOKEN.'
+      });
+    }
+
+    const result = await saveLeadToCloudflareD1(req.body || {});
+    return res.json({
+      success: true,
+      message: 'Lead salvo no Cloudflare D1.',
+      lead: result.lead
+    });
+  } catch (error) {
+    console.error('[PRODUCTION LEADS] Erro ao salvar no Cloudflare D1:', error.message);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // Listar todos os leads
 app.get('/api/leads', (req, res) => {
@@ -3229,12 +3485,79 @@ app.post("/api2/whatsmiau2/generate-summary", async (req, res) => {
     const { context, voice = 'female' } = req.body;
     if (!context) return res.status(400).json({ error: "Contexto obrigatório" });
     const { generateSummaryWithGemini, generateAudioWithOpenAI } = await import("./services/ai.js");
-    const summary = await generateSummaryWithGemini(context);
+    let summary;
+    let warning = null;
+
+    try {
+      summary = await generateSummaryWithGemini(context);
+    } catch (summaryError) {
+      const msg = String(summaryError?.message || "");
+      const isGeminiKeyError =
+        msg.includes("API_KEY_INVALID") ||
+        msg.includes("GEMINI_API_KEY não configurada");
+
+      if (!isGeminiKeyError) {
+        throw summaryError;
+      }
+
+      // Fallback seguro: gera roteiro básico local para não travar o fluxo de áudio.
+      warning = "Gemini indisponível (chave ausente/inválida). Usando resumo local simplificado.";
+      const raw = String(context || "");
+      const cleaned = raw
+        .replace(/\{\{[^}]+\}\}/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      summary = cleaned.length > 0
+        ? `Resumo automático: ${cleaned.slice(0, 900)}`
+        : "Não há interações registradas no momento.";
+    }
+
     const audioUrl = await generateAudioWithOpenAI(summary, voice);
-    res.json({ success: true, summary, audioUrl });
+    res.json({ success: true, summary, audioUrl, warning });
   } catch (error) {
     console.error("Erro na IA:", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api2/whatsmiau2/generate-offer-template", async (req, res) => {
+  try {
+    const {
+      marketplace,
+      productName,
+      price,
+      shopName,
+      commission,
+      commissionRate,
+      sales,
+      offerLink,
+      searchLink,
+      inviteLink,
+      openingMessage
+    } = req.body || {};
+
+    if (!productName && !offerLink) {
+      return res.status(400).json({ success: false, error: "Produto ou link de oferta obrigatório." });
+    }
+
+    const generated = await generateOfferTemplateWithGemini({
+      marketplace,
+      productName,
+      price,
+      shopName,
+      commission,
+      commissionRate,
+      sales,
+      offerLink,
+      searchLink,
+      inviteLink,
+      openingMessage
+    });
+
+    res.json({ success: true, template: generated });
+  } catch (error) {
+    console.error("Erro na IA (template oferta):", error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -3572,10 +3895,20 @@ app.post('/api/chat/conversations/:id/messages', async (req, res) => {
     }
 
     const ticket = ticketsDatabase[ticketIndex];
-    const instance = ticket.instance || DEFAULT_INSTANCE;
+    const ticketInstance = (ticket.instance || "").toString().trim();
+    const defaultInstance = (DEFAULT_INSTANCE || "").toString().trim();
+    const instanceCandidates = [ticketInstance, defaultInstance].filter(Boolean);
     const remoteJid = ticket.customerPhone || ticket.contact?.number;
 
+    if (!remoteJid) {
+      return res.status(400).json({
+        success: false,
+        error: 'Conversa sem número de destino. Atualize o contato antes de enviar mensagem.'
+      });
+    }
+
     let response;
+    let usedInstance = ticketInstance || defaultInstance;
     let newMessage = {
       id: Date.now().toString(),
       type: 'outgoing',
@@ -3585,41 +3918,99 @@ app.post('/api/chat/conversations/:id/messages', async (req, res) => {
       status: 'sent'
     };
 
-    if (media && mediaType === 'audio') {
-      // ENVIAR ÁUDIO VIA EVOLUTION API
-      console.log(`[CHAT] Enviando áUDIO real para ${remoteJid} via ${instance}`);
-      response = await axios.post(`${API_URL}/v1/message/sendWhatsAppAudio/${instance}`, {
-        number: remoteJid,
-        audioMessage: { audio: media, ptt: true }
-      }, { headers: { 'apikey': API_KEY } });
+    const sendWithInstance = async (instanceName) => {
+      usedInstance = instanceName;
+      if (media && mediaType === 'audio') {
+        console.log(`[CHAT] Enviando ÁUDIO para ${remoteJid} via ${instanceName}`);
+        return axios.post(`${API_URL}/v1/message/sendWhatsAppAudio/${instanceName}`, {
+          number: remoteJid,
+          audioMessage: { audio: media, ptt: true }
+        }, { headers: { 'apikey': API_KEY } });
+      }
 
+      if (media && mediaType) {
+        console.log(`[CHAT] Enviando ${mediaType} para ${remoteJid} via ${instanceName}`);
+        return axios.post(`${API_URL}/v1/message/sendMedia/${instanceName}`, {
+          number: remoteJid,
+          mediaMessage: {
+            mediatype: mediaType,
+            media: media,
+            mimetype: mimetype || 'application/octet-stream',
+            caption: message || ''
+          }
+        }, { headers: { 'apikey': API_KEY } });
+      }
+
+      console.log(`[CHAT] Enviando TEXTO para ${remoteJid} via ${instanceName}`);
+      return axios.post(`${API_URL}/v1/message/sendText/${instanceName}`, {
+        number: remoteJid,
+        textMessage: { text: message }
+      }, { headers: { 'apikey': API_KEY } });
+    };
+
+    if (!instanceCandidates.length) {
+      return res.status(400).json({
+        success: false,
+        error: 'Nenhuma instância configurada para envio. Configure uma instância em Conexões antes de enviar.'
+      });
+    }
+
+    let lastError = null;
+    const triedInstances = [];
+
+    for (const candidate of [...new Set(instanceCandidates)]) {
+      triedInstances.push(candidate);
+      try {
+        response = await sendWithInstance(candidate);
+        break;
+      } catch (candidateErr) {
+        lastError = candidateErr;
+        if (candidateErr?.response?.status === 404) {
+          console.warn(`[CHAT] Instância "${candidate}" falhou (404). Tentando próxima candidata.`);
+          continue;
+        }
+        throw candidateErr;
+      }
+    }
+
+    if (!response) {
+      const discovered = await fetchNormalizedChatInstances();
+      const dynamicCandidates = discovered
+        .filter(inst => inst.name && !triedInstances.includes(inst.name))
+        .sort((a, b) => (b.status === 'online' ? 1 : 0) - (a.status === 'online' ? 1 : 0))
+        .map(inst => inst.name);
+
+      for (const candidate of dynamicCandidates) {
+        triedInstances.push(candidate);
+        try {
+          response = await sendWithInstance(candidate);
+          ticket.instance = candidate;
+          break;
+        } catch (dynamicErr) {
+          lastError = dynamicErr;
+          if (dynamicErr?.response?.status === 404) continue;
+          throw dynamicErr;
+        }
+      }
+    }
+
+    if (!response) {
+      const detail = lastError?.response?.data?.error || lastError?.response?.data?.message || 'Not Found';
+      return res.status(400).json({
+        success: false,
+        error: `Nenhuma instância válida para envio foi encontrada (${[...new Set(triedInstances)].join(', ')}). Detalhe: ${detail}.`
+      });
+    }
+
+    if (media && mediaType === 'audio') {
       newMessage.text = '🎤 Áudio enviado';
       newMessage.mediaType = 'audio';
-      newMessage.mediaUrl = media.startsWith('http') ? media : `data:audio/mp3;base64,${media}`; // Simplificado para exibição local imediata
+      newMessage.mediaUrl = media.startsWith('http') ? media : `data:audio/mp3;base64,${media}`;
     } else if (media && mediaType) {
-      // ENVIAR OUTRAS MÍDIAS
-      console.log(`[CHAT] Enviando ${mediaType} real para ${remoteJid} via ${instance}`);
-      response = await axios.post(`${API_URL}/v1/message/sendMedia/${instance}`, {
-        number: remoteJid,
-        mediaMessage: {
-          mediatype: mediaType,
-          media: media,
-          mimetype: mimetype || 'application/octet-stream',
-          caption: message || ''
-        }
-      }, { headers: { 'apikey': API_KEY } });
-
       newMessage.text = message || `${mediaType} enviado`;
       newMessage.mediaType = mediaType;
       newMessage.mediaUrl = media.startsWith('http') ? media : `data:${mimetype || 'image/jpeg'};base64,${media}`;
     } else {
-      // ENVIAR TEXTO SIMPLES
-      console.log(`[CHAT] Enviando mensagem de texto real para ${remoteJid} via ${instance}`);
-      response = await axios.post(`${API_URL}/v1/message/sendText/${instance}`, {
-        number: remoteJid,
-        textMessage: { text: message }
-      }, { headers: { 'apikey': API_KEY } });
-
       newMessage.text = message;
     }
 
@@ -3627,6 +4018,7 @@ app.post('/api/chat/conversations/:id/messages', async (req, res) => {
     ticket.messages.push(newMessage);
     ticket.lastMessage = newMessage.text;
     ticket.updatedAt = new Date().toISOString();
+    ticket.instance = usedInstance;
 
     saveTicketsToFile();
 
@@ -3640,47 +4032,83 @@ app.post('/api/chat/conversations/:id/messages', async (req, res) => {
 
     res.json({ success: true, message: newMessage });
   } catch (error) {
-    console.error('[CHAT SEND ERROR] Falha ao enviar:', error.response?.data || error.message);
-    res.status(500).json({ success: false, error: error.message });
+    console.error('[CHAT SEND ERROR] Falha ao enviar:', error.response?.status, error.response?.data || error.message);
+    const isBackendDown = !error.response && (error.code === 'ECONNREFUSED' || /ECONNREFUSED/i.test(error.message || ''));
+    const detail = error.response?.data?.error || error.response?.data?.message || error.message;
+    const backendDownMessage = `Backend de mensagens indisponível em ${API_URL}. Inicie a API Go e tente novamente.`;
+    const normalized =
+      isBackendDown
+        ? backendDownMessage
+        :
+      error.response?.status === 404
+        ? `Instância de envio não encontrada. Verifique a instância conectada em Conexões (detalhe: ${detail}).`
+        : (detail || 'Falha no envio de mensagem.');
+    const statusCode = isBackendDown ? 503 : 500;
+    res.status(statusCode).json({ success: false, error: normalized });
   }
 });
+
+function normalizeInstanceRecord(raw) {
+  const nested = raw?.instance && typeof raw.instance === 'object' ? raw.instance : {};
+  const source = Object.keys(nested).length ? nested : (raw || {});
+
+  const name = (source.instanceName || source.name || source.instance || '').toString().trim();
+  const owner = (source.owner || source.number || '').toString().trim();
+  const statusRaw = (source.status || source.state || '').toString().toLowerCase();
+  const isOnline = statusRaw === 'open' || statusRaw === 'connected' || statusRaw === 'online';
+
+  if (!name) return null;
+  return {
+    name,
+    owner,
+    status: isOnline ? 'online' : 'offline',
+    rawStatus: statusRaw
+  };
+}
+
+async function fetchNormalizedChatInstances() {
+  const url = `${API_URL}/v1/instance/fetchInstances`;
+  const response = await axios.get(url, { headers: { 'apikey': API_KEY } });
+  const rawInstances = Array.isArray(response.data) ? response.data : [];
+
+  const normalized = [];
+  for (const item of rawInstances) {
+    const inst = normalizeInstanceRecord(item);
+    if (inst) normalized.push(inst);
+  }
+
+  const enriched = await Promise.all(normalized.map(async (inst) => {
+    try {
+      const stateUrl = `${API_URL}/v1/instance/connectionState/${encodeURIComponent(inst.name)}`;
+      const stateRes = await axios.get(stateUrl, { headers: { 'apikey': API_KEY } });
+      const currentState = (stateRes.data?.instance?.state || stateRes.data?.state || inst.rawStatus || '').toString().toLowerCase();
+      const online = currentState === 'open' || currentState === 'connected' || currentState === 'online';
+      return { ...inst, status: online ? 'online' : 'offline' };
+    } catch (_) {
+      return inst;
+    }
+  }));
+
+  return enriched;
+}
 
 // List Connected Instances for Chat
 app.get('/api/chat/instances', async (req, res) => {
   try {
-    const url = `${API_URL}/v1/instance/fetchInstances`;
-    const response = await axios.get(url, { headers: { 'apikey': API_KEY } });
-
-    // Sessions Refresh Status Logic (Inspirado no Woofed CRM)
-    // Verifica cada instância individualmente para garantir redundância ao webhook
-    const rawInstances = response.data || [];
-    const instances = await Promise.all(rawInstances.map(async inst => {
-      try {
-        const stateUrl = `${API_URL}/v1/instance/connectionState/${inst.instanceName}`;
-        const stateRes = await axios.get(stateUrl, { headers: { 'apikey': API_KEY } });
-        const currentState = stateRes.data?.instance?.state || inst.status;
-
-        return {
-          name: inst.instanceName || inst.name,
-          status: currentState === 'open' ? 'online' : 'offline',
-          owner: inst.owner || inst.number,
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(inst.instanceName)}&background=random&color=fff`
-        };
-      } catch (e) {
-        return {
-          name: inst.instanceName || inst.name,
-          status: 'offline',
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(inst.instanceName)}&background=ccc&color=fff`
-        };
-      }
+    const instances = await fetchNormalizedChatInstances();
+    const payload = instances.map(inst => ({
+      name: inst.name,
+      status: inst.status,
+      owner: inst.owner,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(inst.name)}&background=${inst.status === 'online' ? '10b981' : '9ca3af'}&color=fff`
     }));
 
-    res.json({ success: true, instances });
+    res.json({ success: true, instances: payload });
   } catch (error) {
     console.error('[INSTANCES ERROR]', error.message);
     res.json({
       success: true,
-      instances: [{ name: DEFAULT_INSTANCE, status: 'online', avatar: `https://ui-avatars.com/api/?name=${DEFAULT_INSTANCE}&background=10b981&color=fff` }]
+      instances: [{ name: DEFAULT_INSTANCE, status: 'offline', avatar: `https://ui-avatars.com/api/?name=${DEFAULT_INSTANCE}&background=9ca3af&color=fff` }]
     });
   }
 });
@@ -3738,6 +4166,24 @@ function saveSettings(settings) {
 
 // Carregar configurações na inicialização
 let systemSettings = loadSettings();
+
+function syncAiSettingsToEnv() {
+  const provider = String(systemSettings?.openai?.provider || '').toLowerCase();
+  const key = String(systemSettings?.openai?.apiKey || '').trim();
+  if (!key) return;
+
+  if (provider === 'gemini') {
+    process.env.GEMINI_API_KEY = key;
+    if (!process.env.GOOGLE_API_KEY) process.env.GOOGLE_API_KEY = key;
+    return;
+  }
+
+  if (provider === 'openai') {
+    process.env.OPENAI_API_KEY = key;
+  }
+}
+
+syncAiSettingsToEnv();
 
 // === AI Agent Config ===
 app.get('/api/ai/agent-config', (req, res) => {
@@ -3934,6 +4380,7 @@ app.post('/api/settings/openai', (req, res) => {
   systemSettings.openai = { provider, apiKey };
 
   if (saveSettings(systemSettings)) {
+    syncAiSettingsToEnv();
     console.log('[Settings] OpenAI/IA salvo');
     res.json({ success: true });
   } else {
@@ -4737,6 +5184,10 @@ server.listen(PORT, async () => {
   startFollowUpScheduler();
   startInstagramAutomation();
   let apiWasOnline = true;
+  let consecutiveHealthFailures = 0;
+  let consecutiveHealthSuccesses = 0;
+  const HEALTH_FAILURES_TO_MARK_OFFLINE = 2;
+  const HEALTH_SUCCESSES_TO_MARK_ONLINE = 2;
   const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || "";
   const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || API_KEY;
 
@@ -5531,18 +5982,26 @@ Como Especialista em Arquitetura de Agentes, você deve:
   setInterval(async () => {
     try {
       await axios.get(`${API_URL}/health`, { timeout: 5000 });
-      if (!apiWasOnline) {
+      consecutiveHealthFailures = 0;
+      consecutiveHealthSuccesses++;
+
+      if (!apiWasOnline && consecutiveHealthSuccesses >= HEALTH_SUCCESSES_TO_MARK_ONLINE) {
         console.log("🟢 API Go voltou a ficar online.");
         sendAlert("✅ *A API WhatsMiau2 voltou a ficar ONLINE!*");
         apiWasOnline = true;
+        consecutiveHealthSuccesses = 0;
       }
     } catch (err) {
-      if (apiWasOnline) {
-        console.error("🔴 API Go ficou OFFLINE! Erro:", err.message);
+      consecutiveHealthSuccesses = 0;
+      consecutiveHealthFailures++;
+
+      if (apiWasOnline && consecutiveHealthFailures >= HEALTH_FAILURES_TO_MARK_OFFLINE) {
+        console.error("🔴 API Go ficou OFFLINE! Erro:", describeAxiosError(err));
         const alertMessage = `🚨 *ALERTA CRÍTICO - API OFFLINE!*\n\n📌 Automações Comerciais\n🔴 A API WhatsMiau2 Go desconectou!\n⏰ ${new Date().toLocaleString('pt-BR')}\n\nVerifique o servidor imediatamente.`;
         // Tenta via Evolution API externa como fallback
         await sendAlertFallback(alertMessage);
         apiWasOnline = false;
+        consecutiveHealthFailures = 0;
       }
     }
   }, 30000); // Verifica a cada 30 segundos
