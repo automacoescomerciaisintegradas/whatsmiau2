@@ -46,6 +46,14 @@ data/
 .env.production.local
 *.pem
 *.key
+**/secrets/**
+**/credentials/**
+**/env/**
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
 # Temporary & Deployment
 tmp/
