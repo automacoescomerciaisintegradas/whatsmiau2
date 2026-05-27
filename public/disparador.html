@@ -474,9 +474,8 @@
                         <div class="mt-4 pt-4 border-top">
                             <label class="form-label small fw-bold">INTERVALO ENTRE ENVIOS (SEGUNDOS)</label>
                             <div class="delay-row">
-                                <input type="number" id="delay-seconds" class="form-control delay-input" value="10" min="2">
-                                <span class="text-muted small"><i class="fas fa-info-circle me-1"></i> Recomendamos
-                                    ao menos 10s para evitar bloqueios.</span>
+                                <input type="number" id="delay-seconds" class="form-control delay-input" value="8" min="3" max="1800" step="1">
+                                <span class="text-muted small"><i class="fas fa-info-circle me-1"></i> Mínimo 3s, máximo 1800s (30min). Recomendado: 8s para volume baixo, 60-300s (1-5min) para 1k+ contatos, 600-1800s (10-30min) para 5k+ contatos. Espaçar mais reduz risco de bloqueio do número.</span>
                             </div>
                         </div>
                     </div>

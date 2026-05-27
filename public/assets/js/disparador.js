@@ -1047,7 +1047,15 @@ async function startDispatch() {
         return;
     }
 
-    const delaySec = parseInt(document.getElementById('delay-seconds').value) || 10;
+    const delayInput = document.getElementById('delay-seconds');
+    const parsedDelay = Number.parseInt(delayInput.value, 10);
+    const hasValidNumber = Number.isFinite(parsedDelay);
+    const delaySec = hasValidNumber ? Math.min(1800, Math.max(3, parsedDelay)) : 8;
+
+    if (!hasValidNumber || parsedDelay !== delaySec) {
+        delayInput.value = delaySec;
+        log(`Delay ajustado para ${delaySec}s (limite: 3-1800s).`, 'warning');
+    }
     const jids = await normalizeTargetListInput();
 
     // Validation

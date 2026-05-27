@@ -1,10 +1,10 @@
 .export-page .export-layout {
     max-width: 1480px;
-    padding: 1.75rem 1.5rem 2.25rem;
+    padding: 2rem 1.75rem 2.5rem;
 }
 
 .export-page .export-header {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
 }
 
 .export-page .export-header h2 {
@@ -13,8 +13,8 @@
 }
 
 .export-page .export-info-alert {
-    margin-bottom: 1.25rem;
-    padding: 0.95rem 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1.1rem 1.15rem;
     border-radius: 12px;
 }
 
@@ -25,15 +25,15 @@
 .export-page .export-config-card,
 .export-page .export-preview-card {
     border-radius: 18px;
-    padding: 1.4rem !important;
+    padding: 1.65rem !important;
 }
 
 .export-page .export-card-title {
-    margin-bottom: 1.15rem;
+    margin-bottom: 1.35rem;
 }
 
 .export-page .export-block {
-    margin-bottom: 1.15rem !important;
+    margin-bottom: 1.35rem !important;
 }
 
 .export-page .export-config-card .form-label {
@@ -53,8 +53,8 @@
 }
 
 .export-page .export-actions {
-    gap: 0.65rem !important;
-    margin-top: 0.4rem;
+    gap: 0.75rem !important;
+    margin-top: 0.55rem;
 }
 
 .export-page .export-actions .btn {
@@ -82,7 +82,7 @@
 .export-page .export-preview-list {
     max-height: 470px !important;
     border-radius: 12px !important;
-    padding: 0.85rem !important;
+    padding: 1rem !important;
 }
 
 .export-page .export-preview-list .card {
@@ -95,12 +95,12 @@
 
 @media (max-width: 991px) {
     .export-page .export-layout {
-        padding: 1rem 1rem 1.5rem;
+        padding: 1.1rem 1rem 1.65rem;
     }
 
     .export-page .export-config-card,
     .export-page .export-preview-card {
-        padding: 1.1rem !important;
+        padding: 1.2rem !important;
     }
 
     .export-page .export-preview-list {

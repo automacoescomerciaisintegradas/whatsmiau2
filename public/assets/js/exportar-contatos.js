@@ -419,6 +419,90 @@ async function exportarContatos() {
     statusDiv.innerHTML = `<i class="fas fa-check-circle me-2"></i><strong>${allContacts.length}</strong> contatos exportados com sucesso!${dddFilterRaw ? ` (Filtro ${dddFilterRaw})` : ''}${failMsg}`;
 }
 
+// --- Copiar todos os contatos para área de transferência ---
+async function copiarContatos() {
+    const format = document.getElementById('export-format').value;
+    const includeGroups = document.getElementById('include-groups').checked;
+    const includeChannels = document.getElementById('include-channels').checked;
+    const statusDiv = document.getElementById('status-export');
+
+    statusDiv.style.display = 'block';
+    statusDiv.className = 'alert alert-info mt-3';
+    statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Preparando contatos para cópia...';
+
+    let items = [];
+    if (includeGroups) items = [...items, ...state.groups];
+    if (includeChannels) items = [...items, ...state.channels];
+
+    if (items.length === 0) {
+        statusDiv.className = 'alert alert-warning mt-3';
+        statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Nenhum grupo ou canal disponível.';
+        return;
+    }
+
+    const instance = state.currentInstance || 'default';
+    const dddFilterRaw = getDddFilterValueRaw();
+    const dddFilterSet = resolveDddFilterSet(dddFilterRaw);
+    let allContacts = [];
+    let processed = 0;
+    let failed = 0;
+
+    for (const item of items) {
+        processed++;
+        const label = item.subject || item.name || item.jid;
+        statusDiv.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${processed}/${items.length} — Lendo: <strong>${label}</strong>`;
+
+        try {
+            const participants = await fetchParticipantsByJid(item.jid, instance);
+            participants.forEach(p => {
+                const normalized = normalizeParticipant(p, label);
+                if (!normalized) return;
+                allContacts.push({
+                    source: label,
+                    jid: normalized.jid,
+                    number: normalized.number,
+                    role: normalized.role
+                });
+            });
+        } catch (e) {
+            failed++;
+            console.warn(`[Copy Warn] ${item.jid}:`, e.message);
+        }
+
+        await new Promise(r => setTimeout(r, 120));
+    }
+
+    if (allContacts.length === 0) {
+        statusDiv.className = 'alert alert-warning mt-3';
+        statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Nenhum contato encontrado.';
+        return;
+    }
+
+    if (dddFilterSet) {
+        allContacts = allContacts.filter(c => dddFilterSet.has(parseBrazilNumber(c.number).ddd));
+    }
+
+    if (allContacts.length === 0) {
+        statusDiv.className = 'alert alert-warning mt-3';
+        statusDiv.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Nenhum contato encontrado para o filtro ${dddFilterRaw || '-'}.`;
+        return;
+    }
+
+    const content = buildFileContent(allContacts, format);
+    const copied = await copyToClipboardSafe(content);
+
+    if (!copied) {
+        statusDiv.className = 'alert alert-danger mt-3';
+        statusDiv.innerHTML = '<i class="fas fa-times-circle me-2"></i>Não foi possível copiar automaticamente neste navegador.';
+        return;
+    }
+
+    const failMsg = failed > 0 ? ` (${failed} grupo(s) com erro)` : '';
+    statusDiv.className = 'alert alert-success mt-3';
+    statusDiv.innerHTML = `<i class="fas fa-check-circle me-2"></i><strong>${allContacts.length}</strong> contatos copiados para a área de transferência!${dddFilterRaw ? ` (Filtro ${dddFilterRaw})` : ''}${failMsg}`;
+}
+window.copiarContatos = copiarContatos;
+
 // --- Helpers ---
 async function fetchGroupsWithFallback(instance) {
     // 1) Preferred proxy route
@@ -718,6 +802,38 @@ function triggerDirectDownload(url) {
     setTimeout(() => {
         if (a.parentNode) document.body.removeChild(a);
     }, 100);
+}
+
+async function copyToClipboardSafe(text) {
+    const normalized = String(text || '');
+    if (!normalized) return false;
+
+    if (navigator.clipboard && window.isSecureContext) {
+        try {
+            await navigator.clipboard.writeText(normalized);
+            return true;
+        } catch (_) {
+            // fallback abaixo
+        }
+    }
+
+    try {
+        const ta = document.createElement('textarea');
+        ta.value = normalized;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.top = '-9999px';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        ta.setSelectionRange(0, ta.value.length);
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return !!ok;
+    } catch (_) {
+        return false;
+    }
 }
 
 function limparDados() {

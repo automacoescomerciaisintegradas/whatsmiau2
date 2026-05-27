@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat de Atendimento - WhatsMiau2</title>
+    <title>Chat - whatsmiau2</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -608,6 +608,67 @@
             border-radius: 10px;
             margin-left: 6px;
         }
+
+        @media (max-width: 992px) {
+            .chat-app {
+                height: calc(100vh - var(--header-height));
+                margin: 0;
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            .inbox-sidebar {
+                width: 56px;
+                padding: 10px 0;
+                gap: 10px;
+            }
+
+            .conversations-sidebar {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .conversation-tabs {
+                padding: 10px;
+            }
+
+            .tab-btn {
+                font-size: 0.8rem;
+                padding: 8px 10px;
+            }
+
+            .message-content {
+                max-width: 82%;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .inbox-sidebar {
+                width: 48px;
+            }
+
+            .inbox-item {
+                width: 36px;
+                height: 36px;
+                border-radius: 10px;
+            }
+
+            .chat-header-bar {
+                padding: 12px;
+            }
+
+            .messages-container {
+                padding: 12px;
+            }
+
+            .chat-input-area {
+                padding: 10px;
+            }
+
+            .quick-actions {
+                display: none;
+            }
+        }
     </style>
 </head>
 
@@ -639,9 +700,6 @@
                 <a href="/contacts" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-address-book me-2"></i> Contatos
                 </a>
-                <a href="/instagram" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fab fa-instagram me-2"></i> Instagram
-                </a>
                 <a href="/tickets" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-ticket-alt me-2"></i> Tickets
                 </a>
@@ -652,7 +710,7 @@
                     <i class="fas fa-hand-holding-usd me-2"></i> CRM & Pagamentos
                 </a>
                 <a href="/internal-chat" class="list-group-item list-group-item-action bg-transparent active">
-                    <i class="fas fa-comments me-2"></i> Chat de Atendimento
+                    <i class="fas fa-comments me-2"></i> Chat
                 </a>
                 <div class="border-top my-3"></div>
                 <a href="/settings" class="list-group-item list-group-item-action bg-transparent">
@@ -889,7 +947,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
+        const socket = io({
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: Infinity,
+            reconnectionDelay: 1000,
+            timeout: 20000
+        });
         let conversations = [];
         let instances = [];
         let currentConversation = null;

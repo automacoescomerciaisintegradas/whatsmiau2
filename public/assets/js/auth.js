@@ -14,6 +14,23 @@ const STORAGE_KEYS = {
 };
 
 /**
+ * Faz parse seguro de resposta HTTP (JSON ou texto).
+ * Evita quebrar quando backend retorna texto puro (ex.: 404 default).
+ * @param {Response} response
+ * @returns {Promise<Object>}
+ */
+async function parseApiResponse(response) {
+    const rawText = await response.text();
+    if (!rawText) return {};
+
+    try {
+        return JSON.parse(rawText);
+    } catch (_) {
+        return { message: rawText };
+    }
+}
+
+/**
  * Faz login do usuário
  * @param {string} email 
  * @param {string} password 
@@ -28,7 +45,7 @@ async function login(email, password) {
         body: JSON.stringify({ email, password })
     });
 
-    const data = await response.json();
+    const data = await parseApiResponse(response);
 
     if (!response.ok) {
         throw new Error(data.message || 'Erro ao fazer login');
@@ -53,7 +70,7 @@ async function register(name, email, password) {
         body: JSON.stringify({ name, email, password })
     });
 
-    const data = await response.json();
+    const data = await parseApiResponse(response);
 
     if (!response.ok) {
         throw new Error(data.message || 'Erro ao criar conta');
@@ -76,7 +93,7 @@ async function forgotPassword(email) {
         body: JSON.stringify({ email })
     });
 
-    const data = await response.json();
+    const data = await parseApiResponse(response);
 
     if (!response.ok) {
         throw new Error(data.message || 'Erro ao solicitar recuperação');
@@ -99,7 +116,7 @@ async function getCurrentUser() {
         }
     });
 
-    const data = await response.json();
+    const data = await parseApiResponse(response);
 
     if (!response.ok) {
         throw new Error(data.message || 'Erro ao obter usuário');
@@ -133,7 +150,7 @@ async function deleteAccount() {
     });
 
     if (!response.ok) {
-        const data = await response.json();
+        const data = await parseApiResponse(response);
         throw new Error(data.message || 'Erro ao apagar conta');
     }
 
@@ -196,7 +213,15 @@ function getToken() {
  */
 function getUser() {
     const userStr = localStorage.getItem(STORAGE_KEYS.USER);
-    return userStr ? JSON.parse(userStr) : null;
+    if (!userStr) return null;
+
+    try {
+        return JSON.parse(userStr);
+    } catch (_) {
+        // Corrige estado local corrompido sem quebrar a tela de login/perfil.
+        localStorage.removeItem(STORAGE_KEYS.USER);
+        return null;
+    }
 }
 
 /**
