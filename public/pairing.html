@@ -408,17 +408,7 @@
                     <i class="fab fa-whatsapp"></i>
                     Conectar WhatsApp
                 </h1>
-                <p>Escolha o método de conexão preferido</p>
-            </div>
-
-            <!-- Method Tabs -->
-            <div class="method-tabs">
-                <button class="method-tab active" onclick="switchMethod('phone')">
-                    <i class="fas fa-mobile-alt me-2"></i> Código (Recomendado)
-                </button>
-                <button class="method-tab" onclick="switchMethod('qr')">
-                    <i class="fas fa-qrcode me-2"></i> QR Code
-                </button>
+                <p>Pareamento por código</p>
             </div>
 
             <!-- Alert -->
@@ -428,7 +418,7 @@
             </div>
 
             <!-- Phone Method -->
-            <div id="method-phone" class="method-content active">
+            <div id="method-phone" class="method-content active" style="display:block;">
                 <div class="form-group">
                     <label><i class="fas fa-phone me-2"></i> Número do WhatsApp Business</label>
                     <input type="tel" id="phone-input" placeholder="5511999999999" maxlength="15">
@@ -479,50 +469,6 @@
                 </div>
             </div>
 
-            <!-- QR Code Method -->
-            <div id="method-qr" class="method-content">
-                <div class="alert-custom"
-                    style="background: rgba(251, 191, 36, 0.1); border-color: rgba(251, 191, 36, 0.3); color: #fbbf24;">
-                    <i class="fas fa-info-circle"></i>
-                    <span>Se o QR Code não funcionar, use o método de <strong>Código</strong> (mais confiável)</span>
-                </div>
-
-                <div class="text-center">
-                    <div class="btn-group-custom">
-                        <button class="btn-custom btn-danger-custom" onclick="limparSessao()">
-                            <i class="fas fa-trash"></i> Limpar Sessão
-                        </button>
-                        <button class="btn-custom btn-primary-custom" id="btn-get-qr" onclick="solicitarQRCode()">
-                            <i class="fas fa-qrcode"></i> Gerar QR Code
-                        </button>
-                    </div>
-                </div>
-
-                <div id="qr-display" class="text-center" style="display: none;">
-                    <div class="qr-display">
-                        <img id="qr-image" src="" alt="QR Code">
-                    </div>
-                    <p style="color: #e2e8f0; font-weight: 600; margin-bottom: 8px;">Escaneie o QR Code com seu WhatsApp
-                    </p>
-                    <p style="color: #64748b; font-size: 0.85rem;">QR Code expira em 2 minutos</p>
-                    <button class="btn-custom btn-primary-custom" style="max-width: 250px; margin: 16px auto;"
-                        onclick="solicitarQRCode()">
-                        <i class="fas fa-redo"></i> Gerar Novo QR Code
-                    </button>
-                </div>
-
-                <div class="instructions">
-                    <h6><i class="fas fa-list-ol"></i> Como conectar:</h6>
-                    <ol>
-                        <li>Abra o <strong>WhatsApp</strong> no seu celular</li>
-                        <li>Vá em <strong>Configurações</strong> → <strong>Aparelhos conectados</strong></li>
-                        <li>Toque em <strong>Conectar um aparelho</strong></li>
-                        <li>Aponte a câmera para o QR Code acima</li>
-                        <li>Aguarde a conexão (pode levar alguns segundos)</li>
-                    </ol>
-                </div>
-            </div>
-
             <!-- Status Messages -->
             <div id="status-message" class="status-message"></div>
 
@@ -540,6 +486,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         let INSTANCE = urlParams.get('instance') || "minha-instancia";
         let pollingInterval = null;
+        const encodeInstance = (name) => encodeURIComponent((name || '').toString().trim());
 
         function getAuthToken() {
             return localStorage.getItem('authToken');
@@ -555,17 +502,6 @@
             return token;
         }
 
-        // Switch between methods
-        function switchMethod(method) {
-            document.querySelectorAll('.method-tab').forEach(tab => tab.classList.remove('active'));
-            event.target.closest('.method-tab').classList.add('active');
-
-            document.querySelectorAll('.method-content').forEach(content => content.classList.remove('active'));
-            document.getElementById(`method-${method}`).classList.add('active');
-
-            hideStatus();
-        }
-
         // Show/hide status
         function showStatus(message, type = 'info') {
             const statusEl = document.getElementById('status-message');
@@ -577,6 +513,17 @@
             document.getElementById('status-message').className = 'status-message';
         }
 
+        async function clearSession(token) {
+            const response = await fetch(`${API_URL}/instance/logout/${encodeInstance(INSTANCE)}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) {
+                throw new Error('Falha ao limpar sessão');
+            }
+            return true;
+        }
+
         // Clear session
         async function limparSessao() {
             const token = requireAuthOrRedirect();
@@ -584,23 +531,15 @@
 
             showStatus('🔄 Limpando sessão antiga...', 'info');
             try {
-                const response = await fetch(`${API_URL.replace('/api', '/v1')}/instance/${INSTANCE}/logout`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (response.ok) {
-                    showStatus('✅ Sessão limpa! Tente gerar o código agora.', 'success');
-                } else {
-                    throw new Error('Falha ao limpar sessão');
-                }
+                await clearSession(token);
+                showStatus('✅ Sessão limpa! Tente gerar o código agora.', 'success');
             } catch (error) {
                 showStatus('❌ Erro ao limpar sessão: ' + error.message, 'error');
             }
         }
 
         // Request pairing code
-        async function solicitarCodigo() {
+        async function solicitarCodigo(retriedAfterClear = false) {
             const token = requireAuthOrRedirect();
             if (!token) return;
 
@@ -624,7 +563,7 @@
             try {
                 // Usa o endpoint do BFF Node para que o monitor de conexão seja iniciado
                 // e o alerta de segurança seja disparado ao conectar
-                const response = await fetch(`/api/instance/pairPhone/${INSTANCE}`, {
+                const response = await fetch(`/api/instance/pairPhone/${encodeInstance(INSTANCE)}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -655,56 +594,24 @@
                 if (raw.includes('websocket disconnected')) {
                     showStatus('❌ Conexão do WhatsApp oscilou durante o pareamento. Clique em "Limpar Sessão", aguarde 2 segundos e tente novamente.', 'error');
                 } else if (raw.includes('já possui uma conexão ativa') || raw.includes('sessão salva')) {
-                    showStatus('⚠️ Esta instância já tem sessão. Clique em "Limpar Sessão" antes de gerar novo código.', 'error');
+                    if (!retriedAfterClear) {
+                        showStatus('⚠️ Sessão ativa detectada. Limpando e tentando novamente...', 'info');
+                        try {
+                            await clearSession(token);
+                            setTimeout(() => solicitarCodigo(true), 1200);
+                            return;
+                        } catch (clearError) {
+                            showStatus('⚠️ Esta instância já tem sessão. Clique em "Limpar Sessão" antes de gerar novo código.', 'error');
+                        }
+                    } else {
+                        showStatus('⚠️ Esta instância já tem sessão. Clique em "Limpar Sessão" antes de gerar novo código.', 'error');
+                    }
                 } else {
                     showStatus('❌ Erro: ' + error.message, 'error');
                 }
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-key"></i> Obter Código';
-            }
-        }
-
-        // Request QR Code
-        async function solicitarQRCode() {
-            const token = requireAuthOrRedirect();
-            if (!token) return;
-
-            const btn = document.getElementById('btn-get-qr');
-            const qrDisplay = document.getElementById('qr-display');
-            const qrImage = document.getElementById('qr-image');
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner me-2"></span> Gerando...';
-            hideStatus();
-            qrDisplay.style.display = 'none';
-
-            try {
-                showStatus('🔄 Conectando ao backend...', 'info');
-                const response = await fetch(`/v1/instance/connect/${INSTANCE}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                const data = await response.json();
-
-                let base64 = data.base64 || (data.qrcode && data.qrcode.base64);
-
-                if (base64) {
-                    showStatus('✅ QR Code gerado com sucesso!', 'success');
-                    qrImage.src = base64;
-                    qrDisplay.style.display = 'block';
-                    startPolling();
-                } else {
-                    throw new Error(data.error || data.message || 'QR Code não foi gerado');
-                }
-
-            } catch (error) {
-                console.error(error);
-                showStatus('❌ Erro: ' + error.message, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-qrcode"></i> Gerar QR Code';
             }
         }
 
@@ -717,7 +624,7 @@
 
             pollingInterval = setInterval(async () => {
                 try {
-                    const response = await fetch(`/v1/instance/connectionState/${INSTANCE}`, {
+                    const response = await fetch(`${API_URL}/instance/connectionState/${encodeInstance(INSTANCE)}`, {
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }
@@ -747,15 +654,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             if (!requireAuthOrRedirect()) return;
 
-            const method = urlParams.get('method');
-            if (method === 'qr') {
-                document.querySelectorAll('.method-tab').forEach(tab => tab.classList.remove('active'));
-                document.querySelectorAll('.method-tab')[1].classList.add('active');
-                document.querySelectorAll('.method-content').forEach(content => content.classList.remove('active'));
-                document.getElementById('method-qr').classList.add('active');
-            } else {
-                document.getElementById('phone-input').focus();
-            }
+            document.getElementById('phone-input').focus();
         });
     </script>
 </body>

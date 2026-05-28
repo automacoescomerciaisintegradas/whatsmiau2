@@ -882,10 +882,35 @@
 
         let osintResults = [];
 
+        function normalizeIgInputTarget(input) {
+            if (!input) return '';
+            let raw = String(input)
+                .replace(/[\u200B-\u200D\uFEFF]/g, '')
+                .trim();
+            if (!raw) return '';
+
+            raw = raw.replace(/^['"`]+|['"`]+$/g, '').trim();
+
+            const storiesMatch = raw.match(/instagram\.com\/stories\/([A-Za-z0-9._]+)(?:\/|$)/i);
+            if (storiesMatch && storiesMatch[1]) return storiesMatch[1];
+
+            const profileMatch = raw.match(/instagram\.com\/([A-Za-z0-9._]+)(?:\/|$)/i);
+            if (profileMatch && profileMatch[1]) {
+                const reserved = ['stories', 'p', 'reel', 'reels', 'explore', 'accounts', 'direct', 'tv'];
+                const value = profileMatch[1];
+                if (!reserved.includes(value.toLowerCase())) return value;
+            }
+
+            return raw;
+        }
+
         async function startOsint() {
             const sessionId = document.getElementById('ig-session-id').value.trim();
             const input = document.getElementById('ig-input-list').value;
-            const targets = input.split('\n').map(l => l.trim()).filter(l => l);
+            const targets = input
+                .split('\n')
+                .map(l => normalizeIgInputTarget(l))
+                .filter(l => l);
 
             if (!sessionId) return alert('Informe o Session ID');
             if (targets.length === 0) return alert('Informe os IDs ou Usernames');
@@ -906,7 +931,7 @@
                     // Add delay to avoid aggressive rate limiting
                     if (i > 0) await new Promise(r => setTimeout(r, 2000));
 
-                    const res = await fetch('/v1/instagram/investigate', {
+                    const res = await fetch('/api/instagram/investigate', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -915,7 +940,14 @@
                         body: JSON.stringify({ target, sessionId })
                     });
 
-                    const json = await res.json();
+                    const raw = await res.text();
+                    let json = null;
+                    try {
+                        json = JSON.parse(raw);
+                    } catch (parseError) {
+                        const fallback = raw ? raw.slice(0, 220) : 'Resposta vazia';
+                        throw new Error(`Resposta inválida do servidor (${res.status}): ${fallback}`);
+                    }
 
                     if (json.success) {
                         addIgRow(json.data);
@@ -985,14 +1017,62 @@
 
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const filename = `instagram_osint_${timestamp}`;
+            const headers = [
+                'id',
+                'username',
+                'full_name',
+                'public_email',
+                'bio_email',
+                'obfuscated_email',
+                'public_phone_number',
+                'contact_phone_number',
+                'bio_phone',
+                'obfuscated_phone',
+                'is_whatsapp_linked',
+                'follower_count',
+                'is_private',
+                'status_reason'
+            ];
+
+            const exportRows = osintResults.map((row) => {
+                const hasPublicEmail = !!(row.public_email || row.bio_email || row.obfuscated_email);
+                const hasPublicPhone = !!(row.public_phone_number || row.contact_phone_number || row.bio_phone || row.obfuscated_phone);
+                const hasAnyContact = hasPublicEmail || hasPublicPhone;
+
+                let statusReason = 'perfil_sem_contato_publico';
+                if (row.is_whatsapp_linked) {
+                    statusReason = 'whatsapp_vinculado_detectado';
+                } else if (hasAnyContact) {
+                    statusReason = 'contato_publico_detectado';
+                } else if (row.is_private) {
+                    statusReason = 'perfil_privado_sem_contato_publico';
+                }
+
+                return {
+                    id: row.id || '',
+                    username: row.username || '',
+                    full_name: row.full_name || '',
+                    public_email: row.public_email || '',
+                    bio_email: row.bio_email || '',
+                    obfuscated_email: row.obfuscated_email || '',
+                    public_phone_number: row.public_phone_number || '',
+                    contact_phone_number: row.contact_phone_number || '',
+                    bio_phone: row.bio_phone || '',
+                    obfuscated_phone: row.obfuscated_phone || '',
+                    is_whatsapp_linked: row.is_whatsapp_linked ? 'TRUE' : 'FALSE',
+                    follower_count: row.follower_count || 0,
+                    is_private: row.is_private ? 'TRUE' : 'FALSE',
+                    status_reason: statusReason
+                };
+            });
+
+            const ws = XLSX.utils.json_to_sheet(exportRows, { header: headers });
 
             if (type === 'excel') {
-                const ws = XLSX.utils.json_to_sheet(osintResults);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Resultados");
                 XLSX.writeFile(wb, filename + '.xlsx');
             } else {
-                const ws = XLSX.utils.json_to_sheet(osintResults);
                 const csv = XLSX.utils.sheet_to_csv(ws);
                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement("a");
@@ -1009,8 +1089,9 @@
         }
 
         async function searchIgUsers() {
-            const query = document.getElementById('ig-search-query').value.trim();
+            const rawQuery = document.getElementById('ig-search-query').value.trim();
             const sessionId = document.getElementById('ig-session-id').value.trim();
+            const query = rawQuery.replace(/^@+/, '');
 
             if (!query) return alert('Digite algo para buscar');
             if (!sessionId) return alert('Insira o Session ID na tela principal antes de buscar.');
@@ -1019,7 +1100,7 @@
             tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr>';
 
             try {
-                const res = await fetch('/v1/instagram/search', {
+                const res = await fetch('/api/instagram/search', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1028,7 +1109,14 @@
                     body: JSON.stringify({ query, sessionId })
                 });
 
-                const json = await res.json();
+                const raw = await res.text();
+                let json = null;
+                try {
+                    json = JSON.parse(raw);
+                } catch (parseError) {
+                    const fallback = raw ? raw.slice(0, 220) : 'Resposta vazia';
+                    throw new Error(`Resposta inválida do servidor (${res.status}): ${fallback}`);
+                }
 
                 if (json.success) {
                     tbody.innerHTML = '';

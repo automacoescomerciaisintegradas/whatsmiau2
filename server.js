@@ -324,11 +324,12 @@ app.get("/api/normalize-jid", (req, res) => {
 app.post("/api/instance/pairPhone/:instance", async (req, res) => {
   const { instance } = req.params;
   const { phoneNumber } = req.body;
+  const encodedInstance = encodeURIComponent((instance || "").trim());
 
   console.log(`[PAIRING] Requesting code for ${phoneNumber} on instance ${instance}`);
 
   try {
-    const response = await axios.post(`${API_URL}/v1/instance/pairPhone/${instance}`,
+    const response = await axios.post(`${API_URL}/v1/instance/pairPhone/${encodedInstance}`,
       { phoneNumber },
       { headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' } }
     );
@@ -382,7 +383,8 @@ function startConnectionMonitor(instance, phoneNumber) {
     }
 
     try {
-      const response = await axios.get(`${API_URL}/v1/instance/connectionState/${instance}`, {
+      const encodedInstance = encodeURIComponent((instance || "").trim());
+      const response = await axios.get(`${API_URL}/v1/instance/connectionState/${encodedInstance}`, {
         headers: { 'apikey': API_KEY }
       });
 
@@ -432,7 +434,8 @@ async function sendConnectionAlert(instance, phoneNumber) {
       return;
     }
 
-    await axios.post(`${API_URL}/v1/message/sendText/${instance}`, {
+    const encodedInstance = encodeURIComponent((instance || "").trim());
+    await axios.post(`${API_URL}/v1/message/sendText/${encodedInstance}`, {
       number: jid,
       textMessage: { text: alertMessage }
     }, {
@@ -448,11 +451,12 @@ async function sendConnectionAlert(instance, phoneNumber) {
 // Logout / Clear Session
 app.delete("/api/instance/logout/:instance", async (req, res) => {
   const { instance } = req.params;
+  const encodedInstance = encodeURIComponent((instance || "").trim());
 
   console.log(`[LOGOUT] Clearing session for instance ${instance}`);
 
   try {
-    const response = await axios.delete(`${API_URL}/v1/instance/logout/${instance}`, {
+    const response = await axios.delete(`${API_URL}/v1/instance/logout/${encodedInstance}`, {
       headers: { 'apikey': API_KEY }
     });
 
@@ -468,11 +472,12 @@ app.delete("/api/instance/logout/:instance", async (req, res) => {
 // Connect / Get QR Code
 app.get("/api/instance/connect/:instance", async (req, res) => {
   const { instance } = req.params;
+  const encodedInstance = encodeURIComponent((instance || "").trim());
 
   console.log(`[CONNECT] Requesting QR for instance ${instance}`);
 
   try {
-    const response = await axios.get(`${API_URL}/v1/instance/connect/${instance}`, {
+    const response = await axios.get(`${API_URL}/v1/instance/connect/${encodedInstance}`, {
       headers: { 'apikey': API_KEY }
     });
 
@@ -488,9 +493,10 @@ app.get("/api/instance/connect/:instance", async (req, res) => {
 // Connection State
 app.get("/api/instance/connectionState/:instance", async (req, res) => {
   const { instance } = req.params;
+  const encodedInstance = encodeURIComponent((instance || "").trim());
 
   try {
-    const response = await axios.get(`${API_URL}/v1/instance/connectionState/${instance}`, {
+    const response = await axios.get(`${API_URL}/v1/instance/connectionState/${encodedInstance}`, {
       headers: { 'apikey': API_KEY }
     });
 
@@ -1564,6 +1570,125 @@ app.post("/api/evolution/send-media", async (req, res) => {
 /* -------------------------------------------------
    Instagram OSINT Tool API
    ------------------------------------------------- */
+function normalizeInstagramApiData(data) {
+  if (!data) return null;
+  if (typeof data === "object") return data;
+  if (typeof data !== "string") return null;
+
+  let raw = data.trim();
+  raw = raw.replace(/^for\s*\(\s*;;\s*\)\s*;?\s*/i, "");
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch (_) {
+    // Some Instagram responses come as JS object literal (unquoted keys).
+    const jsonLike = raw.replace(/([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:/g, '$1"$2":');
+    try {
+      return JSON.parse(jsonLike);
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
+function extractInstagramUsers(data) {
+  if (Array.isArray(data?.users)) return data.users;
+  if (Array.isArray(data?.payload?.users)) return data.payload.users;
+  return [];
+}
+
+function extractInstagramProfileFromWebInfo(data) {
+  const user = data?.data?.user || data?.user || null;
+  if (!user) return null;
+  return {
+    id: user.id || user.pk || null,
+    username: user.username || null,
+    full_name: user.full_name || null,
+    is_private: !!user.is_private,
+    profile_pic_url: user.profile_pic_url || user.profile_pic_url_hd || null
+  };
+}
+
+function extractInstagramUserIdFromHtml(html) {
+  if (typeof html !== "string" || !html) return null;
+  const patterns = [
+    /"logging_page_id"\s*:\s*"profilePage_(\d+)"/i,
+    /profilePage_(\d+)/i,
+    /"profile_id"\s*:\s*"(\d+)"/i,
+    /"user_id"\s*:\s*"(\d+)"/i
+  ];
+
+  for (const regex of patterns) {
+    const m = html.match(regex);
+    if (m && m[1]) return m[1];
+  }
+  return null;
+}
+
+function normalizeInstagramTargetInput(target) {
+  if (target === null || target === undefined) return "";
+  let raw = String(target)
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/[\r\n\t]+/g, " ")
+    .trim();
+  if (!raw) return "";
+
+  raw = raw.replace(/^['"`]+|['"`]+$/g, "").trim();
+
+  // URL parser fallback (stories/profile links, with query/hash)
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const u = new URL(raw);
+      const host = (u.hostname || "").toLowerCase();
+      if (host.includes("instagram.com")) {
+        const segments = (u.pathname || "")
+          .split("/")
+          .map(s => s.trim())
+          .filter(Boolean);
+
+        if (segments.length > 0) {
+          const first = segments[0].toLowerCase();
+          if (first === "stories" && segments[1]) return segments[1];
+          if (!["p", "reel", "reels", "explore", "accounts", "direct", "tv"].includes(first)) {
+            return segments[0];
+          }
+        }
+      }
+    } catch (_) {
+      // continue with regex fallbacks
+    }
+  }
+
+  // Support stories URL: https://www.instagram.com/stories/<username>/
+  const storiesUrlMatch = raw.match(/instagram\.com\/stories\/([A-Za-z0-9._]+)(?:\/|$)/i);
+  if (storiesUrlMatch?.[1]) {
+    return storiesUrlMatch[1];
+  }
+
+  // Support direct profile URL pasted by user, ignoring reserved routes
+  const profileUrlMatch = raw.match(/instagram\.com\/([A-Za-z0-9._]+)\/?/i);
+  if (profileUrlMatch?.[1]) {
+    const firstPath = profileUrlMatch[1].toLowerCase();
+    const reserved = new Set(["stories", "p", "reel", "reels", "explore", "accounts", "direct", "tv"]);
+    if (!reserved.has(firstPath)) {
+      return profileUrlMatch[1];
+    }
+  }
+
+  // Split mixed lines like: "61707223925 rochelia_girao_moda"
+  const tokens = raw.split(/[\s,;|]+/).filter(Boolean);
+  if (tokens.length > 1) {
+    const numeric = tokens.find(t => /^\d+$/.test(t));
+    if (numeric) return numeric;
+
+    const handle = tokens.find(t => /^@?[A-Za-z0-9._]+$/.test(t));
+    if (handle) return handle;
+  }
+
+  return raw;
+}
+
 app.post("/api/instagram/investigate", async (req, res) => {
   const { target, sessionId } = req.body;
 
@@ -1593,8 +1718,15 @@ app.post("/api/instagram/investigate", async (req, res) => {
   };
 
   try {
-    let cleanTarget = target.toString().trim();
+    const markAuthState = (err, state) => {
+      const status = err?.response?.status;
+      if (status === 401 || status === 302) state.hadAuthError = true;
+      if (status === 403) state.hadAccessDenied = true;
+    };
+
+    let cleanTarget = normalizeInstagramTargetInput(target);
     if (cleanTarget.startsWith('@')) cleanTarget = cleanTarget.substring(1);
+    cleanTarget = cleanTarget.trim();
 
     const isUserId = /^\d+$/.test(cleanTarget);
     let userId = cleanTarget;
@@ -1603,6 +1735,7 @@ app.post("/api/instagram/investigate", async (req, res) => {
     if (!isUserId) {
       console.log(`[IG Investigate] Resolving username: ${cleanTarget}`);
       let resolved = false;
+      const authState = { hadAuthError: false, hadAccessDenied: false };
 
       // Strategy A: Mobile Search
       try {
@@ -1613,13 +1746,18 @@ app.post("/api/instagram/investigate", async (req, res) => {
           "X-IG-Connection-Type": "WIFI"
         };
         const searchRes = await runRequest(searchUrl, headersMobile);
-        const foundUser = searchRes.data.users?.find(u => u.username.toLowerCase() === cleanTarget.toLowerCase());
+        const searchData = normalizeInstagramApiData(searchRes.data);
+        const mobileUsers = extractInstagramUsers(searchData);
+        const foundUser = mobileUsers.find(u => u.username.toLowerCase() === cleanTarget.toLowerCase());
 
         if (foundUser) {
           userId = foundUser.pk;
           resolved = true;
         }
-      } catch (e) { console.log("Resolve Strategy A failed"); }
+      } catch (e) {
+        markAuthState(e, authState);
+        console.log("Resolve Strategy A failed");
+      }
 
       // Strategy B: Web Search (Fallback)
       if (!resolved) {
@@ -1631,17 +1769,86 @@ app.post("/api/instagram/investigate", async (req, res) => {
             "X-IG-App-ID": "936619743392459"
           };
           const webRes = await runRequest(webUrl, headersWeb);
-          const foundUser = webRes.data.users?.find(u => u.user.username.toLowerCase() === cleanTarget.toLowerCase());
+          const webData = normalizeInstagramApiData(webRes.data);
+          const webUsers = extractInstagramUsers(webData);
+          const foundUser = webUsers.find(u => u.user.username.toLowerCase() === cleanTarget.toLowerCase());
 
           if (foundUser) {
             userId = foundUser.user.pk;
             resolved = true;
           }
-        } catch (e) { console.log("Resolve Strategy B failed"); }
+        } catch (e) {
+          markAuthState(e, authState);
+          console.log("Resolve Strategy B failed");
+        }
+      }
+
+      // Strategy C: Public profile HTML parsing (fallback when search APIs are blocked)
+      if (!resolved) {
+        try {
+          const profileUrl = `https://www.instagram.com/${encodeURIComponent(cleanTarget)}/`;
+          const profileRes = await axios.get(profileUrl, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+              "Cookie": `sessionid=${cleanSessionId}; ds_user_id=${ds_user_id};`,
+              "Referer": "https://www.instagram.com/",
+              "Origin": "https://www.instagram.com"
+            },
+            responseType: "text",
+            maxRedirects: 5,
+            validateStatus: s => s < 400
+          });
+
+          const parsedId = extractInstagramUserIdFromHtml(profileRes.data);
+          if (parsedId) {
+            userId = parsedId;
+            resolved = true;
+            console.log(`[IG Investigate] Strategy C resolved @${cleanTarget} -> ${userId}`);
+          }
+        } catch (e) {
+          markAuthState(e, authState);
+          console.log("Resolve Strategy C failed");
+        }
+      }
+
+      // Strategy D: web_profile_info endpoint
+      if (!resolved) {
+        try {
+          const webInfoUrl = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(cleanTarget)}`;
+          const webInfoRes = await axios.get(webInfoUrl, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              "Cookie": `sessionid=${cleanSessionId}; ds_user_id=${ds_user_id};`,
+              "X-IG-App-ID": "936619743392459",
+              "Referer": "https://www.instagram.com/",
+              "Accept": "*/*"
+            },
+            maxRedirects: 5,
+            validateStatus: s => s < 400
+          });
+
+          const webInfoData = normalizeInstagramApiData(webInfoRes.data);
+          const profile = extractInstagramProfileFromWebInfo(webInfoData);
+          if (profile?.id) {
+            userId = profile.id;
+            resolved = true;
+            console.log(`[IG Investigate] Strategy D resolved @${cleanTarget} -> ${userId}`);
+          }
+        } catch (e) {
+          markAuthState(e, authState);
+          console.log("Resolve Strategy D failed");
+        }
       }
 
       if (!resolved) {
-        return res.json({ success: false, error: "Username not found. Try finding the numeric ID first." });
+        if (authState.hadAuthError) {
+          return res.json({ success: false, error: "Session ID Inválido/Expirado (401). Gere um novo." });
+        }
+        if (authState.hadAccessDenied) {
+          return res.json({ success: false, error: "Acesso Negado (403). Tente novamente mais tarde." });
+        }
+        return res.json({ success: false, error: `Username not found (${cleanTarget}). Try finding the numeric ID first.` });
       }
     }
 
@@ -1762,9 +1969,14 @@ app.post("/api/instagram/search", async (req, res) => {
     return res.status(400).json({ success: false, error: "Query and Session ID required" });
   }
 
+  const normalizedQuery = normalizeInstagramTargetInput(query).replace(/^@+/, "");
+  if (!normalizedQuery) {
+    return res.status(400).json({ success: false, error: "Query inválida" });
+  }
+
   // Sanitize Session ID (Decode if user pasted URL encoded value)
   let cleanSessionId = sessionId.trim();
-  if (cleanSessionId.includes('%3A')) {
+  if (cleanSessionId.includes('%3A') || cleanSessionId.includes('%3a')) {
     cleanSessionId = decodeURIComponent(cleanSessionId);
   }
 
@@ -1773,7 +1985,7 @@ app.post("/api/instagram/search", async (req, res) => {
   const match = cleanSessionId.match(/^(\d+)%3A|^(\d+):/);
   const ds_user_id = match ? (match[1] || match[2]) : "";
 
-  console.log(`[IG Search] Searching for: ${query} (DS_USER_ID: ${ds_user_id})`);
+  console.log(`[IG Search] Searching for: ${normalizedQuery} (DS_USER_ID: ${ds_user_id})`);
 
   const runRequest = async (url, headers) => {
     return axios.get(url, {
@@ -1796,10 +2008,10 @@ app.post("/api/instagram/search", async (req, res) => {
         "Host": "i.instagram.com"
       };
 
-      const mobileUrl = `https://i.instagram.com/api/v1/users/search/?q=${encodeURIComponent(query)}&timezone_offset=0&count=30`;
+      const mobileUrl = `https://i.instagram.com/api/v1/users/search/?q=${encodeURIComponent(normalizedQuery)}&timezone_offset=0&count=30`;
       const res = await runRequest(mobileUrl, mobileHeaders);
-
-      const mUsers = res.data.users || [];
+      const mobileData = normalizeInstagramApiData(res.data);
+      const mUsers = extractInstagramUsers(mobileData);
       if (mUsers.length > 0) {
         const mResults = mUsers.map(u => ({
           id: u.pk,
@@ -1827,10 +2039,10 @@ app.post("/api/instagram/search", async (req, res) => {
       "Origin": "https://www.instagram.com"
     };
 
-    const webUrl = `https://www.instagram.com/web/search/topsearch/?context=blended&query=${encodeURIComponent(query)}&include_reel=true`;
+    const webUrl = `https://www.instagram.com/web/search/topsearch/?context=blended&query=${encodeURIComponent(normalizedQuery)}&include_reel=true`;
     const webRes = await runRequest(webUrl, webHeaders);
-
-    const users = webRes.data.users || [];
+    const webData = normalizeInstagramApiData(webRes.data);
+    const users = extractInstagramUsers(webData);
     const wResults = users.map(u => ({
       id: u.user.pk,
       username: u.user.username,
@@ -1839,7 +2051,39 @@ app.post("/api/instagram/search", async (req, res) => {
       profile_pic_url: u.user.profile_pic_url || "https://via.placeholder.com/150"
     }));
 
-    res.json({ success: true, data: wResults });
+    if (wResults.length > 0) {
+      return res.json({ success: true, data: wResults });
+    }
+
+    // STRATEGY 3: web_profile_info direct lookup
+    const webInfoUrl = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(normalizedQuery)}`;
+    const webInfoRes = await axios.get(webInfoUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Cookie": `sessionid=${cleanSessionId}; ds_user_id=${ds_user_id};`,
+        "X-IG-App-ID": "936619743392459",
+        "Referer": "https://www.instagram.com/",
+        "Accept": "*/*"
+      },
+      maxRedirects: 5,
+      validateStatus: s => s < 400
+    });
+    const webInfoData = normalizeInstagramApiData(webInfoRes.data);
+    const profile = extractInstagramProfileFromWebInfo(webInfoData);
+    if (profile?.id) {
+      return res.json({
+        success: true,
+        data: [{
+          id: profile.id,
+          username: profile.username || normalizedQuery,
+          full_name: profile.full_name || "",
+          is_private: !!profile.is_private,
+          profile_pic_url: profile.profile_pic_url || "https://via.placeholder.com/150"
+        }]
+      });
+    }
+
+    res.json({ success: true, data: [] });
 
   } catch (err) {
     console.error("IG Search Critical Error:", err.message);
