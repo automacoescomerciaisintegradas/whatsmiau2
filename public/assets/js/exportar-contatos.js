@@ -1,45 +1,105 @@
 /**
  * exportar-contatos.js
- * Script para gerenciar a exportação de contatos do WhatsMiau2
+ * Exportação de contatos por grupo/canal — com botão individual por grupo
  */
 
 // State
 const state = {
     groups: [],
     channels: [],
-    newsletters: [],
-    selectedGroups: [],
-    stats: {
-        groups: 0,
-        channels: 0,
-        contacts: 0
-    },
+    stats: { groups: 0, channels: 0, contacts: 0 },
     currentInstance: null
+};
+
+// Mapa de DDDs brasileiros (67 códigos geográficos em uso)
+const BR_DDD_MAP = {
+    '11': { uf: 'SP', region: 'São Paulo e região metropolitana' },
+    '12': { uf: 'SP', region: 'São José dos Campos e Vale do Paraíba' },
+    '13': { uf: 'SP', region: 'Santos e Baixada Santista' },
+    '14': { uf: 'SP', region: 'Bauru e Marília' },
+    '15': { uf: 'SP', region: 'Sorocaba e Itapetininga' },
+    '16': { uf: 'SP', region: 'Ribeirão Preto e Franca' },
+    '17': { uf: 'SP', region: 'São José do Rio Preto' },
+    '18': { uf: 'SP', region: 'Presidente Prudente e Araçatuba' },
+    '19': { uf: 'SP', region: 'Campinas e Piracicaba' },
+    '21': { uf: 'RJ', region: 'Rio de Janeiro e Grande Rio' },
+    '22': { uf: 'RJ', region: 'Campos dos Goytacazes e Região dos Lagos' },
+    '24': { uf: 'RJ', region: 'Volta Redonda, Petrópolis e Angra' },
+    '27': { uf: 'ES', region: 'Vitória e região central/norte' },
+    '28': { uf: 'ES', region: 'Cachoeiro de Itapemirim e sul do ES' },
+    '31': { uf: 'MG', region: 'Belo Horizonte e região metropolitana' },
+    '32': { uf: 'MG', region: 'Juiz de Fora e Zona da Mata' },
+    '33': { uf: 'MG', region: 'Governador Valadares e leste de MG' },
+    '34': { uf: 'MG', region: 'Uberlândia e Triângulo Mineiro' },
+    '35': { uf: 'MG', region: 'Poços de Caldas e sul de MG' },
+    '37': { uf: 'MG', region: 'Divinópolis e centro-oeste de MG' },
+    '38': { uf: 'MG', region: 'Montes Claros e norte de MG' },
+    '41': { uf: 'PR', region: 'Curitiba e região metropolitana' },
+    '42': { uf: 'PR', region: 'Ponta Grossa e Campos Gerais' },
+    '43': { uf: 'PR', region: 'Londrina e norte do PR' },
+    '44': { uf: 'PR', region: 'Maringá e noroeste do PR' },
+    '45': { uf: 'PR', region: 'Cascavel e oeste do PR' },
+    '46': { uf: 'PR', region: 'Francisco Beltrão e sudoeste do PR' },
+    '47': { uf: 'SC', region: 'Joinville, Blumenau e Itajaí' },
+    '48': { uf: 'SC', region: 'Florianópolis e sul de SC' },
+    '49': { uf: 'SC', region: 'Chapecó e oeste de SC' },
+    '51': { uf: 'RS', region: 'Porto Alegre e região metropolitana' },
+    '53': { uf: 'RS', region: 'Pelotas e Rio Grande' },
+    '54': { uf: 'RS', region: 'Caxias do Sul e Serra Gaúcha' },
+    '55': { uf: 'RS', region: 'Santa Maria e noroeste do RS' },
+    '61': { uf: 'DF', region: 'Brasília e entorno' },
+    '62': { uf: 'GO', region: 'Goiânia e região central de GO' },
+    '63': { uf: 'TO', region: 'Palmas e Tocantins' },
+    '64': { uf: 'GO', region: 'Rio Verde, Itumbiara e sul de GO' },
+    '65': { uf: 'MT', region: 'Cuiabá e região' },
+    '66': { uf: 'MT', region: 'Rondonópolis, Sinop e interior de MT' },
+    '67': { uf: 'MS', region: 'Campo Grande e Mato Grosso do Sul' },
+    '68': { uf: 'AC', region: 'Rio Branco e Acre' },
+    '69': { uf: 'RO', region: 'Porto Velho e Rondônia' },
+    '71': { uf: 'BA', region: 'Salvador e região metropolitana' },
+    '73': { uf: 'BA', region: 'Ilhéus, Itabuna e sul da BA' },
+    '74': { uf: 'BA', region: 'Juazeiro e norte da BA' },
+    '75': { uf: 'BA', region: 'Feira de Santana e interior da BA' },
+    '77': { uf: 'BA', region: 'Vitória da Conquista e oeste da BA' },
+    '79': { uf: 'SE', region: 'Aracaju e Sergipe' },
+    '81': { uf: 'PE', region: 'Recife e região metropolitana' },
+    '82': { uf: 'AL', region: 'Maceió e Alagoas' },
+    '83': { uf: 'PB', region: 'João Pessoa e Paraíba' },
+    '84': { uf: 'RN', region: 'Natal e Rio Grande do Norte' },
+    '85': { uf: 'CE', region: 'Fortaleza e região metropolitana' },
+    '86': { uf: 'PI', region: 'Teresina e centro-norte do PI' },
+    '87': { uf: 'PE', region: 'Petrolina e interior de PE' },
+    '88': { uf: 'CE', region: 'Sobral, Juazeiro do Norte e interior do CE' },
+    '89': { uf: 'PI', region: 'Picos e sul do PI' },
+    '91': { uf: 'PA', region: 'Belém e região metropolitana' },
+    '92': { uf: 'AM', region: 'Manaus e região central do AM' },
+    '93': { uf: 'PA', region: 'Santarém e oeste do PA' },
+    '94': { uf: 'PA', region: 'Marabá e sudeste do PA' },
+    '95': { uf: 'RR', region: 'Boa Vista e Roraima' },
+    '96': { uf: 'AP', region: 'Macapá e Amapá' },
+    '97': { uf: 'AM', region: 'Interior do Amazonas' },
+    '98': { uf: 'MA', region: 'São Luís e norte do MA' },
+    '99': { uf: 'MA', region: 'Imperatriz e sul do MA' }
 };
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     setupTheme();
     setupSidebar();
-
-    // Initial Load
     loadInstances().then(() => {
         carregarEstatisticas();
     });
-
     console.log('[Export] Sistema pronto');
 });
 
-// UI Setup (Theme & Sidebar)
+// --- Theme & Sidebar ---
 function setupTheme() {
     const toggleSwitch = document.querySelector('#darkModeSwitch');
     const body = document.body;
-
     if (localStorage.getItem('theme') === 'dark') {
         body.setAttribute('data-theme', 'dark');
         if (toggleSwitch) toggleSwitch.checked = true;
     }
-
     if (toggleSwitch) {
         toggleSwitch.addEventListener('change', () => {
             const theme = toggleSwitch.checked ? 'dark' : 'light';
@@ -50,34 +110,29 @@ function setupTheme() {
 }
 
 function setupSidebar() {
-    const toggleButton = document.getElementById("menu-toggle");
-    const wrapper = document.getElementById("wrapper");
+    const toggleButton = document.getElementById('menu-toggle');
+    const wrapper = document.getElementById('wrapper');
     if (toggleButton && wrapper) {
-        toggleButton.onclick = () => wrapper.classList.toggle("sb-sidenav-toggled");
+        toggleButton.onclick = () => wrapper.classList.toggle('sb-sidenav-toggled');
     }
 }
 
 // --- Instance Management ---
 async function loadInstances() {
     try {
-        const response = await fetch('/api/instance/fetchInstances');
+        const response = await fetch('/v1/instance/fetchInstances', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+        });
         const instances = await response.json();
-
         const listEl = document.getElementById('instance-list');
         listEl.innerHTML = '<li><h6 class="dropdown-header">Selecione a Instância</h6></li><li><hr class="dropdown-divider"></li>';
 
         if (Array.isArray(instances) && instances.length > 0) {
             const savedInstance = localStorage.getItem('whatsmiau_instance');
-
-            // Helper to get name from item
             const getName = (item) => (item.instance && item.instance.instanceName) || item.instanceName || item.name;
             const getStatus = (item) => (item.instance && item.instance.status) || item.status;
-            const getOwner = (item) => (item.instance && item.instance.owner) || item.owner;
 
-            // Determine active instance
             let activeInstance = savedInstance || getName(instances[0]);
-
-            // Verify if saved instance still exists
             if (!instances.some(i => getName(i) === activeInstance)) {
                 activeInstance = getName(instances[0]);
             }
@@ -88,14 +143,12 @@ async function loadInstances() {
             instances.forEach(item => {
                 const name = getName(item);
                 const status = getStatus(item);
-                const owner = getOwner(item);
-
+                const owner = (item.instance && item.instance.owner) || item.owner;
                 const statusColor = status === 'connected' ? 'text-success' : 'text-danger';
                 const icon = status === 'connected' ? 'fa-check-circle' : 'fa-times-circle';
-
                 const li = document.createElement('li');
                 li.innerHTML = `
-                    <a class="dropdown-item d-flex justify-content-between align-items-center ${name === activeInstance ? 'active' : ''}" 
+                    <a class="dropdown-item d-flex justify-content-between align-items-center ${name === activeInstance ? 'active' : ''}"
                        href="#" onclick="selectInstance('${name}')">
                         <span>${name} <small class="text-muted ms-1">(${owner || '---'})</small></span>
                         <i class="fas ${icon} ${statusColor}"></i>
@@ -105,11 +158,11 @@ async function loadInstances() {
             });
         } else {
             listEl.innerHTML += '<li><a class="dropdown-item disabled" href="#">Nenhuma instância</a></li>';
-            document.getElementById('current-instance-name').textContent = "Sem Instâncias";
+            document.getElementById('current-instance-name').textContent = 'Sem Instâncias';
         }
     } catch (error) {
-        console.error("Erro ao carregar instâncias:", error);
-        document.getElementById('current-instance-name').textContent = "Erro Conexão";
+        console.error('Erro ao carregar instâncias:', error);
+        document.getElementById('current-instance-name').textContent = 'Erro Conexão';
     }
 }
 
@@ -118,287 +171,680 @@ function selectInstance(name) {
     localStorage.setItem('whatsmiau_instance', name);
     location.reload();
 }
-
-window.selectInstance = selectInstance; // Global for onclick
+window.selectInstance = selectInstance;
 
 function updateInstanceUI(name, instances) {
     const getName = (item) => (item.instance && item.instance.instanceName) || item.instanceName || item.name;
     const getStatus = (item) => (item.instance && item.instance.status) || item.status;
-
     const item = instances.find(i => getName(i) === name);
     const status = item ? getStatus(item) : 'unknown';
     const statusColor = status === 'connected' ? 'text-success' : 'text-danger';
-
     document.getElementById('current-instance-name').innerHTML = `
-        ${name} <i class="fas fa-circle ${statusColor} ms-2" style="font-size: 0.6rem;"></i>
+        ${name} <i class="fas fa-circle ${statusColor} ms-2" style="font-size:0.6rem;"></i>
     `;
 }
 
-// Logic Functions
+// --- Carregar grupos e canais ---
 async function carregarEstatisticas() {
     const statGroups = document.getElementById('stat-groups');
     const statChannels = document.getElementById('stat-channels');
     const statContacts = document.getElementById('stat-contacts');
     const previewList = document.getElementById('preview-list');
 
-    previewList.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div><p class="mt-2">Carregando dados...</p></div>';
+    previewList.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div><p class="mt-2">Carregando grupos e canais...</p></div>';
 
     try {
-        // Fetch groups and newsletters concurrently
-        // Fetch groups and newsletters concurrently
-        const instanceQuery = state.currentInstance ? `&instance=${state.currentInstance}` : '';
-        const instanceQuery2 = state.currentInstance ? `?instance=${state.currentInstance}` : '';
+        const instance = state.currentInstance || 'default';
 
-        const [groupsResponse, channelsResponse] = await Promise.all([
-            fetch(`/api/whatsmiau2/groups?getParticipants=false${instanceQuery}`),
-            fetch(`/api/whatsmiau2/newsletters${instanceQuery2}`)
+        const [groupsResult, channelsResult] = await Promise.allSettled([
+            fetchGroupsWithFallback(instance),
+            fetchNewslettersWithFallback(instance)
         ]);
 
-        const groupsData = await groupsResponse.json();
-        const channelsData = await channelsResponse.json();
-
-        // Handle Groups
-        if (groupsData.success && groupsData.data) {
-            state.groups = groupsData.data; // All from here are groups
+        if (groupsResult.status === 'fulfilled') {
+            state.groups = groupsResult.value;
+        } else {
+            console.warn('[Export] Falha de rede ao carregar grupos:', groupsResult.reason?.message || groupsResult.reason);
+            state.groups = [];
         }
 
-        // Handle Channels
-        if (channelsData.success && channelsData.data) {
-            state.channels = channelsData.data;
+        if (channelsResult.status === 'fulfilled') {
+            state.channels = channelsResult.value;
+        } else {
+            console.warn('[Export] Falha de rede ao carregar canais:', channelsResult.reason?.message || channelsResult.reason);
+            state.channels = [];
         }
 
-        // Update stats
         state.stats.groups = state.groups.length;
         state.stats.channels = state.channels.length;
 
-        // Calc total participants (Group participants + Channel subscribers/viewers)
-        // Group: participantCount, Channel: subscriberCount (usually)
         const groupsTotal = state.groups.reduce((sum, item) => sum + (item.participantCount || 0), 0);
-        // Channels often have 'subscriberCount' or similar
         const channelsTotal = state.channels.reduce((sum, item) => sum + (item.subscriberCount || 0), 0);
-
         const total = groupsTotal + channelsTotal;
 
         statGroups.textContent = state.stats.groups;
         statChannels.textContent = state.stats.channels;
         statContacts.textContent = total > 0 ? `~${total}` : '0';
 
-        // Render Preview
-        renderPreview([...state.groups, ...state.channels]);
+        renderGroupCards([...state.groups, ...state.channels]);
 
     } catch (error) {
         console.error('[Export Error]', error);
-        previewList.innerHTML = `<div class="text-center text-danger py-4"><i class="fas fa-exclamation-triangle mb-2"></i><br>${error.message}</div>`;
+        document.getElementById('preview-list').innerHTML =
+            `<div class="text-center text-danger py-4"><i class="fas fa-exclamation-triangle mb-2"></i><br>${error.message}</div>`;
     }
 }
 
-function renderPreview(items) {
+// --- Renderiza um card por grupo com botão individual ---
+function renderGroupCards(items) {
     const previewList = document.getElementById('preview-list');
     previewList.innerHTML = '';
 
     if (items.length === 0) {
-        previewList.innerHTML = '<div class="text-center text-muted py-4">Nenhum item encontrado</div>';
+        previewList.innerHTML = '<div class="text-center text-muted py-4">Nenhum grupo ou canal encontrado</div>';
         return;
     }
 
-    // Show first 20 items
-    items.slice(0, 20).forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'd-flex justify-content-between align-items-center p-2 border-bottom';
-        div.innerHTML = `
-            <div>
-                <i class="fas ${item.jid.endsWith('@newsletter') ? 'fa-bullhorn text-primary' : 'fa-users text-success'} me-2"></i>
-                <span class="fw-bold">${item.subject || item.name || 'Sem nome'}</span>
-            </div>
-            <span class="badge bg-secondary">${item.participantCount || '?'} parts.</span>
-        `;
-        previewList.appendChild(div);
-    });
+    items.forEach((item, idx) => {
+        const jid = item.jid || '';
+        const isNewsletter = jid.endsWith('@newsletter');
+        const label = item.subject || item.name || jid || 'Sem nome';
+        const count = item.participantCount != null ? item.participantCount : '?';
+        const icon = isNewsletter ? 'fa-bullhorn' : 'fa-users';
+        const color = isNewsletter ? 'primary' : 'success';
+        const safeName = label.replace(/'/g, "\\'").replace(/`/g, '');
 
-    if (items.length > 20) {
-        const moreDiv = document.createElement('div');
-        moreDiv.className = 'text-center text-muted p-2';
-        moreDiv.textContent = `... e mais ${items.length - 20} itens`;
-        previewList.appendChild(moreDiv);
-    }
+        const card = document.createElement('div');
+        card.className = 'card border-0 shadow-sm mb-2 export-preview-item';
+        card.id = `group-card-${idx}`;
+        card.dataset.jid = jid;
+        card.innerHTML = `
+            <div class="card-body py-3 px-3 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width:0;">
+                    <i class="fas ${icon} text-${color}" style="font-size:1.1rem;min-width:18px;"></i>
+                    <div style="min-width:0;">
+                        <div class="fw-semibold text-truncate" style="max-width:420px;" title="${label.replace(/"/g, '&quot;')}">${label}</div>
+                        <small class="text-muted group-jid" style="font-size:0.72rem;">${jid}</small>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 ms-2 flex-shrink-0">
+                    <span class="badge bg-secondary">${count} parts.</span>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-${color} dropdown-toggle btn-export"
+                                type="button"
+                                data-bs-toggle="dropdown"
+                                id="btn-export-${idx}">
+                            <i class="fas fa-download me-1"></i>Exportar
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="min-width:180px;">
+                            <li><h6 class="dropdown-header small">Formato de exportação</h6></li>
+                            <li><a class="dropdown-item small" href="#" onclick="exportarGrupo(${idx},'csv');return false;">
+                                <i class="fas fa-file-csv me-2 text-success"></i>CSV Completo
+                            </a></li>
+                            <li><a class="dropdown-item small" href="#" onclick="exportarGrupo(${idx},'csv-numbers');return false;">
+                                <i class="fas fa-list-ol me-2 text-primary"></i>CSV Só Números
+                            </a></li>
+                            <li><a class="dropdown-item small" href="#" onclick="exportarGrupo(${idx},'numbers');return false;">
+                                <i class="fas fa-hashtag me-2 text-dark"></i>Lista Só Números
+                            </a></li>
+                            <li><a class="dropdown-item small" href="#" onclick="exportarGrupo(${idx},'txt');return false;">
+                                <i class="fas fa-file-alt me-2 text-secondary"></i>TXT
+                            </a></li>
+                            <li><a class="dropdown-item small" href="#" onclick="exportarGrupo(${idx},'json');return false;">
+                                <i class="fas fa-code me-2 text-warning"></i>JSON
+                            </a></li>
+                            <li><a class="dropdown-item small" href="#" onclick="exportarGrupo(${idx},'vcf');return false;">
+                                <i class="fas fa-address-card me-2 text-info"></i>VCF (vCard)
+                            </a></li>
+                        </ul>
+                    </div>
+                    <span class="status-badge" id="status-badge-${idx}" style="display:none;"></span>
+                </div>
+            </div>
+        `;
+        previewList.appendChild(card);
+    });
 }
 
+// --- Exporta contatos de UM grupo/canal específico ---
+window.exportarGrupo = function (idx, format) {
+    const card = document.getElementById(`group-card-${idx}`);
+    if (!card) return;
+
+    const jid = card.dataset.jid;
+    const label = card.querySelector('.fw-semibold')?.textContent.trim() || jid;
+    const btnEl = document.getElementById(`btn-export-${idx}`);
+    const statusEl = document.getElementById(`status-badge-${idx}`);
+    const instance = state.currentInstance || 'default';
+    const dddFilter = getDddFilterValueRaw();
+
+    if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Preparando...';
+    }
+
+    const url = `/api/whatsmiau2/export/contacts?instance=${encodeURIComponent(instance)}&jid=${encodeURIComponent(jid)}&format=${encodeURIComponent(format)}&label=${encodeURIComponent(label)}${dddFilter ? `&ddd=${encodeURIComponent(dddFilter)}` : ''}`;
+    triggerDirectDownload(url);
+
+    if (statusEl) {
+        statusEl.style.display = 'inline';
+        statusEl.innerHTML = `<span class="badge bg-success ms-1"><i class="fas fa-check me-1"></i>Download iniciado</span>`;
+        setTimeout(() => { statusEl.style.display = 'none'; statusEl.innerHTML = ''; }, 4000);
+    }
+
+    setTimeout(() => {
+        if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.innerHTML = '<i class="fas fa-download me-1"></i>Exportar';
+        }
+    }, 900);
+};
+
+// --- Exportar TODOS os grupos (botão geral) ---
 async function exportarContatos() {
     const format = document.getElementById('export-format').value;
-    const includeParticipants = document.getElementById('include-participants').checked;
+    const includeGroups = document.getElementById('include-groups').checked;
+    const includeChannels = document.getElementById('include-channels').checked;
     const statusDiv = document.getElementById('status-export');
 
     statusDiv.style.display = 'block';
     statusDiv.className = 'alert alert-info mt-3';
-    statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Extraindo contatos... Isso pode demorar.';
+    statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Iniciando exportação de todos os grupos...';
 
-    try {
-        let allContacts = [];
+    let items = [];
+    if (includeGroups) items = [...items, ...state.groups];
+    if (includeChannels) items = [...items, ...state.channels];
 
-        // 1. Get List of Groups to Process
-        const itemsToProcess = [...state.groups, ...state.channels];
-
-        if (itemsToProcess.length === 0) {
-            throw new Error("Nenhum grupo ou canal disponível para exportar.");
-        }
-
-        // 2. Fetch Participants for each group (if checked)
-        if (includeParticipants) {
-            let processed = 0;
-            const total = itemsToProcess.length;
-
-            // Process in chunks to avoid rate limiting/overload
-            for (const item of itemsToProcess) {
-                processed++;
-                statusDiv.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i> Processando ${processed}/${total}: ${item.subject || item.name}`;
-
-                try {
-                    // Try to fetch participants detail
-                    const instanceQuery = state.currentInstance ? `?instance=${state.currentInstance}` : '';
-                    const resp = await fetch(`/api/whatsmiau2/groups/${encodeURIComponent(item.jid)}${instanceQuery}`);
-                    const json = await resp.json();
-
-                    if (json.success && json.data) {
-                        const participants = json.data.Participants || json.data.participants || [];
-
-                        participants.forEach(p => {
-                            const jid = p.JID || p.jid || p.id;
-                            const contactJid = p.PhoneNumber || (typeof jid === 'string' ? jid : '');
-
-                            if (!contactJid) return;
-
-                            const isAdmin = p.IsAdmin || p.isAdmin || p.admin;
-                            const role = isAdmin ? 'admin' : 'member';
-
-                            allContacts.push({
-                                source: item.subject || item.name || 'Desconhecido',
-                                jid: contactJid,
-                                number: contactJid.split('@')[0],
-                                role: role
-                            });
-                        });
-                    }
-                } catch (e) {
-                    console.warn(`[Export Warn] Failed to fetch participants for ${item.jid}`, e);
-                    // Continue anyway
-                }
-
-                // Small delay to be nice to server
-                await new Promise(r => setTimeout(r, 100)); // 100ms delay
-            }
-        } else {
-            // Only export Group Info if participants not checked
-            allContacts = itemsToProcess.map(i => ({
-                source: 'System',
-                jid: i.jid,
-                number: i.jid.split('@')[0],
-                role: 'owner/system'
-            }));
-        }
-
-        // 3. Remove Duplicates (Optional, but good practice)
-        // For distinct list: const uniqueContacts = [...new Map(allContacts.map(item => [item.jid, item])).values()];
-        // For CSV with Source, we might want to keep duplicates if appearing in multiple groups?
-        // Let's keep them to know origin, but maybe add a 'Unique' export option later.
-
-        state.stats.contacts = allContacts.length;
-        document.getElementById('stat-contacts').textContent = state.stats.contacts;
-
-        // 4. Generate File Content
-        let content = '';
-        let mimeType = 'text/plain';
-        let extension = 'txt';
-
-        if (format === 'csv') {
-            mimeType = 'text/csv;charset=utf-8';
-            extension = 'csv';
-            // Add BOM for correct Excel encoding of special characters
-            content = "\uFEFF";
-            // Use semicolon (;) which is the standard CSV separator for Excel in Brazil/Europe
-            content += "Origem;Numero;JID;Papel\n";
-            content += allContacts.map(c => {
-                // Escape quotes in content
-                const source = (c.source || '').replace(/"/g, '""');
-                return `"${source}";"${c.number}";"${c.jid}";"${c.role}"`;
-            }).join("\n");
-        } else if (format === 'csv-numbers') {
-            mimeType = 'text/csv;charset=utf-8';
-            extension = 'csv';
-            // BOM for Excel
-            content = "\uFEFF";
-            // Header
-            content += "Numero\n";
-            // Filter distinct numbers and ensure they look like valid mobile numbers (BR: 12-13 digits, starts with 55)
-            const uniqueNumbers = [...new Set(allContacts
-                .map(c => c.number.replace(/\D/g, '')) // Remove any non-numeric chars just in case
-                .filter(n => {
-                    // Check if it is a potentially valid number
-                    // User Example: 558899745661 (12 digits? No, 55 + 88 + 99745661 = 13 digits usually)
-                    // BR Landline: 55 11 3333 4444 = 12 digits
-                    // BR Mobile: 55 11 99999 8888 = 13 digits
-
-                    // Allow 12 or 13 digits starting with 55 (Brazil)
-                    if (n.startsWith('55') && (n.length === 12 || n.length === 13)) {
-                        return true;
-                    }
-                    // Optional: Allow international numbers?
-                    //return n.length > 10; 
-                    return false; // For now, restrict to BR format as requested "55..."
-                })
-            )];
-            content += uniqueNumbers.join("\n");
-        } else if (format === 'json') {
-            mimeType = 'application/json';
-            extension = 'json';
-            content = JSON.stringify(allContacts, null, 2);
-        } else if (format === 'vcf') {
-            mimeType = 'text/vcard';
-            extension = 'vcf';
-            content = allContacts.map(c =>
-                `BEGIN:VCARD
-VERSION:3.0
-FN:WA Contact ${c.number}
-TEL;TYPE=CELL:${c.number}
-NOTE:Imported from ${c.source}
-END:VCARD`).join("\n");
-        } else {
-            // TXT
-            content = allContacts.map(c => `${c.number} (${c.source})`).join("\n");
-        }
-
-        // 5. Download
-        downloadFile(content, `contatos_whatsapp_${new Date().toISOString().slice(0, 10)}.${extension}`, mimeType);
-
-        statusDiv.className = 'alert alert-success mt-3';
-        statusDiv.innerHTML = `<i class="fas fa-check-circle me-2"></i> Sucesso! ${allContacts.length} contatos exportados.`;
-
-    } catch (error) {
-        console.error(error);
-        statusDiv.className = 'alert alert-danger mt-3';
-        statusDiv.innerHTML = `<i class="fas fa-times-circle me-2"></i> Erro: ${error.message}`;
+    if (items.length === 0) {
+        statusDiv.className = 'alert alert-warning mt-3';
+        statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Nenhum grupo ou canal disponível.';
+        return;
     }
+
+    const instance = state.currentInstance || 'default';
+    const dddFilterRaw = getDddFilterValueRaw();
+    const dddFilterSet = resolveDddFilterSet(dddFilterRaw);
+    let allContacts = [];
+    let processed = 0;
+    let failed = 0;
+
+    for (const item of items) {
+        processed++;
+        const label = item.subject || item.name || item.jid;
+        statusDiv.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${processed}/${items.length} — Processando: <strong>${label}</strong>`;
+
+        try {
+            const participants = await fetchParticipantsByJid(item.jid, instance);
+            participants.forEach(p => {
+                const normalized = normalizeParticipant(p, label);
+                if (!normalized) return;
+                allContacts.push({
+                    source: label,
+                    jid: normalized.jid,
+                    number: normalized.number,
+                    role: normalized.role
+                });
+            });
+        } catch (e) {
+            failed++;
+            console.warn(`[Export Warn] ${item.jid}:`, e.message);
+        }
+
+        await new Promise(r => setTimeout(r, 150));
+    }
+
+    if (allContacts.length === 0) {
+        statusDiv.className = 'alert alert-warning mt-3';
+        statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Nenhum contato encontrado nos grupos.';
+        return;
+    }
+
+    if (dddFilterSet) {
+        allContacts = allContacts.filter(c => dddFilterSet.has(parseBrazilNumber(c.number).ddd));
+    }
+
+    if (allContacts.length === 0) {
+        statusDiv.className = 'alert alert-warning mt-3';
+        statusDiv.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Nenhum contato encontrado para o filtro ${dddFilterRaw || '-'}.`;
+        return;
+    }
+
+    const content = buildFileContent(allContacts, format);
+    const ext = formatToExt(format);
+    const mime = formatToMime(format);
+    downloadFile(content, `contatos_todos_${new Date().toISOString().slice(0, 10)}.${ext}`, mime);
+
+    const failMsg = failed > 0 ? ` (${failed} grupo(s) com erro)` : '';
+    statusDiv.className = 'alert alert-success mt-3';
+    statusDiv.innerHTML = `<i class="fas fa-check-circle me-2"></i><strong>${allContacts.length}</strong> contatos exportados com sucesso!${dddFilterRaw ? ` (Filtro ${dddFilterRaw})` : ''}${failMsg}`;
+}
+
+// --- Copiar todos os contatos para área de transferência ---
+async function copiarContatos() {
+    const format = document.getElementById('export-format').value;
+    const includeGroups = document.getElementById('include-groups').checked;
+    const includeChannels = document.getElementById('include-channels').checked;
+    const statusDiv = document.getElementById('status-export');
+
+    statusDiv.style.display = 'block';
+    statusDiv.className = 'alert alert-info mt-3';
+    statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Preparando contatos para cópia...';
+
+    let items = [];
+    if (includeGroups) items = [...items, ...state.groups];
+    if (includeChannels) items = [...items, ...state.channels];
+
+    if (items.length === 0) {
+        statusDiv.className = 'alert alert-warning mt-3';
+        statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Nenhum grupo ou canal disponível.';
+        return;
+    }
+
+    const instance = state.currentInstance || 'default';
+    const dddFilterRaw = getDddFilterValueRaw();
+    const dddFilterSet = resolveDddFilterSet(dddFilterRaw);
+    let allContacts = [];
+    let processed = 0;
+    let failed = 0;
+
+    for (const item of items) {
+        processed++;
+        const label = item.subject || item.name || item.jid;
+        statusDiv.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${processed}/${items.length} — Lendo: <strong>${label}</strong>`;
+
+        try {
+            const participants = await fetchParticipantsByJid(item.jid, instance);
+            participants.forEach(p => {
+                const normalized = normalizeParticipant(p, label);
+                if (!normalized) return;
+                allContacts.push({
+                    source: label,
+                    jid: normalized.jid,
+                    number: normalized.number,
+                    role: normalized.role
+                });
+            });
+        } catch (e) {
+            failed++;
+            console.warn(`[Copy Warn] ${item.jid}:`, e.message);
+        }
+
+        await new Promise(r => setTimeout(r, 120));
+    }
+
+    if (allContacts.length === 0) {
+        statusDiv.className = 'alert alert-warning mt-3';
+        statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Nenhum contato encontrado.';
+        return;
+    }
+
+    if (dddFilterSet) {
+        allContacts = allContacts.filter(c => dddFilterSet.has(parseBrazilNumber(c.number).ddd));
+    }
+
+    if (allContacts.length === 0) {
+        statusDiv.className = 'alert alert-warning mt-3';
+        statusDiv.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Nenhum contato encontrado para o filtro ${dddFilterRaw || '-'}.`;
+        return;
+    }
+
+    const content = buildFileContent(allContacts, format);
+    const copied = await copyToClipboardSafe(content);
+
+    if (!copied) {
+        statusDiv.className = 'alert alert-danger mt-3';
+        statusDiv.innerHTML = '<i class="fas fa-times-circle me-2"></i>Não foi possível copiar automaticamente neste navegador.';
+        return;
+    }
+
+    const failMsg = failed > 0 ? ` (${failed} grupo(s) com erro)` : '';
+    statusDiv.className = 'alert alert-success mt-3';
+    statusDiv.innerHTML = `<i class="fas fa-check-circle me-2"></i><strong>${allContacts.length}</strong> contatos copiados para a área de transferência!${dddFilterRaw ? ` (Filtro ${dddFilterRaw})` : ''}${failMsg}`;
+}
+window.copiarContatos = copiarContatos;
+
+// --- Helpers ---
+async function fetchGroupsWithFallback(instance) {
+    // 1) Preferred proxy route
+    try {
+        const resp = await fetch(`/api/whatsmiau2/groups?instance=${encodeURIComponent(instance)}`);
+        if (resp.ok) {
+            const payload = await resp.json().catch(() => ({}));
+            const groups = Array.isArray(payload)
+                ? payload
+                : (payload?.success && Array.isArray(payload?.data) ? payload.data : []);
+            if (groups.length > 0) return groups;
+        }
+    } catch (e) {
+        console.warn('[Export] /api groups fallback trigger:', e.message);
+    }
+
+    // 2) Direct backend route fallback
+    const direct = await fetch(`/v1/group/list/${encodeURIComponent(instance)}`, {
+        headers: authHeaders()
+    });
+    if (!direct.ok) {
+        throw new Error(`Falha ao carregar grupos (${direct.status})`);
+    }
+    const directPayload = await direct.json().catch(() => []);
+    return Array.isArray(directPayload) ? directPayload : (directPayload?.groups || []);
+}
+
+async function fetchNewslettersWithFallback(instance) {
+    // 1) Preferred proxy route
+    try {
+        const resp = await fetch(`/api/whatsmiau2/newsletters?instance=${encodeURIComponent(instance)}`);
+        if (resp.ok) {
+            const payload = await resp.json().catch(() => ({}));
+            const channels = Array.isArray(payload)
+                ? payload
+                : (payload?.success && Array.isArray(payload?.data) ? payload.data : []);
+            if (channels.length > 0) return channels;
+        }
+    } catch (e) {
+        console.warn('[Export] /api newsletters fallback trigger:', e.message);
+    }
+
+    // 2) Direct backend route fallback
+    const direct = await fetch(`/v1/newsletter/list/${encodeURIComponent(instance)}`, {
+        headers: authHeaders()
+    });
+    if (!direct.ok) {
+        throw new Error(`Falha ao carregar canais (${direct.status})`);
+    }
+    const directPayload = await direct.json().catch(() => ({}));
+    if (Array.isArray(directPayload)) return directPayload;
+    return Array.isArray(directPayload?.newsletters) ? directPayload.newsletters : [];
+}
+
+function authHeaders() {
+    return { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` };
+}
+
+function extractParticipantsFromPayload(payload) {
+    const root = payload?.data || payload || {};
+    const candidates = [
+        root?.Participants,
+        root?.participants,
+        root?.group?.Participants,
+        root?.group?.participants
+    ];
+    for (const c of candidates) {
+        if (Array.isArray(c)) return c;
+    }
+    return [];
+}
+
+function normalizeParticipant(p, sourceLabel) {
+    if (!p || typeof p !== 'object') return null;
+    const rawJid = p.JID || p.jid || p.id || '';
+    const rawNumber = p.PhoneNumber || p.phoneNumber || p.phone || p.number || '';
+    const number = String(rawNumber || (rawJid ? rawJid.split('@')[0] : '')).replace(/\D/g, '');
+    if (!number) return null;
+    return {
+        source: sourceLabel,
+        jid: rawJid || `${number}@s.whatsapp.net`,
+        number,
+        role: p.role || (p.IsAdmin || p.isAdmin ? 'admin' : 'member')
+    };
+}
+
+async function fetchParticipantsByJid(jid, instance) {
+    const isNewsletter = String(jid).endsWith('@newsletter');
+    const endpoints = isNewsletter
+        ? [
+            `/api/whatsmiau2/newsletters/${encodeURIComponent(jid)}?instance=${encodeURIComponent(instance)}`
+        ]
+        : [
+            `/api/whatsmiau2/groups/${encodeURIComponent(jid)}?instance=${encodeURIComponent(instance)}`
+        ];
+
+    let lastError = null;
+
+    for (const endpoint of endpoints) {
+        try {
+            const resp = await fetch(endpoint, { headers: authHeaders() });
+            if (!resp.ok) {
+                const errData = await resp.json().catch(() => ({}));
+                throw new Error(errData.error || `HTTP ${resp.status}`);
+            }
+            const json = await resp.json();
+            const participants = extractParticipantsFromPayload(json);
+            if (participants.length > 0) return participants;
+        } catch (err) {
+            lastError = err;
+        }
+    }
+
+    throw lastError || new Error('Não foi possível carregar participantes do grupo');
+}
+
+function buildFileContent(contacts, format) {
+    if (format === 'csv') {
+        let c = '\uFEFFOrigem;Numero;JID;Papel\n';
+        c += contacts.map(r => `"${(r.source || '').replace(/"/g, '""')}";"${r.number}";"${r.jid}";"${r.role}"`).join('\n');
+        return c;
+    }
+    if (format === 'csv-numbers') {
+        const seen = new Set();
+        const rows = [];
+
+        contacts.forEach((r) => {
+            const parsed = parseBrazilNumber(String(r?.number || r?.jid || ''));
+            if (!parsed.numberE164 || seen.has(parsed.numberE164)) return;
+            seen.add(parsed.numberE164);
+
+            rows.push([
+                parsed.countryCode,
+                parsed.ddd,
+                parsed.uf,
+                parsed.region,
+                parsed.localNumber,
+                parsed.numberE164
+            ]);
+        });
+
+        let csv = '\uFEFFPais;DDD;UF;Regiao;NumeroLocal;NumeroE164\n';
+        csv += rows.map(cols => cols.map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(';')).join('\n');
+        return csv;
+    }
+    if (format === 'numbers') {
+        const nums = [...new Set(
+            contacts
+                .map(r => parseBrazilNumber(String(r?.number || r?.jid || '')).numberE164)
+                .filter(Boolean)
+        )];
+        return nums.join('\n');
+    }
+    if (format === 'json') {
+        return JSON.stringify(contacts, null, 2);
+    }
+    if (format === 'vcf') {
+        return contacts.map(r =>
+            `BEGIN:VCARD\nVERSION:3.0\nFN:WA ${r.number}\nTEL;TYPE=CELL:${r.number}\nNOTE:${r.source}\nEND:VCARD`
+        ).join('\n');
+    }
+    // txt
+    return contacts.map(r => `${r.number} (${r.source}) [${r.role}]`).join('\n');
+}
+
+function parseBrazilNumber(input) {
+    let digits = String(input || '').replace(/\D/g, '');
+    digits = digits.replace(/^0+/, '');
+
+    let countryCode = '';
+    let ddd = '';
+    let localNumber = '';
+
+    if (digits.startsWith('55') && digits.length >= 12) {
+        countryCode = '55';
+        ddd = digits.slice(2, 4);
+        localNumber = digits.slice(4);
+    } else if (digits.length >= 10) {
+        countryCode = '55';
+        ddd = digits.slice(0, 2);
+        localNumber = digits.slice(2);
+    } else {
+        return {
+            countryCode: '',
+            ddd: '',
+            uf: '',
+            region: '',
+            localNumber: digits,
+            numberE164: ''
+        };
+    }
+
+    const dddInfo = BR_DDD_MAP[ddd] || { uf: '', region: 'DDD não mapeado' };
+    return {
+        countryCode,
+        ddd,
+        uf: dddInfo.uf,
+        region: dddInfo.region,
+        localNumber,
+        numberE164: `${countryCode}${ddd}${localNumber}`
+    };
+}
+
+function formatToExt(format) {
+    const map = { csv: 'csv', 'csv-numbers': 'csv', numbers: 'txt', json: 'json', vcf: 'vcf', txt: 'txt' };
+    return map[format] || 'txt';
+}
+
+function formatToMime(format) {
+    const map = {
+        csv: 'text/csv;charset=utf-8',
+        'csv-numbers': 'text/csv;charset=utf-8',
+        numbers: 'text/plain;charset=utf-8',
+        json: 'application/json',
+        vcf: 'text/vcard',
+        txt: 'text/plain'
+    };
+    return map[format] || 'text/plain';
+}
+
+function getDddFilterValueRaw() {
+    const input = document.getElementById('filter-ddd');
+    if (!input) return '';
+    return String(input.value || '').trim().toUpperCase();
+}
+
+function normalizeDddToken(token) {
+    let t = String(token || '').replace(/\D/g, '');
+    if (!t) return '';
+    if (t.length === 3 && t.startsWith('0')) t = t.slice(1);
+    if (t.length > 2) t = t.slice(-2);
+    return BR_DDD_MAP[t] ? t : '';
+}
+
+function resolveDddFilterSet(raw) {
+    const value = String(raw || '').trim().toUpperCase();
+    if (!value) return null;
+
+    // UF ex: PR, SP, RJ
+    if (/^[A-Z]{2}$/.test(value)) {
+        const ddds = Object.keys(BR_DDD_MAP).filter(ddd => BR_DDD_MAP[ddd].uf === value);
+        return ddds.length ? new Set(ddds) : null;
+    }
+
+    // Lista ex: 41,42,43 ou 041;042
+    const tokens = value.split(/[,\s;|/]+/).map(normalizeDddToken).filter(Boolean);
+    return tokens.length ? new Set(tokens) : null;
 }
 
 function downloadFile(content, fileName, mimeType) {
-    const a = document.createElement('a');
     const blob = new Blob([content], { type: mimeType });
+
+    // IE/legacy fallback
+    if (window.navigator && typeof window.navigator.msSaveOrOpenBlob === 'function') {
+        window.navigator.msSaveOrOpenBlob(blob, fileName);
+        return;
+    }
+
     const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
     a.href = url;
     a.download = fileName;
+    a.style.display = 'none';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+
+    try {
+        a.click();
+    } catch (err) {
+        // Safari/WKWebView fallback
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const fallback = document.createElement('a');
+            fallback.href = reader.result;
+            fallback.download = fileName;
+            fallback.style.display = 'none';
+            document.body.appendChild(fallback);
+            fallback.click();
+            document.body.removeChild(fallback);
+        };
+        reader.readAsDataURL(blob);
+    } finally {
+        setTimeout(() => {
+            if (a.parentNode) document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 300);
+    }
+}
+
+function triggerDirectDownload(url) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.style.display = 'none';
+    a.rel = 'noopener';
     document.body.appendChild(a);
     a.click();
     setTimeout(() => {
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-    }, 0);
+        if (a.parentNode) document.body.removeChild(a);
+    }, 100);
+}
+
+async function copyToClipboardSafe(text) {
+    const normalized = String(text || '');
+    if (!normalized) return false;
+
+    if (navigator.clipboard && window.isSecureContext) {
+        try {
+            await navigator.clipboard.writeText(normalized);
+            return true;
+        } catch (_) {
+            // fallback abaixo
+        }
+    }
+
+    try {
+        const ta = document.createElement('textarea');
+        ta.value = normalized;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.top = '-9999px';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        ta.setSelectionRange(0, ta.value.length);
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return !!ok;
+    } catch (_) {
+        return false;
+    }
 }
 
 function limparDados() {
     if (confirm('Limpar dados carregados?')) {
-        document.getElementById('stat-groups').textContent = '0';
-        document.getElementById('stat-channels').textContent = '0';
-        document.getElementById('stat-contacts').textContent = '0';
-        document.getElementById('preview-list').innerHTML = '<div class="text-center text-muted py-4">Clique em "Atualizar"</div>';
+        ['stat-groups', 'stat-channels', 'stat-contacts'].forEach(id => {
+            document.getElementById(id).textContent = '0';
+        });
+        document.getElementById('preview-list').innerHTML =
+            '<div class="text-center text-muted py-4">Clique em "Atualizar" para recarregar</div>';
         document.getElementById('status-export').style.display = 'none';
+        state.groups = [];
+        state.channels = [];
     }
 }

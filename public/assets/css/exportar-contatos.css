@@ -1,0 +1,109 @@
+.export-page .export-layout {
+    max-width: 1480px;
+    padding: 2rem 1.75rem 2.5rem;
+}
+
+.export-page .export-header {
+    margin-bottom: 1.5rem;
+}
+
+.export-page .export-header h2 {
+    margin-bottom: 0.35rem;
+    letter-spacing: -0.01em;
+}
+
+.export-page .export-info-alert {
+    margin-bottom: 1.5rem;
+    padding: 1.1rem 1.15rem;
+    border-radius: 12px;
+}
+
+.export-page .export-main-grid {
+    align-items: stretch;
+}
+
+.export-page .export-config-card,
+.export-page .export-preview-card {
+    border-radius: 18px;
+    padding: 1.65rem !important;
+}
+
+.export-page .export-card-title {
+    margin-bottom: 1.35rem;
+}
+
+.export-page .export-block {
+    margin-bottom: 1.35rem !important;
+}
+
+.export-page .export-config-card .form-label {
+    margin-bottom: 0.55rem;
+}
+
+.export-page .export-config-card .form-check {
+    margin-bottom: 0.28rem;
+}
+
+.export-page .export-config-card .form-check-label {
+    line-height: 1.25;
+}
+
+.export-page .export-config-card .form-select {
+    min-height: 46px;
+}
+
+.export-page .export-actions {
+    gap: 0.75rem !important;
+    margin-top: 0.55rem;
+}
+
+.export-page .export-actions .btn {
+    min-height: 58px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.export-page .export-actions .btn.btn-outline-secondary {
+    min-height: 48px;
+}
+
+.export-page .export-stats-grid {
+    margin-top: 0.1rem;
+}
+
+.export-page .export-stat-box {
+    min-height: 112px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-radius: 12px !important;
+}
+
+.export-page .export-preview-list {
+    max-height: 470px !important;
+    border-radius: 12px !important;
+    padding: 1rem !important;
+}
+
+.export-page .export-preview-list .card {
+    margin-bottom: 0.65rem;
+}
+
+.export-page .export-preview-list .card:last-child {
+    margin-bottom: 0;
+}
+
+@media (max-width: 991px) {
+    .export-page .export-layout {
+        padding: 1.1rem 1rem 1.65rem;
+    }
+
+    .export-page .export-config-card,
+    .export-page .export-preview-card {
+        padding: 1.2rem !important;
+    }
+
+    .export-page .export-preview-list {
+        max-height: 360px !important;
+    }
+}

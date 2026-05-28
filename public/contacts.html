@@ -27,7 +27,7 @@
                 </a>
 
                 <a href="/connections" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fas fa-wifi me-2"></i> ConexÃµes
+                    <i class="fas fa-wifi me-2"></i> Conexões
                 </a>
 
                 <a href="/disparador" class="list-group-item list-group-item-action bg-transparent">
@@ -64,7 +64,7 @@
                     <i class="fas fa-cog me-2"></i> Configurações
                 </a>
 
-                <a href="/" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
+                <a href="/logout" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
                     <i class="fas fa-sign-out-alt me-2"></i> Sair
                 </a>
             </div>
@@ -92,7 +92,7 @@
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
-                            <li><a class="dropdown-item text-danger" href="#">Sair</a></li>
+                            <li><a class="dropdown-item text-danger" href="/logout">Sair</a></li>
                         </ul>
                     </div>
                 </div>
@@ -112,13 +112,34 @@
                     </div>
                 </div>
 
+                <div class="card border-0 shadow-sm p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <h6 class="fw-bold mb-0">Categorias de Contatos</h6>
+                        <span class="small text-muted">Clique em uma categoria para filtrar e exportar sem misturar dados.</span>
+                    </div>
+                    <div class="row g-3" id="category-cards">
+                        <!-- Dinâmico -->
+                    </div>
+                </div>
+
                 <div class="card border-0 shadow-sm p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-                        <div class="input-group" style="max-width: 350px;">
-                            <span class="input-group-text bg-white border-end-0 text-muted"><i
-                                    class="fas fa-search"></i></span>
-                            <input type="text" class="form-control border-start-0 ps-0"
-                                placeholder="Buscar por nome ou número...">
+                        <div class="d-flex flex-wrap gap-2">
+                            <div class="input-group" style="max-width: 350px;">
+                                <span class="input-group-text bg-white border-end-0 text-muted"><i
+                                        class="fas fa-search"></i></span>
+                                <input type="text" class="form-control border-start-0 ps-0"
+                                    placeholder="Buscar por nome, número, grupo, canal ou origem...">
+                            </div>
+                            <select id="filter-lead-type" class="form-select" style="max-width: 180px;">
+                                <option value="all">Tipo: Todos</option>
+                                <option value="nome">Nomes/Contatos</option>
+                                <option value="grupo">Grupos</option>
+                                <option value="canal">Canais</option>
+                            </select>
+                            <select id="filter-lead-source" class="form-select" style="max-width: 220px;">
+                                <option value="all">Origem: Todas</option>
+                            </select>
                         </div>
 
                         <div id="bulk-actions" class="d-none animate__animated animate__fadeIn">
@@ -138,6 +159,14 @@
                         </div>
                     </div>
 
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <div class="small text-muted" id="active-category-indicator">Exibindo: Todas as categorias</div>
+                        <button class="btn btn-outline-success btn-sm fw-bold" id="export-filtered-btn"
+                            onclick="exportFilteredContactsCSV()">
+                            <i class="fas fa-file-export me-1"></i> Exportar Categoria Atual (CSV)
+                        </button>
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">
                             <thead class="bg-light">
@@ -148,6 +177,8 @@
                                     </th>
                                     <th class="border-0">Nome</th>
                                     <th class="border-0">WhatsApp</th>
+                                    <th class="border-0">Tipo</th>
+                                    <th class="border-0">Origem</th>
                                     <th class="border-0">Tags</th>
                                     <th class="border-0 text-end">Ações</th>
                                 </tr>
@@ -246,26 +277,223 @@
 
         // Contact Management Logic
         let allContacts = [];
+        let visibleContacts = [];
+        let activeCategory = '__all__';
+        let currentSearchTerm = '';
+        let activeLeadType = 'all';
+        let activeLeadSource = 'all';
+
+        function getContactName(contact) {
+            return (contact.nome || contact.name || '').toString().trim();
+        }
+
+        function getContactPhone(contact) {
+            return (contact.whatsapp || contact.phone || '').toString().trim();
+        }
+
+        function getContactTags(contact) {
+            const rawTags = contact.tags;
+            if (Array.isArray(rawTags)) {
+                return rawTags.map(t => (t || '').toString().trim()).filter(Boolean);
+            }
+            if (typeof rawTags === 'string') {
+                return rawTags
+                    .split(',')
+                    .map(t => t.trim())
+                    .filter(Boolean);
+            }
+            return [];
+        }
+
+        function getLeadSource(contact) {
+            const fonte = (contact.fonte || contact.source || '').toString().trim();
+            if (fonte) return fonte;
+
+            const tags = getContactTags(contact).map(t => t.toLowerCase());
+            if (tags.some(t => t.includes('grupo'))) return 'grupo';
+            if (tags.some(t => t.includes('canal') || t.includes('newsletter'))) return 'canal';
+            return 'desconhecida';
+        }
+
+        function getLeadType(contact) {
+            const phone = getContactPhone(contact).toLowerCase();
+            const name = getContactName(contact).toLowerCase();
+            const source = getLeadSource(contact).toLowerCase();
+            const tags = getContactTags(contact).map(t => t.toLowerCase());
+
+            if (phone.includes('@g.us')) return 'grupo';
+            if (phone.includes('@newsletter')) return 'canal';
+            if (source.includes('grupo') || name.includes('grupo') || tags.some(t => t.includes('grupo'))) return 'grupo';
+            if (source.includes('canal') || source.includes('newsletter') || name.includes('canal') || tags.some(t => t.includes('canal') || t.includes('newsletter'))) return 'canal';
+            return 'nome';
+        }
+
+        function getLeadTypeLabel(type) {
+            if (type === 'grupo') return 'Grupo';
+            if (type === 'canal') return 'Canal';
+            return 'Contato';
+        }
+
+        function refreshLeadSourceOptions(contacts) {
+            const select = document.getElementById('filter-lead-source');
+            if (!select) return;
+
+            const currentValue = select.value || 'all';
+            const unique = new Map();
+            contacts.forEach(c => {
+                const sourceLabel = getLeadSource(c);
+                const key = sourceLabel.toLowerCase();
+                if (!unique.has(key)) unique.set(key, sourceLabel);
+            });
+
+            const options = Array.from(unique.entries()).sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
+            select.innerHTML = `<option value="all">Origem: Todas</option>` + options
+                .map(([key, label]) => `<option value="${key}">${label}</option>`)
+                .join('');
+
+            if (Array.from(select.options).some(o => o.value === currentValue)) {
+                select.value = currentValue;
+            } else {
+                select.value = 'all';
+                activeLeadSource = 'all';
+            }
+        }
+
+        function slugifyCategory(value) {
+            return value
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '') || 'categoria';
+        }
 
         async function loadContacts() {
             const tbody = document.getElementById('contacts-tbody');
             if (!tbody) return;
 
             try {
-                const res = await fetch('/api/contacts');
+                const res = await fetch('/v1/crm/leads', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
                 const data = await res.json();
-                allContacts = data.contacts || [];
-                renderContacts(allContacts);
+                allContacts = data.leads || [];
+                renderCategoryCards(allContacts);
+                refreshLeadSourceOptions(allContacts);
+                applyFilters();
             } catch (err) {
                 console.error("Erro ao carregar contatos", err);
             }
         }
 
+        function renderCategoryCards(contacts) {
+            const container = document.getElementById('category-cards');
+            if (!container) return;
+
+            const counts = new Map();
+            let uncategorized = 0;
+
+            contacts.forEach(c => {
+                const tags = getContactTags(c);
+                if (!tags.length) {
+                    uncategorized += 1;
+                    return;
+                }
+                tags.forEach(tag => counts.set(tag, (counts.get(tag) || 0) + 1));
+            });
+
+            const sortedTags = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+            const cards = [
+                { key: '__all__', label: 'Todas', count: contacts.length, hint: 'Sem filtro de categoria' },
+                ...sortedTags.map(([tag, count]) => ({ key: tag, label: tag, count, hint: 'Clique para filtrar' })),
+                { key: '__uncategorized__', label: 'Sem categoria', count: uncategorized, hint: 'Contatos sem tag' }
+            ];
+
+            container.innerHTML = cards.map(card => `
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <button type="button"
+                        class="btn w-100 text-start p-3 border ${activeCategory === card.key ? 'btn-primary text-white' : 'btn-light'} category-card-btn"
+                        data-category="${card.key}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold">${card.label}</span>
+                            <span class="badge ${activeCategory === card.key ? 'bg-white text-primary' : 'bg-secondary'}">${card.count}</span>
+                        </div>
+                        <div class="small ${activeCategory === card.key ? 'text-white-50' : 'text-muted'} mt-1">${card.hint}</div>
+                    </button>
+                </div>
+            `).join('');
+
+            container.querySelectorAll('.category-card-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    setActiveCategory(btn.getAttribute('data-category') || '__all__');
+                });
+            });
+        }
+
+        function setActiveCategory(category) {
+            activeCategory = category || '__all__';
+            renderCategoryCards(allContacts);
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const term = currentSearchTerm.toLowerCase();
+
+            const filtered = allContacts.filter(c => {
+                const name = getContactName(c).toLowerCase();
+                const phone = getContactPhone(c).toLowerCase();
+                const tags = getContactTags(c);
+                const source = getLeadSource(c).toLowerCase();
+                const type = getLeadType(c);
+                const tagsText = tags.join(' ').toLowerCase();
+
+                const matchesSearch = !term ||
+                    name.includes(term) ||
+                    phone.includes(term) ||
+                    source.includes(term) ||
+                    tagsText.includes(term) ||
+                    type.includes(term);
+                if (!matchesSearch) return false;
+
+                if (activeLeadType !== 'all' && type !== activeLeadType) return false;
+                if (activeLeadSource !== 'all' && source !== activeLeadSource) return false;
+
+                if (activeCategory === '__all__') return true;
+                if (activeCategory === '__uncategorized__') return tags.length === 0;
+                return tags.includes(activeCategory);
+            });
+
+            renderContacts(filtered);
+        }
+
         function renderContacts(contacts) {
             const tbody = document.getElementById('contacts-tbody');
+            const indicator = document.getElementById('active-category-indicator');
+            const exportBtn = document.getElementById('export-filtered-btn');
+
+            visibleContacts = contacts;
+
+            if (indicator) {
+                if (activeCategory === '__all__') {
+                    indicator.textContent = `Exibindo: Todas as categorias (${contacts.length})`;
+                } else if (activeCategory === '__uncategorized__') {
+                    indicator.textContent = `Exibindo: Sem categoria (${contacts.length})`;
+                } else {
+                    indicator.textContent = `Exibindo: ${activeCategory} (${contacts.length})`;
+                }
+                if (activeLeadType !== 'all') {
+                    indicator.textContent += ` | Tipo: ${getLeadTypeLabel(activeLeadType)}`;
+                }
+                if (activeLeadSource !== 'all') {
+                    indicator.textContent += ` | Origem: ${activeLeadSource}`;
+                }
+            }
+            if (exportBtn) exportBtn.disabled = contacts.length === 0;
+
             if (contacts.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-muted">Nenhum contato encontrado.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted">Nenhum contato encontrado.</td></tr>`;
                 updateBulkBar();
+                updateTagsList(contacts);
                 return;
             }
 
@@ -274,11 +502,13 @@
                     <td>
                         <input type="checkbox" class="form-check-input contact-checkbox" data-id="${c.id}" onchange="updateBulkBar()">
                     </td>
-                    <td class="fw-bold">${c.name}</td>
-                    <td>${c.phone}</td>
-                    <td>${(c.tags || []).map(t => `<span class="badge bg-primary-subtle text-primary me-1">${t}</span>`).join('')}</td>
+                    <td class="fw-bold">${getContactName(c)}</td>
+                    <td>${getContactPhone(c)}</td>
+                    <td><span class="badge bg-info-subtle text-info">${getLeadTypeLabel(getLeadType(c))}</span></td>
+                    <td><span class="badge bg-secondary-subtle text-secondary">${getLeadSource(c)}</span></td>
+                    <td>${getContactTags(c).map(t => `<span class="badge bg-primary-subtle text-primary me-1">${t}</span>`).join('')}</td>
                     <td class="text-end">
-                        <button class="btn btn-light btn-sm" onclick="alert('Chat para ${c.phone}')"><i class="fas fa-comment"></i></button>
+                        <button class="btn btn-light btn-sm" onclick="alert('Chat para ${getContactPhone(c)}')"><i class="fas fa-comment"></i></button>
                         <button class="btn btn-light btn-sm" onclick="deleteContact(${c.id})"><i class="fas fa-trash text-danger"></i></button>
                     </td>
                 </tr>
@@ -291,7 +521,7 @@
         function updateTagsList(contacts) {
             const tagsList = document.getElementById('tags-delete-list');
             const allTags = new Set();
-            contacts.forEach(c => (c.tags || []).forEach(t => allTags.add(t)));
+            contacts.forEach(c => getContactTags(c).forEach(t => allTags.add(t)));
 
             if (allTags.size === 0) {
                 tagsList.innerHTML = '<li><span class="dropdown-item disabled">Nenhuma tag encontrada</span></li>';
@@ -301,6 +531,38 @@
             tagsList.innerHTML = Array.from(allTags).map(tag => `
                 <li><a class="dropdown-item text-danger" href="#" onclick="deleteByTag('${tag}')">Excluir todos com: <b>${tag}</b></a></li>
             `).join('');
+        }
+
+        function exportFilteredContactsCSV() {
+            if (!visibleContacts.length) {
+                alert('Nenhum contato para exportar na categoria atual.');
+                return;
+            }
+
+            const header = 'Nome,Numero,Tipo,Origem,Categorias';
+            const lines = visibleContacts.map(c => {
+                const name = getContactName(c).replace(/"/g, '""');
+                const phone = getContactPhone(c).replace(/"/g, '""');
+                const type = getLeadTypeLabel(getLeadType(c)).replace(/"/g, '""');
+                const source = getLeadSource(c).replace(/"/g, '""');
+                const tags = getContactTags(c).join('|').replace(/"/g, '""');
+                return `"${name}","${phone}","${type}","${source}","${tags}"`;
+            });
+
+            const csv = [header, ...lines].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const categoryLabel = activeCategory === '__all__'
+                ? 'todas'
+                : (activeCategory === '__uncategorized__' ? 'sem-categoria' : slugifyCategory(activeCategory));
+
+            a.href = url;
+            a.download = `contatos_${categoryLabel}_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
 
         function toggleSelectAll(master) {
@@ -322,18 +584,200 @@
             }
         }
 
+        async function createContact() {
+            const nameInput = document.getElementById('new-contact-name');
+            const phoneInput = document.getElementById('new-contact-phone');
+            const tagsInput = document.getElementById('new-contact-tags');
+
+            const nome = sanitizeName((nameInput?.value || '').trim());
+            const whatsapp = sanitizePhone((phoneInput?.value || '').trim());
+            const tagsRaw = (tagsInput?.value || '').trim();
+
+            if (!nome || nome === 'Sem Nome') {
+                alert('Informe um nome válido.');
+                return;
+            }
+            if (!whatsapp || whatsapp.length < 10) {
+                alert('Informe um WhatsApp válido.');
+                return;
+            }
+
+            const tags = tagsRaw
+                ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean)
+                : [];
+
+            const existingByPhone = allContacts.find(c => sanitizePhone(getContactPhone(c)) === whatsapp);
+            if (existingByPhone) {
+                const existingName = getContactName(existingByPhone) || '(sem nome)';
+                const shouldUpdate = confirm(
+                    `Já existe um contato com este número: ${existingName}.\n\nDeseja atualizar o nome/origem do contato existente?`
+                );
+                if (shouldUpdate) {
+                    await updateExistingLead(existingByPhone.id, nome);
+                    if (tags.length) {
+                        alert('Contato atualizado. Observação: as tags atuais foram mantidas no backend.');
+                    }
+                }
+                return;
+            }
+
+            try {
+                const response = await fetch('/v1/crm/leads', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify({
+                        nome,
+                        whatsapp,
+                        tags: tags.join(','),
+                        fonte: 'manual'
+                    })
+                });
+
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || data.success === false) {
+                    const msg = data.error || data.message || `Erro ${response.status}`;
+
+                    if (/UNIQUE constraint failed:\s*leads\.whatsapp/i.test(msg)) {
+                        const fallbackExisting = allContacts.find(c => sanitizePhone(getContactPhone(c)) === whatsapp);
+                        if (fallbackExisting) {
+                            const shouldUpdate = confirm(
+                                'Este WhatsApp já existe no CRM.\n\nDeseja atualizar o contato existente com este nome?'
+                            );
+                            if (shouldUpdate) {
+                                await updateExistingLead(fallbackExisting.id, nome);
+                            }
+                            return;
+                        }
+                        alert('Este WhatsApp já está cadastrado. Edite o contato existente em vez de criar outro.');
+                        return;
+                    }
+
+                    alert(`Falha ao criar contato: ${msg}`);
+                    return;
+                }
+
+                clearAndCloseNewContactModal();
+                await loadContacts();
+                alert('Contato criado com sucesso!');
+            } catch (err) {
+                console.error('Erro ao criar contato', err);
+                alert('Erro ao criar contato. Tente novamente.');
+            }
+        }
+
+        async function updateExistingLead(leadId, nome) {
+            try {
+                const response = await fetch(`/v1/crm/leads/${leadId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify({
+                        nome,
+                        fonte: 'manual'
+                    })
+                });
+
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || data.success === false) {
+                    const msg = data.error || data.message || `Erro ${response.status}`;
+                    alert(`Falha ao atualizar contato existente: ${msg}`);
+                    return false;
+                }
+
+                clearAndCloseNewContactModal();
+                await loadContacts();
+                alert('Contato existente atualizado com sucesso!');
+                return true;
+            } catch (err) {
+                console.error('Erro ao atualizar contato existente', err);
+                alert('Erro ao atualizar contato existente.');
+                return false;
+            }
+        }
+
+        function clearAndCloseNewContactModal() {
+            const nameInput = document.getElementById('new-contact-name');
+            const phoneInput = document.getElementById('new-contact-phone');
+            const tagsInput = document.getElementById('new-contact-tags');
+
+            if (nameInput) nameInput.value = '';
+            if (phoneInput) phoneInput.value = '';
+            if (tagsInput) tagsInput.value = '';
+
+            const modalEl = document.getElementById('modalNewContact');
+            if (!modalEl) return;
+            const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            modalInstance.hide();
+        }
+
+        // -------------------------------------------------
+        // Delete Contact
+        // -------------------------------------------------
+        /**
+         * Exclui um contato pelo ID.
+         * @param {number|string} id - ID do contato a ser removido.
+         */
+        async function deleteContact(id) {
+            if (!id) return;
+            if (!confirm('Deseja realmente excluir este contato?')) return;
+            try {
+                const res = await fetch(`/v1/crm/leads/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    const msg = errData.message || errData.error || `Erro ${res.status}`;
+                    alert(`Falha ao excluir contato: ${msg}`);
+                    return;
+                }
+                // Remove a linha da tabela se ainda existir
+                const row = document.getElementById(`contact-row-${id}`);
+                if (row) row.remove();
+                // Recarrega a lista para garantir consistência
+                loadContacts();
+            } catch (e) {
+                console.error('Erro ao excluir contato', e);
+                alert('Ocorreu um erro ao tentar excluir o contato.');
+            }
+        }
+
         async function deleteSelected() {
-            const selected = Array.from(document.querySelectorAll('.contact-checkbox:checked')).map(cb => Number(cb.getAttribute('data-id')));
+            const selected = Array.from(document.querySelectorAll('.contact-checkbox:checked'))
+                .map(cb => Number(cb.getAttribute('data-id')));
+            if (selected.length === 0) {
+                alert('Nenhum contato selecionado.');
+                return;
+            }
             if (!confirm(`Excluir as ${selected.length} pessoas selecionadas?`)) return;
 
             try {
-                await fetch('/api/contacts/bulk-delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ids: selected })
-                });
+                // Excluir um por um, pois a API não suporta múltiplos IDs na mesma rota DELETE
+                for (const id of selected) {
+                    const res = await fetch(`/v1/crm/leads/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                    });
+                    if (!res.ok) {
+                        const errData = await res.json().catch(() => ({}));
+                        const msg = errData.message || errData.error || `Erro ${res.status}`;
+                        alert(`Falha ao excluir contato ID ${id}: ${msg}`);
+                        // Opcional: interromper o loop ou continuar; aqui continuamos
+                    }
+                }
+                // Atualiza a lista após todas as exclusões
                 loadContacts();
-            } catch (err) { alert("Erro ao excluir contatos."); }
+            } catch (err) {
+                console.error('Erro ao excluir contatos selecionados', err);
+                alert('Erro ao excluir contatos selecionados.');
+            }
         }
 
         async function deleteByTag(tag) {
@@ -488,14 +932,27 @@
 
         async function processImport(contacts) {
             try {
-                await fetch('/api/contacts/import', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contacts })
-                });
+                // Map frontend names to backend names (nome, whatsapp)
+                const mappedContacts = contacts.map(c => ({
+                    nome: c.name,
+                    whatsapp: c.phone,
+                    tags: c.tags.join(',')
+                }));
+
+                for (const contact of mappedContacts) {
+                    await fetch('/v1/crm/leads', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                        },
+                        body: JSON.stringify(contact)
+                    });
+                }
+                
                 bootstrap.Modal.getInstance(document.getElementById('modalImport')).hide();
                 loadContacts();
-                alert(`${contacts.length} contatos importados com sucesso!`);
+                alert(`${contacts.length} contatos processados!`);
             } catch (err) {
                 alert("Erro na importação");
             }
@@ -503,9 +960,18 @@
 
         // Search
         document.querySelector('input[placeholder*="Buscar"]').addEventListener('input', (e) => {
-            const q = e.target.value.toLowerCase();
-            const filtered = allContacts.filter(c => c.name.toLowerCase().includes(q) || c.phone.includes(q));
-            renderContacts(filtered);
+            currentSearchTerm = (e.target.value || '').trim();
+            applyFilters();
+        });
+
+        document.getElementById('filter-lead-type')?.addEventListener('change', (e) => {
+            activeLeadType = e.target.value || 'all';
+            applyFilters();
+        });
+
+        document.getElementById('filter-lead-source')?.addEventListener('change', (e) => {
+            activeLeadSource = e.target.value || 'all';
+            applyFilters();
         });
 
         loadContacts();

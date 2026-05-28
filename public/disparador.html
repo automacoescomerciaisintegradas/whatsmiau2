@@ -191,10 +191,102 @@
             width: 0%;
             transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
+        .dispatch-page #page-content-wrapper {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .dispatch-page .responsive-container {
+            max-width: 1500px;
+            padding: 1.75rem 1.5rem 2rem;
+        }
+
+        .dispatch-page .card {
+            border-radius: 20px;
+        }
+
+        .dispatch-page .dispatch-card {
+            padding: 1.6rem !important;
+        }
+
+        .dispatch-page .section-title {
+            margin-bottom: 1.25rem !important;
+        }
+
+        .dispatch-page .content-tabs {
+            gap: 0.85rem !important;
+            margin-bottom: 1.35rem !important;
+        }
+
+        .dispatch-page .tab-button {
+            min-height: 76px;
+            border-radius: 14px;
+            font-size: 1.05rem;
+            line-height: 1.2;
+            padding: 0.85rem 1rem;
+        }
+
+        .dispatch-page #content-sections .form-label {
+            margin-bottom: 0.55rem;
+        }
+
+        .dispatch-page #message-content,
+        .dispatch-page #target-list,
+        .dispatch-page #ig-input-list {
+            border-radius: 14px;
+            min-height: 240px;
+            padding: 0.95rem 1rem;
+            line-height: 1.45;
+        }
+
+        .dispatch-page .delay-row {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            flex-wrap: wrap;
+        }
+
+        .dispatch-page .delay-input {
+            width: 130px !important;
+            min-width: 130px;
+        }
+
+        .dispatch-page .status-actions {
+            margin-bottom: 1.1rem !important;
+        }
+
+        .dispatch-page .log-console {
+            border-radius: 14px;
+            padding: 1rem;
+            min-height: 360px;
+            height: auto;
+        }
+
+        @media (max-width: 991px) {
+            .dispatch-page .responsive-container {
+                padding: 1rem 0.85rem 1.35rem;
+            }
+
+            .dispatch-page .dispatch-card {
+                padding: 1rem !important;
+            }
+
+            .dispatch-page .tab-button {
+                min-height: 64px;
+                font-size: 0.98rem;
+            }
+
+            .dispatch-page #message-content,
+            .dispatch-page #target-list,
+            .dispatch-page #ig-input-list {
+                min-height: 200px;
+            }
+        }
     </style>
 </head>
 
-<body data-theme="light">
+<body data-theme="light" class="dispatch-page">
 
     <div class="d-flex" id="wrapper">
 
@@ -209,7 +301,7 @@
                 </a>
 
                 <a href="/connections" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fas fa-wifi me-2"></i> ConexÃµes
+                    <i class="fas fa-wifi me-2"></i> Conexões
                 </a>
 
                 <a href="/disparador" class="list-group-item list-group-item-action bg-transparent">
@@ -284,16 +376,16 @@
         <div class="responsive-container">
             <div class="row g-4">
                 <!-- Config Section -->
-                <div class="col-xl-7">
-                    <div class="card p-4 shadow-sm border-0 mb-4">
-                        <h5 class="fw-bold mb-4 d-flex align-items-center">
+                <div class="col-12 col-xxl-7">
+                    <div class="card dispatch-card shadow-sm border-0 mb-4">
+                        <h5 class="fw-bold section-title d-flex align-items-center">
                             <span
                                 class="bg-primary bg-opacity-10 text-primary rounded-circle w-32 h-32 d-flex align-items-center justify-content-center me-2"
                                 style="width:32px; height:32px;">1</span>
                             Configurar Conteúdo
                         </h5>
 
-                        <div class="d-flex gap-2 mb-4 flex-wrap">
+                        <div class="d-flex content-tabs flex-wrap">
                             <button class="tab-button active" id="tab-text" onclick="setTab('text')">💬
                                 Texto</button>
                             <button class="tab-button" id="tab-audio" onclick="setTab('audio')">🎤 Áudio
@@ -381,15 +473,14 @@
 
                         <div class="mt-4 pt-4 border-top">
                             <label class="form-label small fw-bold">INTERVALO ENTRE ENVIOS (SEGUNDOS)</label>
-                            <div class="d-flex align-items-center gap-3">
-                                <input type="number" id="delay-seconds" class="form-control w-25" value="10" min="2">
-                                <span class="text-muted small"><i class="fas fa-info-circle me-1"></i> Recomendamos
-                                    ao menos 10s para evitar bloqueios.</span>
+                            <div class="delay-row">
+                                <input type="number" id="delay-seconds" class="form-control delay-input" value="8" min="3" max="1800" step="1">
+                                <span class="text-muted small"><i class="fas fa-info-circle me-1"></i> Mínimo 3s, máximo 1800s (30min). Recomendado: 8s para volume baixo, 60-300s (1-5min) para 1k+ contatos, 600-1800s (10-30min) para 5k+ contatos. Espaçar mais reduz risco de bloqueio do número.</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="card p-4 shadow-sm border-0">
+                    <div class="card dispatch-card shadow-sm border-0">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h5 class="fw-bold mb-0 d-flex align-items-center">
                                 <span
@@ -423,22 +514,22 @@
                             <span id="target-count"
                                 class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">0
                                 destinatários</span>
-                            <div class="text-muted small">Suporta JIDs e números simples.</div>
+                            <div class="text-muted small">Suporta JIDs (@g.us, @s.whatsapp.net, @lid) e números BR.</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Status Column -->
-                <div class="col-xl-5">
-                    <div class="card p-4 shadow-sm border-0 mb-4 h-100 d-flex flex-column">
-                        <h5 class="fw-bold mb-4 d-flex align-items-center">
+                <div class="col-12 col-xxl-5">
+                    <div class="card dispatch-card shadow-sm border-0 mb-4 h-100 d-flex flex-column">
+                        <h5 class="fw-bold section-title d-flex align-items-center">
                             <span
                                 class="bg-primary bg-opacity-10 text-primary rounded-circle w-32 h-32 d-flex align-items-center justify-content-center me-2"
                                 style="width:32px; height:32px;">3</span>
                             Painel de Controle
                         </h5>
 
-                        <div class="mb-4">
+                        <div class="status-actions">
                             <div class="d-flex justify-content-between align-items-end mb-2">
                                 <span class="small fw-bold text-uppercase opacity-75">Progresso</span>
                                 <span id="progress-text" class="fw-bold h4 mb-0 text-primary">0/0</span>
@@ -474,7 +565,7 @@
             <!-- Instagram OSINT Section -->
             <div class="row g-4 mt-2">
                 <div class="col-12">
-                    <div class="card p-4 shadow-sm border-0">
+                    <div class="card dispatch-card shadow-sm border-0">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h5 class="fw-bold mb-0 d-flex align-items-center">
                                 <span
@@ -744,6 +835,7 @@
         </div>
     </dialog>
 
+    <script src="/assets/js/check_access.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -790,10 +882,35 @@
 
         let osintResults = [];
 
+        function normalizeIgInputTarget(input) {
+            if (!input) return '';
+            let raw = String(input)
+                .replace(/[\u200B-\u200D\uFEFF]/g, '')
+                .trim();
+            if (!raw) return '';
+
+            raw = raw.replace(/^['"`]+|['"`]+$/g, '').trim();
+
+            const storiesMatch = raw.match(/instagram\.com\/stories\/([A-Za-z0-9._]+)(?:\/|$)/i);
+            if (storiesMatch && storiesMatch[1]) return storiesMatch[1];
+
+            const profileMatch = raw.match(/instagram\.com\/([A-Za-z0-9._]+)(?:\/|$)/i);
+            if (profileMatch && profileMatch[1]) {
+                const reserved = ['stories', 'p', 'reel', 'reels', 'explore', 'accounts', 'direct', 'tv'];
+                const value = profileMatch[1];
+                if (!reserved.includes(value.toLowerCase())) return value;
+            }
+
+            return raw;
+        }
+
         async function startOsint() {
             const sessionId = document.getElementById('ig-session-id').value.trim();
             const input = document.getElementById('ig-input-list').value;
-            const targets = input.split('\n').map(l => l.trim()).filter(l => l);
+            const targets = input
+                .split('\n')
+                .map(l => normalizeIgInputTarget(l))
+                .filter(l => l);
 
             if (!sessionId) return alert('Informe o Session ID');
             if (targets.length === 0) return alert('Informe os IDs ou Usernames');
@@ -816,11 +933,21 @@
 
                     const res = await fetch('/api/instagram/investigate', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                        },
                         body: JSON.stringify({ target, sessionId })
                     });
 
-                    const json = await res.json();
+                    const raw = await res.text();
+                    let json = null;
+                    try {
+                        json = JSON.parse(raw);
+                    } catch (parseError) {
+                        const fallback = raw ? raw.slice(0, 220) : 'Resposta vazia';
+                        throw new Error(`Resposta inválida do servidor (${res.status}): ${fallback}`);
+                    }
 
                     if (json.success) {
                         addIgRow(json.data);
@@ -890,14 +1017,62 @@
 
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const filename = `instagram_osint_${timestamp}`;
+            const headers = [
+                'id',
+                'username',
+                'full_name',
+                'public_email',
+                'bio_email',
+                'obfuscated_email',
+                'public_phone_number',
+                'contact_phone_number',
+                'bio_phone',
+                'obfuscated_phone',
+                'is_whatsapp_linked',
+                'follower_count',
+                'is_private',
+                'status_reason'
+            ];
+
+            const exportRows = osintResults.map((row) => {
+                const hasPublicEmail = !!(row.public_email || row.bio_email || row.obfuscated_email);
+                const hasPublicPhone = !!(row.public_phone_number || row.contact_phone_number || row.bio_phone || row.obfuscated_phone);
+                const hasAnyContact = hasPublicEmail || hasPublicPhone;
+
+                let statusReason = 'perfil_sem_contato_publico';
+                if (row.is_whatsapp_linked) {
+                    statusReason = 'whatsapp_vinculado_detectado';
+                } else if (hasAnyContact) {
+                    statusReason = 'contato_publico_detectado';
+                } else if (row.is_private) {
+                    statusReason = 'perfil_privado_sem_contato_publico';
+                }
+
+                return {
+                    id: row.id || '',
+                    username: row.username || '',
+                    full_name: row.full_name || '',
+                    public_email: row.public_email || '',
+                    bio_email: row.bio_email || '',
+                    obfuscated_email: row.obfuscated_email || '',
+                    public_phone_number: row.public_phone_number || '',
+                    contact_phone_number: row.contact_phone_number || '',
+                    bio_phone: row.bio_phone || '',
+                    obfuscated_phone: row.obfuscated_phone || '',
+                    is_whatsapp_linked: row.is_whatsapp_linked ? 'TRUE' : 'FALSE',
+                    follower_count: row.follower_count || 0,
+                    is_private: row.is_private ? 'TRUE' : 'FALSE',
+                    status_reason: statusReason
+                };
+            });
+
+            const ws = XLSX.utils.json_to_sheet(exportRows, { header: headers });
 
             if (type === 'excel') {
-                const ws = XLSX.utils.json_to_sheet(osintResults);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Resultados");
                 XLSX.writeFile(wb, filename + '.xlsx');
             } else {
-                const ws = XLSX.utils.json_to_sheet(osintResults);
                 const csv = XLSX.utils.sheet_to_csv(ws);
                 const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement("a");
@@ -914,8 +1089,9 @@
         }
 
         async function searchIgUsers() {
-            const query = document.getElementById('ig-search-query').value.trim();
+            const rawQuery = document.getElementById('ig-search-query').value.trim();
             const sessionId = document.getElementById('ig-session-id').value.trim();
+            const query = rawQuery.replace(/^@+/, '');
 
             if (!query) return alert('Digite algo para buscar');
             if (!sessionId) return alert('Insira o Session ID na tela principal antes de buscar.');
@@ -926,11 +1102,21 @@
             try {
                 const res = await fetch('/api/instagram/search', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
                     body: JSON.stringify({ query, sessionId })
                 });
 
-                const json = await res.json();
+                const raw = await res.text();
+                let json = null;
+                try {
+                    json = JSON.parse(raw);
+                } catch (parseError) {
+                    const fallback = raw ? raw.slice(0, 220) : 'Resposta vazia';
+                    throw new Error(`Resposta inválida do servidor (${res.status}): ${fallback}`);
+                }
 
                 if (json.success) {
                     tbody.innerHTML = '';
@@ -990,6 +1176,8 @@
             }
         }
     </script>
+    <!-- Access Check -->
+    <script src="/assets/js/check_access.js"></script>
 </body>
 
 </html>
