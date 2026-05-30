@@ -356,7 +356,7 @@ func (s *Server) setupRoutes() {
 	s.router.StaticFile("/contacts", "./public/contacts.html")
 	s.router.StaticFile("/webhooks", "./public/webhooks.html")
 	s.router.StaticFile("/crm-full", "./public/crm-full.html")
-	s.router.StaticFile("/resumo-grupos", "./public/groups.html")
+	s.router.StaticFile("/resumo-grupos", "./public/resumo-grupos.html")
 	s.router.StaticFile("/exportar-contatos", "./public/exportar-contatos.html")
 	s.router.StaticFile("/automacao", "./public/automacao.html")
 	s.router.StaticFile("/tickets", "./public/tickets.html")
