@@ -409,6 +409,9 @@ func (h *InstanceHandler) UpdateInstance(c *gin.Context) {
 	if req.WebhookToken != "" {
 		instance.WebhookToken = req.WebhookToken
 	}
+	if req.SIPDestination != "" {
+		instance.SIPDestination = req.SIPDestination
+	}
 
 	if err := h.db.UpdateInstance(instance); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -501,9 +504,10 @@ func (h *InstanceHandler) GetWebhookConfig(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"instance":     instance.Name,
-		"webhookUrl":   instance.WebhookURL,
-		"webhookToken": instance.WebhookToken,
+		"instance":       instance.Name,
+		"webhookUrl":     instance.WebhookURL,
+		"webhookToken":   instance.WebhookToken,
+		"sipDestination": instance.SIPDestination,
 	})
 }
 

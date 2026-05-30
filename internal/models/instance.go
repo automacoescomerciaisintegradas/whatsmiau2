@@ -27,6 +27,14 @@ type Instance struct {
 	ProfilePic   string         `json:"profilePic" gorm:"type:text"`
 	WebhookURL   string         `json:"webhookUrl" gorm:"type:text"`
 	WebhookToken string         `json:"webhookToken" gorm:"type:varchar(255)"`
+	
+	// SIP Integration (PBX Gateway)
+	SIPConnectionID string `json:"sipConnectionId" gorm:"type:varchar(100)"`
+	SIPHost         string `json:"sipHost" gorm:"type:varchar(100)"`
+	SIPUser         string `json:"sipUser" gorm:"type:varchar(100)"`
+	SIPPassword     string `json:"sipPassword" gorm:"type:varchar(100)"`
+	SIPDestination  string `json:"sipDestination" gorm:"type:varchar(100)"`
+	
 	LastSeen     *time.Time     `json:"lastSeen"`
 	CreatedAt    time.Time      `json:"createdAt"`
 	UpdatedAt    time.Time      `json:"updatedAt"`
@@ -43,8 +51,9 @@ type CreateInstanceRequest struct {
 
 // UpdateInstanceRequest represents the request to update an instance
 type UpdateInstanceRequest struct {
-	Webhook      string `json:"webhook"`
-	WebhookToken string `json:"webhookToken"`
+	Webhook        string `json:"webhook"`
+	WebhookToken   string `json:"webhookToken"`
+	SIPDestination string `json:"sipDestination"`
 }
 
 // InstanceResponse represents the API response for an instance

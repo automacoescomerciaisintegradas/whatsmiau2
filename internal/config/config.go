@@ -69,6 +69,9 @@ type Config struct {
 	// Free trial abuse guard
 	TrustedAccessIPs      []string
 	FreeTrialIPBlockHours int
+
+	// SIP Integration (Telnyx)
+	TelnyxAPIKey string
 }
 
 // Load reads configuration from environment variables
@@ -136,6 +139,9 @@ func Load() (*Config, error) {
 		// Free trial abuse guard
 		TrustedAccessIPs:      accesspolicy.ParseTrustedAccessIPs(os.Getenv("TRUSTED_ACCESS_IPS")),
 		FreeTrialIPBlockHours: accesspolicy.ParseFreeTrialBlockHours(os.Getenv("FREE_TRIAL_IP_BLOCK_HOURS"), 24*365*10, 1, 24*365*10),
+
+		// SIP Integration (Telnyx)
+		TelnyxAPIKey: getEnv("TELNYX_API_KEY", ""),
 	}
 
 	return cfg, nil

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
@@ -124,7 +124,7 @@
                     <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                 </a>
                 <a href="/connections" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fas fa-wifi me-2"></i> Conexões
+                    <i class="fas fa-wifi me-2"></i> ConexÃµes
                 </a>
                 <a href="/disparador" class="list-group-item list-group-item-action bg-transparent">
                     <i class="fas fa-paper-plane me-2"></i> Disparador
@@ -151,9 +151,9 @@
                 <div class="border-top my-3"></div>
 
                 <a href="/settings" class="list-group-item list-group-item-action bg-transparent">
-                    <i class="fas fa-cog me-2"></i> Configurações
+                    <i class="fas fa-cog me-2"></i> ConfiguraÃ§Ãµes
                 </a>
-                <a href="/logout" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
+                <a href="#" onclick="localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href='/login.html'; return false;" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
                     <i class="fas fa-sign-out-alt me-2"></i> Sair
                 </a>
             </div>
@@ -175,8 +175,8 @@
                     <!-- Filter / Actions in Navbar -->
                     <div class="d-flex gap-2">
                         <select class="form-select form-select-sm" id="viewSelector" style="width: auto;">
-                            <option value="kanban">Visualização Kanban</option>
-                            <option value="list">Visualização Lista</option>
+                            <option value="kanban">VisualizaÃ§Ã£o Kanban</option>
+                            <option value="list">VisualizaÃ§Ã£o Lista</option>
                             <option value="dashboard">Dashboard</option>
                         </select>
                         <button class="btn btn-primary btn-sm" onclick="openModal('modalAddLead')">
@@ -206,7 +206,7 @@
                         </div>
                         <div class="col-md-3">
                             <div class="stat-card">
-                                <small class="text-muted text-uppercase fw-bold">Em Negociação</small>
+                                <small class="text-muted text-uppercase fw-bold">Em NegociaÃ§Ã£o</small>
                                 <h2 class="display-6 fw-bold text-warning mb-0" id="statNegociacao">0</h2>
                             </div>
                         </div>
@@ -242,10 +242,10 @@
                                 ondragover="allowDrop(event)"></div>
                         </div>
 
-                        <!-- Negociação -->
+                        <!-- NegociaÃ§Ã£o -->
                         <div class="kanban-column" data-status="negociacao">
                             <div class="kanban-header">
-                                <div><i class="fas fa-circle text-warning me-2"></i> Negociação</div>
+                                <div><i class="fas fa-circle text-warning me-2"></i> NegociaÃ§Ã£o</div>
                                 <span class="badge bg-secondary rounded-pill" id="count-negociacao">0</span>
                             </div>
                             <div class="kanban-body" id="col-negociacao" ondrop="drop(event)"
@@ -340,7 +340,7 @@
 
         let leads = [];
 
-        socket.on('connect', () => console.log('🔌 CRM Real-time Active'));
+        socket.on('connect', () => console.log('ðŸ”Œ CRM Real-time Active'));
         socket.on('ticket-update', () => { loadLeads(); loadStats(); });
         socket.on('kanban-move', () => { loadLeads(); loadStats(); });
 
@@ -410,7 +410,7 @@
             const container = document.getElementById('leadsTableContainer');
             container.innerHTML = `
                 <table class="table table-hover mb-0">
-                    <thead class="table-light"><tr><th>Nome</th><th>WhatsApp</th><th>Status</th><th>Ações</th></tr></thead>
+                    <thead class="table-light"><tr><th>Nome</th><th>WhatsApp</th><th>Status</th><th>AÃ§Ãµes</th></tr></thead>
                     <tbody>
                         ${leads.map(l => `
                             <tr>
@@ -476,7 +476,7 @@
                         customerName: fd.get('nome'),
                         subject: fd.get('empresa') || 'Novo Lead Manual',
                         status: 'NOVO',
-                        priority: 'MÉDIA'
+                        priority: 'MÃ‰DIA'
                     })
                 });
                 modalAddLead.hide();

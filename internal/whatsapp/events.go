@@ -151,6 +151,19 @@ func (c *Client) handleMessage(evt *events.Message) {
 				"url":      audio.GetURL(),
 			},
 		}
+
+		// Baixar o áudio para integração com o SIP Gateway
+		if audio.GetPTT() && c.manager.OnAudioMessage != nil {
+			go func() {
+				audioBytes, err := c.WA.Download(audio)
+				if err == nil {
+					sender := evt.Info.Sender.ToNonAD().User
+					c.manager.OnAudioMessage(c.InstanceID, audioBytes, audio.GetMimetype(), sender)
+				} else {
+					zap.L().Error("Erro ao baixar áudio do whatsmeow", zap.Error(err), zap.String("instance", c.InstanceID))
+				}
+			}()
+		}
 	} else if evt.Message.GetDocumentMessage() != nil {
 		doc := evt.Message.GetDocumentMessage()
 		messageData["message"] = map[string]interface{}{

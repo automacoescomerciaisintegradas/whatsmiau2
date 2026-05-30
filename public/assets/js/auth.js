@@ -243,6 +243,28 @@ function requireAuth() {
     return true;
 }
 
+/**
+ * Verifica assinatura e redireciona para a tela correta (Dashboard ou Assinatura)
+ */
+async function redirectBasedOnSubscription() {
+    const token = getToken();
+    try {
+        const res = await fetch('/v1/subscription/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.status === 'active') {
+                window.location.href = '/dashboard';
+                return;
+            }
+        }
+    } catch (e) {
+        console.error('Erro ao checar assinatura:', e);
+    }
+    window.location.href = '/subscription.html';
+}
+
 // ============================================
 // Event Handlers para formulários
 // ============================================
@@ -292,9 +314,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 showSuccess('Login realizado com sucesso!');
 
-                // Redirecionar após breve delay
+                // Redirecionar após breve delay dependendo da assinatura
                 setTimeout(() => {
-                    window.location.href = '/profile.html';
+                    redirectBasedOnSubscription();
                 }, 1000);
 
             } catch (error) {
@@ -348,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Redirecionar
                 setTimeout(() => {
-                    window.location.href = '/profile.html';
+                    redirectBasedOnSubscription();
                 }, 1000);
 
             } catch (error) {
@@ -410,3 +432,4 @@ window.getUser = getUser;
 window.requireAuth = requireAuth;
 window.deleteAccount = deleteAccount;
 window.syncCurrentUser = syncCurrentUser;
+window.redirectBasedOnSubscription = redirectBasedOnSubscription;

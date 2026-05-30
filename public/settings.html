@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
@@ -114,7 +114,7 @@
                 <a href="/settings" class="list-group-item list-group-item-action bg-transparent active">
                     <i class="fas fa-cog me-2"></i> Configurações
                 </a>
-                <a href="/logout" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
+                <a href="#" onclick="localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href='/login.html'; return false;" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
                     <i class="fas fa-sign-out-alt me-2"></i> Sair
                 </a>
             </div>
@@ -141,7 +141,7 @@
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
-                            <li><a class="dropdown-item text-danger" href="/logout">Sair</a></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href='/login.html'; return false;">Sair</a></li>
                         </ul>
                     </div>
                 </div>
@@ -400,56 +400,7 @@
                                 </div>
                             </div>
 
-                            <!-- Webhook / Integração Externa -->
-                            <div class="col-md-6">
-                                <div class="api-card p-4" id="webhookCard">
-                                    <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <div class="d-flex align-items-center">
-                                            <div class="api-icon bg-warning text-dark me-3">
-                                                <i class="fas fa-bolt"></i>
-                                            </div>
-                                            <div>
-                                                <h5 class="fw-bold mb-0">Webhooks</h5>
-                                                <small class="text-muted">Notificações Externas</small>
-                                            </div>
-                                        </div>
-                                        <span class="status-badge bg-secondary text-white" id="webhookStatus">Não
-                                            Configurada</span>
-                                    </div>
-                                    <p class="text-muted small mb-3">
-                                        Receba notificações em sua aplicação quando eventos ocorrerem.
-                                    </p>
-                                    <div class="mb-3">
-                                        <label class="form-label small fw-bold">URL do Webhook</label>
-                                        <input type="text" class="form-control" id="webhookUrl"
-                                            placeholder="https://seu-servidor.com/webhook">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label small fw-bold">Eventos</label>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="webhookMsgReceived"
-                                                checked>
-                                            <label class="form-check-label small">Mensagem Recebida</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="webhookMsgSent" checked>
-                                            <label class="form-check-label small">Mensagem Enviada</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="webhookTicket">
-                                            <label class="form-check-label small">Ticket Atualizado</label>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-outline-warning btn-sm" onclick="testWebhook()">
-                                            <i class="fas fa-paper-plane me-1"></i> Enviar Teste
-                                        </button>
-                                        <button class="btn btn-warning btn-sm" onclick="saveWebhook()">
-                                            <i class="fas fa-save me-1"></i> Salvar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+
 
                             <!-- N8N / Automação -->
                             <div class="col-md-6">
@@ -490,6 +441,81 @@
                                     </div>
                                 </div>
                             </div>
+                            
+                            <!-- PBX / SIP Gateway -->
+                            <div class="col-md-6">
+                                <div class="api-card p-4" id="sipCard">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="api-icon text-white me-3" style="background: #2b54d6;">
+                                                <i class="fas fa-phone-alt"></i>
+                                            </div>
+                                            <div>
+                                                <h5 class="fw-bold mb-0">PBX / SIP Gateway</h5>
+                                                <small class="text-muted">Integração com 3CX e PABX</small>
+                                            </div>
+                                        </div>
+                                        <span class="status-badge bg-secondary text-white" id="sipStatus">Não
+                                            Configurada</span>
+                                    </div>
+                                    <p class="text-muted small mb-3">
+                                        Gere credenciais SIP via Telnyx para conectar este número de WhatsApp ao seu PABX.
+                                    </p>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Instância</label>
+                                        <div class="input-group">
+                                            <select class="form-select" id="sipInstanceSelect">
+                                                <option value="">Carregando instâncias...</option>
+                                            </select>
+                                            <button class="btn btn-outline-secondary" type="button" onclick="loadSIPConfig()">
+                                                <i class="fas fa-sync"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3" id="sipDestinationBox">
+                                        <label class="form-label small fw-bold">Destino SIP (Ramal do PABX)</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="sipDestination" placeholder="sip:1000@sua-empresa.3cx.us" disabled>
+                                            <button class="btn btn-primary" type="button" id="btnSaveSIPDest" onclick="saveSIPDestination()" disabled>
+                                                <i class="fas fa-save"></i> Salvar Ramal
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Para qual ramal o WhatsMiau ligará quando receber um áudio de voz.</small>
+                                    </div>
+                                    
+                                    <div id="sipCredentialsBox" class="bg-light p-3 rounded mb-3 border d-none">
+                                        <div class="mb-2">
+                                            <label class="small text-muted mb-1 d-block">Host / Registrar</label>
+                                            <div class="d-flex align-items-center">
+                                                <code class="text-dark bg-white border px-2 py-1 rounded w-100" id="sipHost">sip.telnyx.com</code>
+                                                <button class="btn btn-sm btn-link text-muted ms-2 px-1" onclick="copyToClipboard('sipHost')"><i class="far fa-copy"></i></button>
+                                            </div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="small text-muted mb-1 d-block">Authentication ID (User)</label>
+                                            <div class="d-flex align-items-center">
+                                                <code class="text-dark bg-white border px-2 py-1 rounded w-100" id="sipUser">---</code>
+                                                <button class="btn btn-sm btn-link text-muted ms-2 px-1" onclick="copyToClipboard('sipUser')"><i class="far fa-copy"></i></button>
+                                            </div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="small text-muted mb-1 d-block">Password</label>
+                                            <div class="d-flex align-items-center">
+                                                <code class="text-dark bg-white border px-2 py-1 rounded w-100" id="sipPassword">---</code>
+                                                <button class="btn btn-sm btn-link text-muted ms-2 px-1" onclick="copyToClipboard('sipPassword')"><i class="far fa-copy"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-primary btn-sm w-100" onclick="setupSIP()" id="btnSetupSip">
+                                            <i class="fas fa-plus me-1"></i> Gerar Credenciais
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
                         </div>
                     </div>
 
@@ -981,55 +1007,7 @@ Automacoes Comerciais Integradas AI é uma empresa que presta consultoria de IA 
             }
         }
 
-        // Webhook
-        async function testWebhook() {
-            const url = document.getElementById('webhookUrl').value;
-            if (!url) return alert('Informe a URL do Webhook');
 
-            try {
-                const res = await fetch('/api/settings/webhook/test', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    updateCardStatus('webhookCard', 'webhookStatus', true, 'Funcionando');
-                    alert('✅ Webhook de teste enviado com sucesso!');
-                } else {
-                    throw new Error(data.error || 'Falha');
-                }
-            } catch (e) {
-                updateCardStatus('webhookCard', 'webhookStatus', false, 'Erro');
-                alert('❌ Erro: ' + e.message);
-            }
-        }
-
-        async function saveWebhook() {
-            const events = [];
-            if (document.getElementById('webhookMsgReceived').checked) events.push('message_received');
-            if (document.getElementById('webhookMsgSent').checked) events.push('message_sent');
-            if (document.getElementById('webhookTicket').checked) events.push('ticket_updated');
-
-            try {
-                const res = await fetch('/api/settings/webhook', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        url: document.getElementById('webhookUrl').value,
-                        events
-                    })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    alert('✅ Webhook configurado!');
-                } else {
-                    throw new Error(data.error);
-                }
-            } catch (e) {
-                alert('❌ Erro ao salvar: ' + e.message);
-            }
-        }
 
         // N8N
         async function testN8N() {
@@ -1251,13 +1229,7 @@ Você é Sofia, Especialista em Automação Digital da Automacoescomerciais.
                 if (aiData.baseUrl) document.getElementById('aiBaseUrl').value = aiData.baseUrl;
                 if (aiData.hasApiKey) updateCardStatus('openaiCard', 'openaiStatus', true, 'Configurada');
 
-                // Carregar Webhook
-                const webhookRes = await fetch('/api/settings/webhook');
-                const webhookData = await webhookRes.json();
-                if (webhookData.url) {
-                    document.getElementById('webhookUrl').value = webhookData.url;
-                    updateCardStatus('webhookCard', 'webhookStatus', true, 'Configurada');
-                }
+
 
                 // Carregar N8N
                 const n8nRes = await fetch('/api/settings/n8n');
@@ -1329,8 +1301,165 @@ Após isso, quando um PIX for pago:
 • O cliente receberá confirmação via WhatsApp
 • Você receberá um alerta no seu número`);
         }
-    </script>
+        // Carrega instâncias no dropdown do SIP
+        async function loadSipInstances() {
+            try {
+                const res = await fetch('/v1/instance/fetchInstances', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+                const instances = await res.json();
+                const select = document.getElementById('sipInstanceSelect');
+                
+                if (!instances || instances.length === 0) {
+                    select.innerHTML = '<option value="">Nenhuma instância encontrada</option>';
+                    return;
+                }
+                
+                select.innerHTML = '<option value="">Selecione uma instância...</option>';
+                instances.forEach(item => {
+                    const inst = item.instance || item;
+                    const id = inst.instanceId || inst.name;
+                    select.innerHTML += `<option value="${id}">${inst.name}</option>`;
+                });
+                
+                // Add event listener to auto-load config when changed
+                select.addEventListener('change', loadSIPConfig);
+                
+            } catch (e) {
+                console.error('Erro ao carregar instâncias:', e);
+            }
+        }
 
+        async function loadSIPConfig() {
+            const instanceId = document.getElementById('sipInstanceSelect').value;
+            if (!instanceId) {
+                document.getElementById('sipCredentialsBox').classList.add('d-none');
+                document.getElementById('sipDestination').disabled = true;
+                document.getElementById('sipDestination').value = '';
+                document.getElementById('btnSaveSIPDest').disabled = true;
+                document.getElementById('sipStatus').className = 'status-badge bg-secondary text-white';
+                document.getElementById('sipStatus').innerText = 'Não Configurada';
+                document.getElementById('btnSetupSip').classList.remove('d-none');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`/v1/instance/sip/${encodeURIComponent(instanceId)}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+                
+                // Fetch destination as well using the generic instance config
+                const resInst = await fetch(`/v1/instance/webhook/${encodeURIComponent(instanceId)}`, {
+                     headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+
+                if (resInst.ok) {
+                    const dataInst = await resInst.json();
+                    if(dataInst.sipDestination) {
+                        document.getElementById('sipDestination').value = dataInst.sipDestination;
+                    } else {
+                        document.getElementById('sipDestination').value = '';
+                    }
+                    document.getElementById('sipDestination').disabled = false;
+                    document.getElementById('btnSaveSIPDest').disabled = false;
+                }
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.sipConfig) {
+                        document.getElementById('sipHost').innerText = data.sipConfig.host;
+                        document.getElementById('sipUser').innerText = data.sipConfig.username;
+                        document.getElementById('sipPassword').innerText = data.sipConfig.password;
+                        
+                        document.getElementById('sipCredentialsBox').classList.remove('d-none');
+                        document.getElementById('sipStatus').className = 'status-badge bg-success text-white';
+                        document.getElementById('sipStatus').innerText = 'Ativo';
+                        document.getElementById('btnSetupSip').classList.add('d-none'); // Esconde o botão se já tem
+                    }
+                } else {
+                    // Não tem
+                    document.getElementById('sipCredentialsBox').classList.add('d-none');
+                    document.getElementById('sipStatus').className = 'status-badge bg-secondary text-white';
+                    document.getElementById('sipStatus').innerText = 'Não Configurada';
+                    document.getElementById('btnSetupSip').classList.remove('d-none');
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function saveSIPDestination() {
+            const instanceId = document.getElementById('sipInstanceSelect').value;
+            const dest = document.getElementById('sipDestination').value;
+            if (!instanceId) {
+                alert('Selecione uma instância primeiro!');
+                return;
+            }
+            try {
+                const res = await fetch(`/v1/instance/update/${encodeURIComponent(instanceId)}`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}` 
+                    },
+                    body: JSON.stringify({ sipDestination: dest })
+                });
+                if (res.ok) {
+                    alert('Destino SIP salvo com sucesso!');
+                } else {
+                    const data = await res.json();
+                    alert('Erro ao salvar: ' + (data.error || 'Falha desconhecida'));
+                }
+            } catch (e) {
+                alert('Erro na requisição: ' + e.message);
+            }
+        }
+
+        async function setupSIP() {
+            const instanceId = document.getElementById('sipInstanceSelect').value;
+            if (!instanceId) {
+                alert('Selecione uma instância primeiro!');
+                return;
+            }
+            
+            const btn = document.getElementById('btnSetupSip');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Gerando...';
+            btn.disabled = true;
+            
+            try {
+                const res = await fetch(`/v1/instance/sip/${encodeURIComponent(instanceId)}/setup`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+                
+                const data = await res.json();
+                if (res.ok) {
+                    alert('Credenciais SIP geradas com sucesso!');
+                    loadSIPConfig();
+                } else {
+                    alert('Erro: ' + (data.error || 'Falha ao gerar credenciais'));
+                }
+            } catch (e) {
+                alert('Erro na requisição: ' + e.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+        
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copiado para a área de transferência!');
+            });
+        }
+
+        // Initialize SIP instances list
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSipInstances();
+        });
+    </script>
 </body>
 
 </html>

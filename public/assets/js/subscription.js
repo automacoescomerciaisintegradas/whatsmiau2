@@ -55,7 +55,7 @@ async function loadSubscriptionStatus(token) {
                         </div>
                     </div>
                     <div class="active-subscription-cta">
-                        <button class="btn btn-success btn-active-dashboard" onclick="window.location.href='/connections'">Ir para dashboard</button>
+                        <button class="btn btn-success btn-active-dashboard" onclick="window.location.href='/dashboard'">Ir para dashboard</button>
                     </div>
                 </div>
             `;
@@ -150,22 +150,25 @@ async function loadPlans(token) {
                     ${features.map(f => {
                         // Verificar se é uma feature de documentação para formatar diferente
                         if (f.includes('Documentação da Minha API')) {
-                            return `<li><i class="fas fa-book"></i> ${f}
-                                <div class="documentation-links mt-2">
-                                    <div class="doc-option">
-                                        <a href="http://localhost:3002/docs" target="_blank" class="doc-link">
-                                            <i class="fas fa-book"></i> Documentação da API
-                                        </a>
-                                    </div>
-                                    <div class="doc-option">
-                                        <a href="https://swagger.io" target="_blank" class="doc-link">
-                                            <i class="fas fa-swagger"></i> Swagger
-                                        </a>
-                                    </div>
-                                    <div class="doc-option">
-                                        <a href="https://pkg.go.dev/github.com/go-whatsapp/whatsmeow" target="_blank" class="doc-link">
-                                            <i class="fas fa-book"></i> Whatsmeow Docs
-                                        </a>
+                            return `<li><i class="fas fa-book mt-1"></i>
+                                <div class="d-flex flex-column w-100">
+                                    <span>${f}</span>
+                                    <div class="documentation-links mt-2">
+                                        <div class="doc-option">
+                                            <a href="http://localhost:3002/docs" target="_blank" class="doc-link">
+                                                <i class="fas fa-book"></i> Documentação da API
+                                            </a>
+                                        </div>
+                                        <div class="doc-option">
+                                            <a href="https://swagger.io" target="_blank" class="doc-link">
+                                                <i class="fas fa-code"></i> Swagger
+                                            </a>
+                                        </div>
+                                        <div class="doc-option">
+                                            <a href="https://pkg.go.dev/github.com/go-whatsapp/whatsmeow" target="_blank" class="doc-link">
+                                                <i class="fas fa-book-open"></i> Whatsmeow Docs
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             </li>`;
@@ -175,8 +178,8 @@ async function loadPlans(token) {
                     }).join('')}
                 </ul>
 
-                <button class="btn-subscribe" onclick="subscribe(${planId}, event)" data-plan-id="${planId}" data-plan-name="${plan.name}">${btnText}</button>
-                <a href="#" class="btn-secondary-action">Saibo Mais <i class="fas fa-arrow-right small ms-1"></i></a>
+                <button class="btn-subscribe pulse-btn ${isFreePlan ? 'btn-pulse-free' : 'btn-pulse-premium'}" onclick="subscribe(${planId}, event)" data-plan-id="${planId}" data-plan-name="${plan.name}">${btnText}</button>
+                <a href="#" class="btn-secondary-action">Saiba Mais !!! <i class="fas fa-arrow-right small ms-1"></i></a>
             </div>
         `}).join('');
     } catch (e) {
@@ -235,7 +238,7 @@ window.subscribe = async function (planId, ev) {
             if (result.checkout_url === '#') {
                 alert('Assinatura criada com sucesso! Redirecionando para o dashboard...');
                 setTimeout(() => {
-                    window.location.href = '/connections';
+                    window.location.href = '/dashboard';
                 }, 1200);
             } else {
                 window.location.href = result.checkout_url;

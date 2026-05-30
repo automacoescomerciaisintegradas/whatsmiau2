@@ -125,8 +125,8 @@
                 });
 
                 if (response.ok) {
-                    // Token is valid, redirect to profile page
-                    window.location.href = '/profile.html';
+                    // Token is valid, redirect intelligently
+                    window.redirectBasedOnSubscription();
                 } else {
                     // Token expired, clear it
                     localStorage.removeItem('authToken');
