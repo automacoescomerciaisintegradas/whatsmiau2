@@ -135,8 +135,10 @@
                             <strong class="d-none d-md-inline" id="user-display-name">Admin</strong>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="dropdownUser1">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Perfil</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-credit-card me-2"></i> Assinatura</a>
+                            <li><a class="dropdown-item" href="/profile.html"><i class="fas fa-user me-2"></i>
+                                    Perfil</a></li>
+                            <li><a class="dropdown-item" href="/subscription.html"><i
+                                        class="fas fa-credit-card me-2"></i> Assinatura</a>
                             </li>
                             <li>
                                 <hr class="dropdown-divider">
@@ -287,6 +289,73 @@
                                                 <textarea class="form-control" id="mensagem-abertura" rows="3"
                                                     placeholder="Ex: Olá pessoal! Confira o resumo do dia..."></textarea>
                                             </div>
+
+                                            <!-- Oferta: dados dinâmicos -->
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-medium small text-uppercase text-muted">Produto/Oferta</label>
+                                                <input type="text" class="form-control" id="oferta-produto"
+                                                    placeholder="Ex: Projetor HY300 Original Portátil Smart Android">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-medium small text-uppercase text-muted">Preço</label>
+                                                <input type="text" class="form-control" id="oferta-preco"
+                                                    placeholder="Ex: R$ 162,45">
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label fw-medium small text-uppercase text-muted">Link da Oferta (Shopee)</label>
+                                                <input type="text" class="form-control" id="oferta-link"
+                                                    placeholder="https://s.shopee.com.br/...">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-medium small text-uppercase text-muted">Marketplace</label>
+                                                <select class="form-select" id="oferta-marketplace">
+                                                    <option value="shopee" selected>Shopee</option>
+                                                    <option value="mercadolivre">Mercado Livre</option>
+                                                    <option value="amazon">Amazon</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-medium small text-uppercase text-muted">ID Afiliado</label>
+                                                <input type="text" class="form-control" id="afiliado-id"
+                                                    placeholder="18372150411">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-medium small text-uppercase text-muted">AppID</label>
+                                                <input type="text" class="form-control" id="afiliado-app-id"
+                                                    placeholder="18372150411">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-medium small text-uppercase text-muted">Sub_id (Opcional)</label>
+                                                <input type="text" class="form-control" id="afiliado-sub-id"
+                                                    placeholder="grupo_a|campanha_x">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-medium small text-uppercase text-muted">Termo de Busca</label>
+                                                <input type="text" class="form-control" id="oferta-termo"
+                                                    placeholder="Ex: celular barato 128gb">
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label fw-medium small text-uppercase text-muted">Link de Busca Afiliado</label>
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" id="oferta-link-busca"
+                                                        placeholder="Link montado automaticamente">
+                                                    <button class="btn btn-outline-primary" type="button"
+                                                        onclick="gerarLinksAfiliados()">
+                                                        <i class="fas fa-link me-1"></i> Gerar Links
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label fw-medium small text-uppercase text-muted">CSV de Ofertas (Opcional)</label>
+                                                <textarea class="form-control font-monospace" id="ofertas-csv" rows="5"
+                                                    placeholder="Cole aqui: Item Id,Item Name,Price,Sales,Shop Name,Commission Rate,Commission,Product Link,Offer Link"></textarea>
+                                                <div class="form-text">Use para preencher produto/preço/link e gerar template inteligente automaticamente.</div>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label fw-medium small text-uppercase text-muted">Link de Convite (Grupo)</label>
+                                                <input type="text" class="form-control" id="oferta-convite"
+                                                    placeholder="https://chat.whatsapp.com/...">
+                                            </div>
                                         </div>
 
                                         <!-- Action Buttons -->
@@ -299,6 +368,12 @@
                                             </button>
                                             <button class="btn btn-outline-secondary btn-sm" onclick="colarConfig()">
                                                 <i class="fas fa-paste me-1"></i> Colar Config
+                                            </button>
+                                            <button class="btn btn-outline-primary btn-sm" onclick="aplicarMelhorOfertaCSV()">
+                                                <i class="fas fa-database me-1"></i> Aplicar Melhor Oferta CSV
+                                            </button>
+                                            <button class="btn btn-outline-success btn-sm" onclick="gerarTemplateIAOferta()">
+                                                <i class="fas fa-robot me-1"></i> Gerar Template IA
                                             </button>
                                             <button class="btn btn-primary btn-sm ms-auto" onclick="gerarResumo()">
                                                 <i class="fas fa-wand-magic-sparkles me-1"></i> Gerar Preview
@@ -489,7 +564,7 @@
                     <div class="tab-pane fade" id="tab-templates" role="tabpanel">
                         <div class="card shadow-sm border-0">
                             <div class="card-header bg-transparent border-bottom py-3">
-                                <h5 class="fw-bold mb-0 text-dark">Templates de Resumo</h5>
+                                <h5 class="fw-bold mb-0 text-dark">Templates de Oferta</h5>
                             </div>
                             <div class="card-body">
                                 <div class="row g-3 mb-4">
@@ -498,8 +573,8 @@
                                             onclick="selecionarTemplate('simples')">
                                             <div class="card-body p-3 text-center">
                                                 <div class="fs-1 mb-2">📋</div>
-                                                <h6 class="fw-bold text-dark">Simples</h6>
-                                                <small class="text-muted">Lista básica com ranking</small>
+                                                <h6 class="fw-bold text-dark">Oferta Direta</h6>
+                                                <small class="text-muted">Mensagem curta de conversão</small>
                                             </div>
                                         </div>
                                     </div>
@@ -507,8 +582,8 @@
                                         <div class="card h-100 template-card" onclick="selecionarTemplate('detalhado')">
                                             <div class="card-body p-3 text-center">
                                                 <div class="fs-1 mb-2">📊</div>
-                                                <h6 class="fw-bold text-dark">Detalhado</h6>
-                                                <small class="text-muted">Estatísticas completas</small>
+                                                <h6 class="fw-bold text-dark">Oferta Completa</h6>
+                                                <small class="text-muted">Com benefícios e prova</small>
                                             </div>
                                         </div>
                                     </div>
@@ -517,8 +592,8 @@
                                             onclick="selecionarTemplate('motivacional')">
                                             <div class="card-body p-3 text-center">
                                                 <div class="fs-1 mb-2">🎉</div>
-                                                <h6 class="fw-bold text-dark">Motivacional</h6>
-                                                <small class="text-muted">Com emojis e incentivo</small>
+                                                <h6 class="fw-bold text-dark">Escassez</h6>
+                                                <small class="text-muted">Urgência + CTA forte</small>
                                             </div>
                                         </div>
                                     </div>
@@ -527,8 +602,8 @@
                                             onclick="selecionarTemplate('corporativo')">
                                             <div class="card-body p-3 text-center">
                                                 <div class="fs-1 mb-2">💼</div>
-                                                <h6 class="fw-bold text-dark">Corporativo</h6>
-                                                <small class="text-muted">Formal e objetivo</small>
+                                                <h6 class="fw-bold text-dark">Convite para Grupo</h6>
+                                                <small class="text-muted">Oferta + entrada no grupo</small>
                                             </div>
                                         </div>
                                     </div>
@@ -536,21 +611,46 @@
 
                                 <div class="form-group">
                                     <label class="form-label fw-bold small text-uppercase">Editor de Template</label>
-                                    <textarea class="form-control font-monospace" id="template-editor" rows="10">Resumo do Grupo: 📱 WhatsApp
+                                    <textarea class="form-control font-monospace" id="template-editor" rows="10">📢 *OFERTA DO DIA* | {{GRUPO}}
 📅 {{DATA}}
 
-🏆 *Top {{TOP}} mais ativos do dia:*
+🔥 *{{PRODUTO}}*
+✅ Por apenas: *{{PRECO}}*
 
-{{RANKING}}
+🛒 {{MARKETPLACE}}:
+{{LINK_OFERTA}}
 
-📊 Total de mensagens: {{TOTAL_MENSAGENS}}
-👥 Participantes ativos: {{TOTAL_PARTICIPANTES}}
+🔎 Pesquise mais:
+{{LINK_BUSCA_AFILIADO}}
 
-_Resumo gerado automaticamente_ 🤖</textarea>
+🔗 Entre no grupo:
+{{LINK_CONVITE}}
+
+{{ABERTURA}}
+
+🏬 Loja: {{LOJA}}
+💸 Comissão: {{COMISSAO}}
+📈 Vendas: {{VENDAS}}
+
+🏆 Bônus do dia:
+{{RANKING}}</textarea>
                                     <div class="form-text mt-2">
                                         <span class="badge bg-secondary me-1">{{DATA}}</span>
-                                        <span class="badge bg-secondary me-1">{{TOP}}</span>
+                                        <span class="badge bg-secondary me-1">{{GRUPO}}</span>
+                                        <span class="badge bg-secondary me-1">{{PRODUTO}}</span>
+                                        <span class="badge bg-secondary me-1">{{PRECO}}</span>
+                                        <span class="badge bg-secondary me-1">{{MARKETPLACE}}</span>
+                                        <span class="badge bg-secondary me-1">{{LINK_BUSCA_AFILIADO}}</span>
+                                        <span class="badge bg-secondary me-1">{{LOJA}}</span>
+                                        <span class="badge bg-secondary me-1">{{COMISSAO}}</span>
+                                        <span class="badge bg-secondary me-1">{{COMISSAO_RATE}}</span>
+                                        <span class="badge bg-secondary me-1">{{VENDAS}}</span>
+                                        <span class="badge bg-secondary me-1">{{ITEM_ID}}</span>
+                                        <span class="badge bg-secondary me-1">{{LINK_OFERTA}}</span>
+                                        <span class="badge bg-secondary me-1">{{LINK_CONVITE}}</span>
+                                        <span class="badge bg-secondary me-1">{{ABERTURA}}</span>
                                         <span class="badge bg-secondary me-1">{{RANKING}}</span>
+                                        <span class="badge bg-secondary me-1">{{TOP}}</span>
                                         <span class="badge bg-secondary me-1">{{TOTAL_MENSAGENS}}</span>
                                         <span class="badge bg-secondary">{{TOTAL_PARTICIPANTES}}</span>
                                     </div>
@@ -582,7 +682,10 @@ _Resumo gerado automaticamente_ 🤖</textarea>
         // ==========================================
         // GROUP SUMMARY LOGIC
         // ==========================================
-        const socket = io();
+        const socket = io({
+            transports: ['polling'],
+            upgrade: false
+        });
 
         const state = {
             grupoSelecionado: null,
@@ -598,15 +701,308 @@ _Resumo gerado automaticamente_ 🤖</textarea>
             // Set Default Date
             const hoje = new Date().toISOString().split('T')[0];
             document.getElementById('data').value = hoje;
+            document.getElementById('afiliado-id').value = '18372150411';
+            document.getElementById('afiliado-app-id').value = '18372150411';
 
             // Socket Listeners
             socket.on('evolution-event', (event) => {
                 console.log('[Socket.IO] Evento:', event);
             });
 
+            const autoLinkFields = [
+                'oferta-marketplace',
+                'afiliado-id',
+                'afiliado-app-id',
+                'afiliado-sub-id',
+                'oferta-termo',
+                'oferta-produto'
+            ];
+            autoLinkFields.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('change', () => gerarLinksAfiliados(false));
+            });
+
             // Initialize Instances on Load (AFTER state is defined)
             loadInstances();
         });
+
+        function encodeQueryParam(value) {
+            return encodeURIComponent((value || '').toString().trim());
+        }
+
+        function normalizeMarketplaceName(value) {
+            const v = (value || '').toString().trim().toLowerCase();
+            if (v === 'mercadolivre') return 'Mercado Livre';
+            if (v === 'amazon') return 'Amazon';
+            return 'Shopee';
+        }
+
+        function buildAffiliateSearchLink(marketplace, term, affiliateId, subId, appId) {
+            const q = encodeQueryParam(term || '');
+            const aff = encodeQueryParam(affiliateId || '');
+            const sub = encodeQueryParam(subId || '');
+            const app = encodeQueryParam(appId || '');
+
+            if (marketplace === 'amazon') {
+                const tag = aff || app || 'whatsmiau2-20';
+                return `https://www.amazon.com.br/s?k=${q}&tag=${tag}`;
+            }
+
+            if (marketplace === 'mercadolivre') {
+                const src = aff || app || 'whatsmiau2';
+                const sid = sub ? `&sid=${sub}` : '';
+                return `https://lista.mercadolivre.com.br/${q}?matt_tool=${src}${sid}`;
+            }
+
+            const timestamp = Date.now();
+            const subQuery = sub ? `&sub_id=${sub}` : '';
+            const appQuery = app ? `&app_id=${app}` : '';
+            return `https://shopee.com.br/search?keyword=${q}&af_id=${aff}${appQuery}&af_timestamp=${timestamp}${subQuery}`;
+        }
+
+        function appendAffiliateParamsToOfferLink(url, marketplace, affiliateId, subId, appId) {
+            const raw = (url || '').toString().trim();
+            if (!raw) return '';
+
+            try {
+                const parsed = new URL(raw);
+                if (marketplace === 'shopee') {
+                    if (affiliateId) parsed.searchParams.set('af_id', affiliateId);
+                    if (appId) parsed.searchParams.set('app_id', appId);
+                    parsed.searchParams.set('af_timestamp', Date.now().toString());
+                    if (subId) parsed.searchParams.set('sub_id', subId);
+                } else if (marketplace === 'amazon') {
+                    if (affiliateId || appId) parsed.searchParams.set('tag', affiliateId || appId);
+                    if (subId) parsed.searchParams.set('ascsubtag', subId);
+                } else if (marketplace === 'mercadolivre') {
+                    if (affiliateId || appId) parsed.searchParams.set('matt_tool', affiliateId || appId);
+                    if (subId) parsed.searchParams.set('sid', subId);
+                }
+                return parsed.toString();
+            } catch (_e) {
+                return raw;
+            }
+        }
+
+        function splitCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < line.length; i++) {
+                const ch = line[i];
+                const next = line[i + 1];
+                if (ch === '"' && inQuotes && next === '"') {
+                    current += '"';
+                    i++;
+                    continue;
+                }
+                if (ch === '"') {
+                    inQuotes = !inQuotes;
+                    continue;
+                }
+                if (ch === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                    continue;
+                }
+                current += ch;
+            }
+            result.push(current.trim());
+            return result;
+        }
+
+        function parseOfertasCSV() {
+            const raw = (document.getElementById('ofertas-csv')?.value || '').trim();
+            if (!raw) return [];
+
+            const lines = raw
+                .split(/\r?\n/)
+                .map(l => l.trim())
+                .filter(Boolean);
+
+            if (lines.length < 2) return [];
+
+            const headers = splitCSVLine(lines[0]).map(h => h.toLowerCase());
+            const idx = (name, fallback) => {
+                const found = headers.indexOf(name.toLowerCase());
+                return found >= 0 ? found : fallback;
+            };
+
+            const map = {
+                itemId: idx('item id', 0),
+                itemName: idx('item name', 1),
+                price: idx('price', 2),
+                sales: idx('sales', 3),
+                shopName: idx('shop name', 4),
+                commissionRate: idx('commission rate', 5),
+                commission: idx('commission', 6),
+                productLink: idx('product link', 7),
+                offerLink: idx('offer link', 8)
+            };
+
+            return lines.slice(1).map(line => {
+                const cols = splitCSVLine(line);
+                const record = {
+                    itemId: cols[map.itemId] || '',
+                    itemName: cols[map.itemName] || '',
+                    price: cols[map.price] || '',
+                    sales: cols[map.sales] || '0',
+                    shopName: cols[map.shopName] || '',
+                    commissionRate: cols[map.commissionRate] || '',
+                    commission: cols[map.commission] || '',
+                    productLink: cols[map.productLink] || '',
+                    offerLink: cols[map.offerLink] || ''
+                };
+                return record;
+            }).filter(r => r.itemName || r.offerLink || r.productLink);
+        }
+
+        function parseNumberLoose(value) {
+            const clean = (value || '').toString().replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+            const n = Number(clean);
+            return Number.isFinite(n) ? n : 0;
+        }
+
+        function escolherMelhorOferta(records) {
+            if (!records.length) return null;
+
+            // Heurística "IA local": prioriza comissão e tração de vendas.
+            const scored = records.map(r => {
+                const commissionValue = parseNumberLoose(r.commission);
+                const sales = parseNumberLoose(r.sales);
+                const commissionRate = parseNumberLoose(r.commissionRate);
+                const score = (commissionValue * 1.2) + (Math.log10(sales + 1) * 3) + (commissionRate * 0.15);
+                return { ...r, _score: score };
+            });
+
+            scored.sort((a, b) => b._score - a._score);
+            return scored[0];
+        }
+
+        function preencherOfertaComRegistro(record) {
+            if (!record) return false;
+            document.getElementById('oferta-produto').value = record.itemName || '';
+            document.getElementById('oferta-preco').value = record.price ? `R$ ${record.price}`.replace('R$ R$', 'R$') : '';
+            document.getElementById('oferta-link').value = record.offerLink || record.productLink || '';
+            document.getElementById('oferta-termo').value = record.itemName || '';
+            return true;
+        }
+
+        function aplicarMelhorOfertaCSV() {
+            const records = parseOfertasCSV();
+            if (!records.length) {
+                mostrarStatus('config', 'warning', '⚠️ Cole um CSV com cabeçalho e pelo menos 1 linha de oferta.');
+                return;
+            }
+
+            const best = escolherMelhorOferta(records);
+            if (!best || !preencherOfertaComRegistro(best)) {
+                mostrarStatus('config', 'error', '❌ Não foi possível aplicar a oferta do CSV.');
+                return;
+            }
+
+            gerarLinksAfiliados(false);
+            mostrarStatus('config', 'success', `✅ Melhor oferta aplicada: ${best.itemName || 'Item selecionado'}`);
+        }
+
+        async function gerarTemplateIAOferta() {
+            const records = parseOfertasCSV();
+            if (!records.length) {
+                mostrarStatus('config', 'warning', '⚠️ Cole o CSV para gerar template inteligente.');
+                return;
+            }
+
+            const best = escolherMelhorOferta(records);
+            preencherOfertaComRegistro(best);
+            gerarLinksAfiliados(false);
+
+            const marketplace = normalizeMarketplaceName(document.getElementById('oferta-marketplace')?.value);
+            const produto = (document.getElementById('oferta-produto')?.value || 'Oferta').trim();
+            const preco = (document.getElementById('oferta-preco')?.value || 'Consulte no link').trim();
+            const loja = (best?.shopName || 'Loja parceira').trim();
+            const comissao = (best?.commission || '--').trim();
+            const comissaoRate = (best?.commissionRate || '--').trim();
+            const vendas = (best?.sales || '0').trim();
+
+            const text = `🔥 *OFERTA INTELIGENTE* | {{GRUPO}}
+📅 {{DATA}}
+
+🛍️ *${produto}*
+💰 Preço: *${preco}*
+🏬 Loja: ${loja}
+💸 Comissão: ${comissao} (${comissaoRate})
+📈 Vendas: ${vendas}
+
+🛒 Comprar na ${marketplace}:
+{{LINK_OFERTA}}
+
+🔎 Buscar produtos similares:
+{{LINK_BUSCA_AFILIADO}}
+
+{{ABERTURA}}
+
+🔗 Convite do grupo:
+{{LINK_CONVITE}}`;
+            const payload = {
+                marketplace,
+                productName: produto,
+                price: preco,
+                shopName: loja,
+                commission: comissao,
+                commissionRate: comissaoRate,
+                sales: vendas,
+                offerLink: (document.getElementById('oferta-link')?.value || '').trim(),
+                searchLink: (document.getElementById('oferta-link-busca')?.value || '').trim(),
+                inviteLink: (document.getElementById('oferta-convite')?.value || '').trim(),
+                openingMessage: (document.getElementById('mensagem-abertura')?.value || '').trim()
+            };
+
+            try {
+                mostrarStatus('config', 'info', '🤖 Gerando template com IA...');
+                const response = await fetch('/api2/whatsmiau2/generate-offer-template', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                if (!data.success || !data.template) {
+                    throw new Error(data.error || 'Falha na geração');
+                }
+
+                document.getElementById('template-editor').value = data.template;
+                mostrarStatus('config', 'success', '🤖 Template IA gerado com sucesso.');
+                return;
+            } catch (error) {
+                console.warn('IA indisponível, usando fallback local:', error.message);
+            }
+
+            document.getElementById('template-editor').value = text;
+            mostrarStatus('config', 'warning', '⚠️ IA indisponível. Template local inteligente aplicado.');
+        }
+
+        function gerarLinksAfiliados(showStatus = true) {
+            const marketplace = (document.getElementById('oferta-marketplace')?.value || 'shopee').trim().toLowerCase();
+            const affiliateId = (document.getElementById('afiliado-id')?.value || '').trim();
+            const appId = (document.getElementById('afiliado-app-id')?.value || '').trim();
+            const subId = (document.getElementById('afiliado-sub-id')?.value || '').trim();
+            const term = (document.getElementById('oferta-termo')?.value || document.getElementById('oferta-produto')?.value || '').trim();
+
+            const searchLink = buildAffiliateSearchLink(marketplace, term, affiliateId, subId, appId);
+            document.getElementById('oferta-link-busca').value = searchLink;
+
+            const currentOffer = document.getElementById('oferta-link')?.value || '';
+            const updatedOfferLink = appendAffiliateParamsToOfferLink(currentOffer, marketplace, affiliateId, subId, appId);
+            if (updatedOfferLink) {
+                document.getElementById('oferta-link').value = updatedOfferLink;
+            }
+
+            if (showStatus) {
+                mostrarStatus('config', 'success', `🔗 Links afiliados gerados para ${normalizeMarketplaceName(marketplace)}.`);
+            }
+        }
 
         // Helper to show status/alerts
         function mostrarStatus(context, type, message) {
@@ -716,6 +1112,24 @@ _Resumo gerado automaticamente_ 🤖</textarea>
 
         // --- Grupos ---
 
+        function getGroupId(grupo) {
+            return (grupo?.id || grupo?.jid || grupo?.groupJid || '').toString().trim();
+        }
+
+        function getGroupName(grupo) {
+            return (grupo?.subject || grupo?.name || getGroupId(grupo) || 'Grupo sem nome').toString().trim();
+        }
+
+        function normalizeGroup(grupo) {
+            const id = getGroupId(grupo);
+            return {
+                ...grupo,
+                id,
+                jid: id,
+                subject: getGroupName(grupo)
+            };
+        }
+
         async function carregarGrupos() {
             const listEl = document.getElementById('grupos-lista');
             listEl.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary" role="status"></div><div class="small mt-2">Carregando...</div></div>';
@@ -726,9 +1140,15 @@ _Resumo gerado automaticamente_ 🤖</textarea>
                 const data = await response.json();
 
                 if (data.success && data.data) {
-                    state.todosGrupos = data.data;
+                    state.todosGrupos = (data.data || [])
+                        .map(normalizeGroup)
+                        .filter(g => g.id);
+
+                    const allowed = new Set(state.todosGrupos.map(g => g.id));
+                    state.gruposSelecionados = (state.gruposSelecionados || []).filter(g => allowed.has(getGroupId(g)));
+
                     renderizarListaGrupos();
-                    mostrarStatus('config', 'success', `✅ ${data.data.length} grupos carregados.`);
+                    mostrarStatus('config', 'success', `✅ ${state.todosGrupos.length} grupos carregados.`);
                 } else {
                     if (response.status === 400) {
                         throw new Error("Instância desconectada. Por favor, conecte o WhatsApp primeiro.");
@@ -737,15 +1157,11 @@ _Resumo gerado automaticamente_ 🤖</textarea>
                 }
             } catch (error) {
                 console.error('Erro API Grupos:', error);
-
-                // Fallback / Simulation
-                state.todosGrupos = [
-                    { id: '120363404245749874@g.us', subject: 'Grupo Teste 1', participants: [] },
-                    { id: '120363404245749875@g.us', subject: 'Marketing 2025', participants: [] },
-                    { id: '120363404245749876@g.us', subject: 'Vendas Q1', participants: [] }
-                ];
+                state.todosGrupos = [];
+                state.gruposSelecionados = [];
+                document.getElementById('grupo-id').value = '';
                 renderizarListaGrupos();
-                mostrarStatus('config', 'warning', `⚠️ Erro na API (${error.message}). Exibindo grupos simulados.`);
+                mostrarStatus('config', 'danger', `❌ Erro ao carregar grupos: ${error.message}`);
             }
         }
 
@@ -753,18 +1169,28 @@ _Resumo gerado automaticamente_ 🤖</textarea>
             const listEl = document.getElementById('grupos-lista');
             listEl.innerHTML = '';
 
+            if (!state.todosGrupos.length) {
+                listEl.innerHTML = '<div class="text-center text-muted py-3 small">Nenhum grupo disponível para esta instância.</div>';
+                atualizarContadorGrupos();
+                return;
+            }
+
             state.todosGrupos.forEach(grupo => {
-                const isSelected = state.gruposSelecionados.some(g => g.id === grupo.id);
+                const gid = getGroupId(grupo);
+                const isSelected = state.gruposSelecionados.some(g => getGroupId(g) === gid);
                 const item = document.createElement('button');
                 item.className = `list-group-item list-group-item-action d-flex justify-content-between align-items-center ${isSelected ? 'active' : ''}`;
                 item.onclick = () => toggleGrupo(grupo);
 
                 item.innerHTML = `
                     <div>
-                        <div class="fw-bold small">${grupo.subject || 'Grupo sem nome'}</div>
-                        <div class="small opacity-75" style="font-size: 0.7rem;">${grupo.id}</div>
+                        <div class="fw-bold small">${getGroupName(grupo)}</div>
+                        <div class="small opacity-75" style="font-size: 0.7rem;">${gid}</div>
                     </div>
-                    ${isSelected ? '<i class="fas fa-check text-white"></i>' : ''}
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-light text-dark" onclick="event.stopPropagation(); selecionarSomenteGrupo('${gid.replace(/'/g, "\\'")}')">Somente</span>
+                        ${isSelected ? '<i class="fas fa-check text-white"></i>' : ''}
+                    </div>
                 `;
                 listEl.appendChild(item);
             });
@@ -772,25 +1198,38 @@ _Resumo gerado automaticamente_ 🤖</textarea>
         }
 
         function toggleGrupo(grupo) {
-            const index = state.gruposSelecionados.findIndex(g => g.id === grupo.id);
+            const gid = getGroupId(grupo);
+            if (!gid) return;
+            const normalized = normalizeGroup(grupo);
+            const index = state.gruposSelecionados.findIndex(g => getGroupId(g) === gid);
             if (index === -1) {
-                state.gruposSelecionados.push(grupo);
+                state.gruposSelecionados.push(normalized);
             } else {
                 state.gruposSelecionados.splice(index, 1);
             }
 
             // Update Inputs
-            const ids = state.gruposSelecionados.map(g => g.id).join(', ');
+            const ids = state.gruposSelecionados.map(g => getGroupId(g)).filter(Boolean).join(', ');
             document.getElementById('grupo-id').value = ids;
 
             // Re-render to show active state
             renderizarListaGrupos();
         }
 
-        function selecionarTodosGrupos() {
-            state.gruposSelecionados = [...state.todosGrupos];
+        function selecionarSomenteGrupo(groupId) {
+            const target = state.todosGrupos.find(g => getGroupId(g) === groupId);
+            if (!target) return;
+
+            state.gruposSelecionados = [normalizeGroup(target)];
+            document.getElementById('grupo-id').value = groupId;
             renderizarListaGrupos();
-            document.getElementById('grupo-id').value = state.gruposSelecionados.map(g => g.id).join(', ');
+            mostrarStatus('config', 'info', `🎯 Selecionado apenas: ${getGroupName(target)}`);
+        }
+
+        function selecionarTodosGrupos() {
+            state.gruposSelecionados = state.todosGrupos.map(normalizeGroup).filter(g => g.id);
+            renderizarListaGrupos();
+            document.getElementById('grupo-id').value = state.gruposSelecionados.map(g => getGroupId(g)).join(', ');
         }
 
         function deselecionarTodosGrupos() {
@@ -805,6 +1244,61 @@ _Resumo gerado automaticamente_ 🤖</textarea>
 
         // --- Canais ---
 
+        function sanitizeEntityValue(value) {
+            if (value === null || value === undefined) return '';
+            const str = String(value).trim();
+            if (!str || str === 'undefined' || str === 'null' || str === '[object Object]') return '';
+            return str;
+        }
+
+        function getCanalId(canal) {
+            const candidates = [
+                canal?.id?._serialized,
+                canal?.id?.jid,
+                canal?.id?.id,
+                canal?.id,
+                canal?.jid,
+                canal?.newsletterJid,
+                canal?.channelJid,
+                canal?.remoteJid,
+                canal?.chatId,
+                canal?.key?.remoteJid,
+                canal?.meta?.id
+            ];
+
+            for (const candidate of candidates) {
+                const id = sanitizeEntityValue(candidate);
+                if (id) return id;
+            }
+            return '';
+        }
+
+        function getCanalType(canal) {
+            const id = getCanalId(canal);
+            const rawType = sanitizeEntityValue(canal?.type || canal?.chatType || canal?.kind).toLowerCase();
+
+            if (rawType.includes('group')) return 'group';
+            if (rawType.includes('newsletter') || rawType.includes('channel')) return 'channel';
+            if (id.endsWith('@g.us')) return 'group';
+            if (id.endsWith('@newsletter')) return 'channel';
+            return 'channel';
+        }
+
+        function getCanalName(canal) {
+            return sanitizeEntityValue(canal?.name || canal?.subject || canal?.title || canal?.displayName || getCanalId(canal) || 'Canal sem nome');
+        }
+
+        function normalizeCanal(canal) {
+            const id = getCanalId(canal);
+            return {
+                ...canal,
+                id,
+                jid: id,
+                name: getCanalName(canal),
+                _entityType: getCanalType(canal)
+            };
+        }
+
         async function carregarCanais() {
             const listEl = document.getElementById('canais-lista');
             listEl.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-warning" role="status"></div><div class="small mt-2">Carregando...</div></div>';
@@ -815,9 +1309,24 @@ _Resumo gerado automaticamente_ 🤖</textarea>
                 const data = await response.json();
 
                 if (data.success && data.data) {
-                    state.todosCanais = data.data;
+                    const normalized = (data.data || [])
+                        .map(normalizeCanal)
+                        .filter(c => c.id);
+
+                    // O endpoint de newsletters pode vir misturado em alguns provedores.
+                    // Mantemos apenas canais no card de newsletters para não misturar com grupos.
+                    state.todosCanais = normalized.filter(c => c._entityType === 'channel');
+
+                    const allowed = new Set(state.todosCanais.map(c => c.id));
+                    state.canaisSelecionados = (state.canaisSelecionados || []).filter(c => allowed.has(getCanalId(c)));
+
                     renderizarListaCanais();
-                    mostrarStatus('config', 'success', `✅ ${data.data.length} canais carregados.`);
+                    const descartadosGrupos = normalized.length - state.todosCanais.length;
+                    if (descartadosGrupos > 0) {
+                        mostrarStatus('config', 'info', `✅ ${state.todosCanais.length} canais carregados. ${descartadosGrupos} itens de grupo foram removidos da lista de canais.`);
+                    } else {
+                        mostrarStatus('config', 'success', `✅ ${state.todosCanais.length} canais carregados.`);
+                    }
                 } else {
                     if (response.status === 400) {
                         throw new Error("Instância desconectada. Por favor, conecte o WhatsApp primeiro.");
@@ -826,14 +1335,11 @@ _Resumo gerado automaticamente_ 🤖</textarea>
                 }
             } catch (error) {
                 console.error('Erro API Canais:', error);
-
-                // Fallback
-                state.todosCanais = [
-                    { id: '120363404245749899@newsletter', name: 'Ofertas da Semana', subject: 'Ofertas da Semana' }
-                ];
+                state.todosCanais = [];
+                state.canaisSelecionados = [];
                 renderizarListaCanais();
                 const msg = error.message.includes('404') ? 'Funcionalidade não disponível na API.' : error.message;
-                mostrarStatus('config', 'warning', `⚠️ Erro canais: ${msg} (Modo Simulado)`);
+                mostrarStatus('config', 'warning', `⚠️ Erro canais: ${msg}`);
             }
         }
 
@@ -841,9 +1347,16 @@ _Resumo gerado automaticamente_ 🤖</textarea>
             const listEl = document.getElementById('canais-lista');
             listEl.innerHTML = '';
 
+            if (!state.todosCanais.length) {
+                listEl.innerHTML = '<div class="text-center text-muted py-3 small">Nenhum canal disponível para esta instância.</div>';
+                atualizarContadorCanais();
+                return;
+            }
+
             state.todosCanais.forEach(canal => {
-                const isSelected = state.canaisSelecionados.some(c => c.id === canal.id);
-                const nome = canal.name || canal.subject || canal.id;
+                const cid = getCanalId(canal);
+                const isSelected = state.canaisSelecionados.some(c => getCanalId(c) === cid);
+                const nome = getCanalName(canal);
 
                 const item = document.createElement('button');
                 item.className = `list-group-item list-group-item-action d-flex justify-content-between align-items-center ${isSelected ? 'active bg-warning border-warning text-dark' : ''}`;
@@ -852,9 +1365,12 @@ _Resumo gerado automaticamente_ 🤖</textarea>
                 item.innerHTML = `
                     <div>
                         <div class="fw-bold small">${nome}</div>
-                        <div class="small opacity-75" style="font-size: 0.7rem;">${canal.id}</div>
+                        <div class="small opacity-75" style="font-size: 0.7rem;">${cid}</div>
                     </div>
-                    ${isSelected ? '<i class="fas fa-check"></i>' : ''}
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-light text-dark" onclick="event.stopPropagation(); selecionarSomenteCanal('${cid.replace(/'/g, "\\'")}')">Somente</span>
+                        ${isSelected ? '<i class="fas fa-check"></i>' : ''}
+                    </div>
                 `;
                 listEl.appendChild(item);
             });
@@ -862,17 +1378,29 @@ _Resumo gerado automaticamente_ 🤖</textarea>
         }
 
         function toggleCanal(canal) {
-            const index = state.canaisSelecionados.findIndex(c => c.id === canal.id);
+            const cid = getCanalId(canal);
+            if (!cid) return;
+            const normalized = normalizeCanal(canal);
+            const index = state.canaisSelecionados.findIndex(c => getCanalId(c) === cid);
             if (index === -1) {
-                state.canaisSelecionados.push(canal);
+                state.canaisSelecionados.push(normalized);
             } else {
                 state.canaisSelecionados.splice(index, 1);
             }
             renderizarListaCanais();
         }
 
+        function selecionarSomenteCanal(canalId) {
+            const target = state.todosCanais.find(c => getCanalId(c) === canalId);
+            if (!target) return;
+
+            state.canaisSelecionados = [normalizeCanal(target)];
+            renderizarListaCanais();
+            mostrarStatus('config', 'info', `🎯 Selecionado apenas canal: ${getCanalName(target)}`);
+        }
+
         function selecionarTodosCanais() {
-            state.canaisSelecionados = [...state.todosCanais];
+            state.canaisSelecionados = state.todosCanais.map(normalizeCanal).filter(c => c.id);
             renderizarListaCanais();
         }
 
@@ -904,9 +1432,10 @@ _Resumo gerado automaticamente_ 🤖</textarea>
             statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Buscando mensagens e calculando ranking...';
 
             try {
+                const primaryGroupId = grupoId.split(',')[0].trim();
                 const instanceQuery = state.currentInstance ? `?instance=${state.currentInstance}&period=${period}&limit=${topN}` : `?period=${period}&limit=${topN}`;
                 // Use a dedicated ranking endpoint
-                const response = await fetch(`/api/whatsmiau2/groups/${grupoId}/ranking${instanceQuery}`);
+                const response = await fetch(`/api/whatsmiau2/groups/${encodeURIComponent(primaryGroupId)}/ranking${instanceQuery}`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -924,25 +1453,20 @@ _Resumo gerado automaticamente_ 🤖</textarea>
             } catch (error) {
                 console.error("Erro Ranking:", error);
                 statusDiv.className = 'alert alert-danger mt-3';
-                statusDiv.innerHTML = `❌ Erro: ${error.message}. (Usando dados simulados)`;
-
-                // Fallback Simulation
-                const parts = [
-                    { name: 'João Silva (Simulado)', msgs: 128 },
-                    { name: 'Maria Souza', msgs: 95 },
-                    { name: 'Pedro Santos', msgs: 72 },
-                    { name: 'Ana Costa', msgs: 54 },
-                    { name: 'Lucas Oliveira', msgs: 41 }
-                ];
-                state.ranking = parts;
-                state.stats = { totalMessages: 390, activeParticipants: 5 };
-                renderRanking(parts);
+                statusDiv.innerHTML = `❌ Erro ao calcular ranking: ${error.message}`;
+                state.ranking = [];
+                state.stats = { totalMessages: 0, activeParticipants: 0 };
+                renderRanking([]);
             }
         }
 
         function renderRanking(data) {
             const tbody = document.getElementById('ranking-lista');
             tbody.innerHTML = '';
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted py-3">Sem dados para exibir.</td></tr>`;
+                return;
+            }
             data.forEach((p, i) => {
                 const row = `
                     <tr>
@@ -962,13 +1486,87 @@ _Resumo gerado automaticamente_ 🤖</textarea>
 
             let text = '';
             if (type === 'simples') {
-                text = `Resumo do Grupo: 📱 WhatsApp\n📅 {{DATA}}\n\n🏆 *Top {{TOP}} mais ativos:*\n\n{{RANKING}}\n\n📊 Total: {{TOTAL_MENSAGENS}} msgs`;
+                text = `📢 *OFERTA RÁPIDA* | {{GRUPO}}
+📅 {{DATA}}
+
+🔥 *{{PRODUTO}}*
+✅ Só hoje: *{{PRECO}}*
+
+🛒 Compre aqui:
+{{LINK_OFERTA}}
+
+🔎 Busca {{MARKETPLACE}}:
+{{LINK_BUSCA_AFILIADO}}
+
+{{ABERTURA}}
+
+🔗 Entre no grupo:
+{{LINK_CONVITE}}`;
             } else if (type === 'detalhado') {
-                text = `📊 *RESUMO DETALHADO* 📊\n\n📅 Data: {{DATA}}\n⏰ Período: {{HORAS}} horas\n\n🏆 *RANKING DE PARTICIPANTES*\n{{RANKING}}\n\n📈 *ESTATÍSTICAS*\nTotal de Mensagens: {{TOTAL_MENSAGENS}}\nParticipantes Ativos: {{TOTAL_PARTICIPANTES}}\nMédia por pessoa: {{MEDIA}}\n\n🤖 _Gerado por WhatsMiau2_`;
+                text = `🛍️ *OFERTA COMPLETA* | {{GRUPO}}
+📅 {{DATA}}
+
+🔥 Produto: *{{PRODUTO}}*
+💰 Preço promocional: *{{PRECO}}*
+
+✅ Benefícios:
+• Entrega rápida
+• Compra segura
+• Suporte da loja
+
+🛒 Link {{MARKETPLACE}}:
+{{LINK_OFERTA}}
+
+🔎 Busca afiliada:
+{{LINK_BUSCA_AFILIADO}}
+
+🔗 Convite do grupo:
+{{LINK_CONVITE}}
+
+{{ABERTURA}}
+
+🏬 Loja: {{LOJA}} | 💸 Comissão: {{COMISSAO}}
+
+🏆 Top {{TOP}} mais ativos:
+{{RANKING}}`;
             } else if (type === 'motivacional') {
-                text = `🎉 *PARABÉNS EQUIPE!* 🎉\n\nOlha só o que movimentamos hoje ({{DATA}})!\n\n👑 *Destaques do Dia:*\n{{RANKING}}\n\n🚀 Vocês são incríveis! Foram {{TOTAL_MENSAGENS}} mensagens de pura produtividade.\n\nVamos com tudo! 💪`;
+                text = `⏰ *ÚLTIMAS UNIDADES* | {{GRUPO}}
+📅 {{DATA}}
+
+🔥 *{{PRODUTO}}*
+💸 Agora por: *{{PRECO}}*
+
+⚠️ Oferta pode sair a qualquer momento.
+🛒 Garanta no link:
+{{LINK_OFERTA}}
+
+🔎 Mais opções:
+{{LINK_BUSCA_AFILIADO}}
+
+{{ABERTURA}}
+
+🚀 Quer receber mais ofertas?
+{{LINK_CONVITE}}`;
             } else if (type === 'corporativo') {
-                text = `*Relatório de Atividades - Grupo Corporativo*\nData: {{DATA}}\n\nPrezados,\nSegue resumo das interações nas últimas {{HORAS}}h:\n\n*Engajamento Individual (Top {{TOP}})*\n{{RANKING}}\n\nAtenciosamente,\nAdmin`;
+                text = `🤝 *CONVITE VIP* | {{GRUPO}}
+📅 {{DATA}}
+
+Hoje destaque:
+*{{PRODUTO}}* por *{{PRECO}}*
+
+🛒 Oferta:
+{{LINK_OFERTA}}
+
+🔎 Busca:
+{{LINK_BUSCA_AFILIADO}}
+
+🔗 Entre no grupo VIP:
+{{LINK_CONVITE}}
+
+{{ABERTURA}}
+
+📈 Comunidade ativa:
+{{TOTAL_PARTICIPANTES}} participantes`;
             }
 
             document.getElementById('template-editor').value = text;
@@ -983,6 +1581,23 @@ _Resumo gerado automaticamente_ 🤖</textarea>
 
             const topN = parseInt(document.getElementById('top-ranking').value);
             const horas = document.getElementById('horas').value;
+            const abertura = (document.getElementById('mensagem-abertura').value || '').trim();
+            const produto = (document.getElementById('oferta-produto')?.value || 'Produto em destaque').trim();
+            const preco = (document.getElementById('oferta-preco')?.value || 'Consulte no link').trim();
+            const linkOferta = (document.getElementById('oferta-link')?.value || 'https://s.shopee.com.br/').trim();
+            const linkBuscaAfiliado = (document.getElementById('oferta-link-busca')?.value || '').trim();
+            const linkConvite = (document.getElementById('oferta-convite')?.value || 'https://chat.whatsapp.com/').trim();
+            const grupoNome = state.gruposSelecionados.length > 0 ? getGroupName(state.gruposSelecionados[0]) : 'Grupo VIP';
+            const marketplaceRaw = (document.getElementById('oferta-marketplace')?.value || 'shopee').trim().toLowerCase();
+            const marketplaceName = normalizeMarketplaceName(marketplaceRaw);
+
+            const csvRecords = parseOfertasCSV();
+            const bestCSV = csvRecords.length ? escolherMelhorOferta(csvRecords) : null;
+            const loja = (bestCSV?.shopName || 'Loja parceira').trim();
+            const comissao = (bestCSV?.commission || '--').trim();
+            const vendas = (bestCSV?.sales || '0').toString().trim();
+            const itemId = (bestCSV?.itemId || '').toString().trim();
+            const comissaoRate = (bestCSV?.commissionRate || '--').toString().trim();
 
             // Use real data if available, otherwise mock
             const dadosRanking = state.ranking.length > 0 ? state.ranking : [
@@ -999,13 +1614,28 @@ _Resumo gerado automaticamente_ 🤖</textarea>
             });
 
             let template = document.getElementById('template-editor').value;
-            template = template.replace('{{DATA}}', dataFmt);
-            template = template.replace('{{TOP}}', topN);
-            template = template.replace('{{HORAS}}', horas);
-            template = template.replace('{{RANKING}}', rankingText);
-            template = template.replace('{{TOTAL_MENSAGENS}}', totalMsgs);
-            template = template.replace('{{TOTAL_PARTICIPANTES}}', totalParts);
-            template = template.replace('{{MEDIA}}', media);
+            const applyToken = (source, token, value) => source.replaceAll(token, String(value ?? ''));
+
+            template = applyToken(template, '{{DATA}}', dataFmt);
+            template = applyToken(template, '{{TOP}}', topN);
+            template = applyToken(template, '{{HORAS}}', horas);
+            template = applyToken(template, '{{RANKING}}', rankingText);
+            template = applyToken(template, '{{TOTAL_MENSAGENS}}', totalMsgs);
+            template = applyToken(template, '{{TOTAL_PARTICIPANTES}}', totalParts);
+            template = applyToken(template, '{{MEDIA}}', media);
+            template = applyToken(template, '{{PRODUTO}}', produto);
+            template = applyToken(template, '{{PRECO}}', preco);
+            template = applyToken(template, '{{LINK_OFERTA}}', linkOferta);
+            template = applyToken(template, '{{LINK_BUSCA_AFILIADO}}', linkBuscaAfiliado);
+            template = applyToken(template, '{{LINK_CONVITE}}', linkConvite);
+            template = applyToken(template, '{{GRUPO}}', grupoNome);
+            template = applyToken(template, '{{MARKETPLACE}}', marketplaceName);
+            template = applyToken(template, '{{LOJA}}', loja);
+            template = applyToken(template, '{{COMISSAO}}', comissao);
+            template = applyToken(template, '{{COMISSAO_RATE}}', comissaoRate);
+            template = applyToken(template, '{{VENDAS}}', vendas);
+            template = applyToken(template, '{{ITEM_ID}}', itemId);
+            template = applyToken(template, '{{ABERTURA}}', abertura || '');
 
             document.getElementById('preview-texto').innerText = template;
             mostrarStatus('preview', 'success', 'Preview gerado com dados!');
@@ -1015,38 +1645,6 @@ _Resumo gerado automaticamente_ 🤖</textarea>
             const tab = bootstrap.Tab.getInstance(triggerEl) || new bootstrap.Tab(triggerEl);
             tab.show();
         }
-        const abertura = document.getElementById('mensagem-abertura').value;
-
-        // Build Ranking Text
-        const mNomes = ['João', 'Maria', 'Pedro', 'Ana', 'Lucas', 'Fernanda', 'Carlos'];
-        let rankingTxt = '';
-        for (let i = 0; i < topN; i++) {
-            const nome = mNomes[i] || `Usuário ${i + 1}`;
-            const msgs = Math.floor(100 - (i * 10));
-            rankingTxt += `${i + 1}️⃣ ${nome} - ${msgs} msgs\n`;
-        }
-
-        let template = document.getElementById('template-editor').value;
-        let finalMsg = template
-            .replace('{{DATA}}', dataFmt)
-            .replace('{{TOP}}', topN)
-            .replace('{{RANKING}}', rankingTxt)
-            .replace('{{TOTAL_MENSAGENS}}', '420')
-            .replace('{{TOTAL_PARTICIPANTES}}', '15')
-            .replace('{{HORAS}}', horas)
-            .replace('{{MEDIA}}', '28');
-
-        if (abertura) {
-            finalMsg = `${abertura}\n\n${finalMsg}`;
-        }
-
-        document.getElementById('preview-texto').innerText = finalMsg; // Use innerText to preserve line breaks visibility in ContentEditable
-
-        // Switch tab
-        const tabPreview = new bootstrap.Tab(document.querySelector('#preview-tab'));
-        tabPreview.show();
-
-        mostrarStatus('preview', 'success', '✅ Preview gerado!');
 
         async function enviarResumo() {
             const caixaStatus = document.getElementById('status-preview');
@@ -1066,7 +1664,10 @@ _Resumo gerado automaticamente_ 🤖</textarea>
             // 2. Grupos/Canais Selecionados
             else {
                 state.gruposSelecionados.forEach(g => destinatarios.push({ id: g.id, type: 'group' }));
-                state.canaisSelecionados.forEach(c => destinatarios.push({ id: c.id, type: 'channel' }));
+                state.canaisSelecionados.forEach(c => {
+                    const cid = getCanalId(c);
+                    if (cid) destinatarios.push({ id: cid, type: 'channel' });
+                });
             }
 
             if (destinatarios.length === 0) {
@@ -1089,7 +1690,11 @@ _Resumo gerado automaticamente_ 🤖</textarea>
                     const res = await fetch('/api/whatsmiau2/send-text', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ number: dest.id, text: texto })
+                        body: JSON.stringify({
+                            number: dest.id,
+                            text: texto,
+                            instance: state.currentInstance || undefined
+                        })
                     });
                     const json = await res.json();
 
@@ -1127,6 +1732,17 @@ _Resumo gerado automaticamente_ 🤖</textarea>
         function limparCampos() {
             document.getElementById('grupo-id').value = '';
             document.getElementById('numero-destino').value = '';
+            document.getElementById('oferta-produto').value = '';
+            document.getElementById('oferta-preco').value = '';
+            document.getElementById('oferta-link').value = '';
+            document.getElementById('oferta-marketplace').value = 'shopee';
+            document.getElementById('afiliado-id').value = '18372150411';
+            document.getElementById('afiliado-app-id').value = '18372150411';
+            document.getElementById('afiliado-sub-id').value = '';
+            document.getElementById('oferta-termo').value = '';
+            document.getElementById('oferta-link-busca').value = '';
+            document.getElementById('ofertas-csv').value = '';
+            document.getElementById('oferta-convite').value = '';
             state.gruposSelecionados = [];
             state.canaisSelecionados = [];
             renderizarListaGrupos();

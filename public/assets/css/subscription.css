@@ -1,0 +1,432 @@
+/* Clean Light Theme for Subscription Page */
+
+body[data-theme="light"] {
+    background-color: #f8f9fa;
+    /* Consistent light background */
+}
+
+/* Page Wrapper overrides for standalone page check */
+#page-content-wrapper {
+    background-color: transparent;
+}
+
+.subscription-container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* Header Section */
+.subscription-header {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.subscription-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--text-color);
+}
+
+.subscription-header p {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+}
+
+/* CTA de conversão forte */
+.cta-boost {
+    background: linear-gradient(120deg, #052e16 0%, #064e3b 40%, #14532d 100%);
+    border: 1px solid rgba(16, 185, 129, 0.38);
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(5, 46, 22, 0.2);
+}
+
+.cta-boost-content {
+    padding: 22px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.cta-boost-copy h2 {
+    margin: 8px 0 6px;
+    color: #ecfdf5;
+    font-size: 1.6rem;
+    font-weight: 800;
+}
+
+.cta-boost-copy p {
+    margin: 0;
+    color: #bbf7d0;
+}
+
+.cta-badge {
+    display: inline-block;
+    background: rgba(16, 185, 129, 0.25);
+    border: 1px solid rgba(16, 185, 129, 0.45);
+    color: #a7f3d0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 6px 10px;
+    border-radius: 999px;
+}
+
+.cta-boost-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.btn-cta-primary,
+.btn-cta-secondary {
+    border: none;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-weight: 700;
+    min-width: 210px;
+    transition: all 0.2s ease;
+}
+
+.btn-cta-primary {
+    background: #22c55e;
+    color: #052e16;
+}
+
+.btn-cta-primary:hover {
+    background: #4ade80;
+    transform: translateY(-1px);
+}
+
+.btn-cta-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ecfdf5;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.btn-cta-secondary:hover {
+    background: rgba(255, 255, 255, 0.16);
+    transform: translateY(-1px);
+}
+
+@media (max-width: 992px) {
+    .cta-boost-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .cta-boost-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .btn-cta-primary,
+    .btn-cta-secondary {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+/* Pricing Grid */
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .pricing-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Pricing Card */
+.pricing-card {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    min-height: 400px;
+}
+
+.pricing-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-color: var(--primary-color);
+}
+
+.pricing-card.border-primary {
+    border: 2px solid var(--primary-color);
+}
+
+/* Badges */
+.badge-endpoints {
+    position: absolute;
+    top: -12px;
+    right: 30px;
+    background: var(--primary-color);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+}
+
+/* Card Content */
+.pricing-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--text-color);
+}
+
+.pricing-price {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #111827;
+    /* Darker than text-color for emphasis */
+    margin-bottom: 4px;
+}
+
+.pricing-period {
+    font-size: 1rem;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.pricing-instances {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Features List */
+.features-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 30px 0;
+    flex-grow: 1;
+}
+
+.features-list li {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    color: #374151;
+    font-size: 0.95rem;
+}
+
+.features-list li i {
+    color: var(--primary-color);
+    margin-right: 12px;
+    margin-top: 4px;
+    flex-shrink: 0;
+}
+
+/* Button */
+.btn-subscribe {
+    background-color: white;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    font-weight: 600;
+    padding: 12px 20px;
+    border-radius: 8px;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+}
+
+.btn-subscribe:hover {
+    background-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.btn-secondary-action {
+    display: block;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: 16px;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.btn-secondary-action:hover {
+    color: var(--primary-color);
+}
+
+/* Banner Alert Customization */
+.alert-subscription {
+    border-left: 4px solid #f59e0b;
+    background-color: #fffbeb;
+    color: #92400e;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.alert-subscription .alert-heading {
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+/* Active Subscription Banner (CTA central) */
+.alert-active-subscription {
+    background: linear-gradient(180deg, #e8f5ee 0%, #dff0e8 100%);
+    border: 1px solid rgba(16, 185, 129, 0.18) !important;
+    padding: 1.25rem 1.4rem;
+}
+
+.active-subscription-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    text-align: center;
+}
+
+.active-subscription-icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(16, 185, 129, 0.12);
+    flex-shrink: 0;
+}
+
+.active-subscription-copy .alert-heading {
+    font-size: clamp(1.3rem, 2vw, 1.9rem);
+    color: #083344;
+    margin-bottom: 0.2rem;
+    text-wrap: balance;
+}
+
+.active-subscription-copy p {
+    font-size: 1.05rem;
+}
+
+.active-subscription-cta {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.btn-active-dashboard {
+    min-width: 260px;
+    padding: 0.75rem 1.5rem;
+    border-radius: 999px;
+    font-size: 1rem;
+    font-weight: 700;
+    box-shadow: 0 8px 20px rgba(5, 150, 105, 0.24);
+}
+
+.btn-active-dashboard:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(5, 150, 105, 0.3);
+}
+
+@media (max-width: 768px) {
+    .alert-active-subscription {
+        padding: 1rem;
+    }
+    .active-subscription-top {
+        align-items: flex-start;
+        text-align: left;
+        justify-content: flex-start;
+    }
+    .btn-active-dashboard {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+/* Enterprise Card (Light) */
+.card-enterprise {
+    background: linear-gradient(to bottom, #f0fdf4, #ffffff);
+    border: 1px solid #d1fae5;
+    margin-top: 40px;
+}
+
+.card-enterprise .pricing-title {
+    color: #065f46;
+}
+
+.card-enterprise .btn-subscribe {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+.card-enterprise .btn-subscribe:hover {
+    background-color: var(--primary-hover);
+}
+
+/* Navbar Minimal */
+.navbar-minimal {
+    background: white;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    padding: 1rem 2rem;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    color: var(--primary-color) !important;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Estilos para os links de documentação */
+.documentation-links {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 8px;
+}
+
+.doc-option {
+    margin-bottom: 6px;
+    display: block;
+}
+
+.doc-option:last-child {
+    margin-bottom: 0;
+}
+
+.doc-link {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.doc-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+    color: white;
+}
+
+.doc-link i {
+    margin-right: 5px;
+}

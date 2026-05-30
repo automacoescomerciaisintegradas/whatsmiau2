@@ -19,6 +19,7 @@ import (
 type Server struct {
 	db                *sql.DB
 	leadHandler       *handlers.LeadHandler
+	ticketHandler     *handlers.TicketHandler
 	automationHandler *handlers.AutomationHandler
 	automationService *services.AutomationService
 }
@@ -36,10 +37,12 @@ func NewServer(db *sql.DB) *Server {
 
 	// Criar handlers
 	leadHandler := handlers.NewLeadHandler(crmRepo)
+	ticketHandler := handlers.NewTicketHandler(crmRepo)
 
 	return &Server{
-		db:          db,
-		leadHandler: leadHandler,
+		db:            db,
+		leadHandler:   leadHandler,
+		ticketHandler: ticketHandler,
 	}
 }
 
@@ -59,11 +62,13 @@ func NewServerWithManager(db *sql.DB, manager *whatsapp.Manager) *Server {
 
 	// Criar handlers
 	leadHandler := handlers.NewLeadHandler(crmRepo)
+	ticketHandler := handlers.NewTicketHandler(crmRepo)
 	automationHandler := handlers.NewAutomationHandler(automationService)
 
 	return &Server{
 		db:                db,
 		leadHandler:       leadHandler,
+		ticketHandler:     ticketHandler,
 		automationHandler: automationHandler,
 		automationService: automationService,
 	}
@@ -298,6 +303,44 @@ func (s *Server) GetLeadStats(c *gin.Context) {
 		"success": true,
 		"stats":   stats,
 	})
+}
+
+// Tickets
+
+// ListTickets lista tickets (Gin)
+func (s *Server) ListTickets(c *gin.Context) {
+	if s.ticketHandler != nil {
+		s.ticketHandler.ListTickets(c)
+	} else {
+		c.JSON(http.StatusNotImplemented, gin.H{"error": "Ticket handler not initialized"})
+	}
+}
+
+// CreateTicket cria ticket (Gin)
+func (s *Server) CreateTicket(c *gin.Context) {
+	if s.ticketHandler != nil {
+		s.ticketHandler.CreateTicket(c)
+	} else {
+		c.JSON(http.StatusNotImplemented, gin.H{"error": "Ticket handler not initialized"})
+	}
+}
+
+// UpdateTicketStatus atualiza status do ticket (Gin)
+func (s *Server) UpdateTicketStatus(c *gin.Context) {
+	if s.ticketHandler != nil {
+		s.ticketHandler.UpdateTicketStatus(c)
+	} else {
+		c.JSON(http.StatusNotImplemented, gin.H{"error": "Ticket handler not initialized"})
+	}
+}
+
+// DeleteTicket deleta ticket (Gin)
+func (s *Server) DeleteTicket(c *gin.Context) {
+	if s.ticketHandler != nil {
+		s.ticketHandler.DeleteTicket(c)
+	} else {
+		c.JSON(http.StatusNotImplemented, gin.H{"error": "Ticket handler not initialized"})
+	}
 }
 
 // RegisterRoutes registra todas as rotas do CRM

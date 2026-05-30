@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import axios from "axios";
 import * as googleTTS from "google-tts-api";
 import { spawn } from "child_process";
+import { SecurityViolation, validateCommandSecurity } from "./securityGuard.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,6 +25,11 @@ const VOICE_MAP = {
     'female_alt': { kokoro: 'af_nicole', openai: 'shimmer', google: 'pt-BR-Neural2-C' } // 'af_nicole' or 'af_bella'
 };
 
+function resolveGeminiApiKey() {
+    const key = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "").trim();
+    return key;
+}
+
 function cleanTextForAudio(text) {
     return text
         .replace(/---/g, '')
@@ -38,7 +44,7 @@ function cleanTextForAudio(text) {
 
 export async function generateChatResponse(userMessage, systemPrompt, history = []) {
     // ... existing implementation ...
-    const key = process.env.GEMINI_API_KEY;
+    const key = resolveGeminiApiKey();
     if (!key) throw new Error("GEMINI_API_KEY não configurada no .env");
 
     const genAI = new GoogleGenerativeAI(key);
@@ -60,7 +66,7 @@ export async function generateChatResponse(userMessage, systemPrompt, history = 
 }
 
 export async function analyzeLeadMessage(userMessage, history = "") {
-    const key = process.env.GEMINI_API_KEY;
+    const key = resolveGeminiApiKey();
     if (!key) return null; // Fail silently if no key
 
     const genAI = new GoogleGenerativeAI(key);
@@ -98,7 +104,7 @@ export async function analyzeLeadMessage(userMessage, history = "") {
 export async function generateSummaryWithGemini(context) {
     // ... existing code ...
     // ... existing code ...
-    const key = process.env.GEMINI_API_KEY;
+    const key = resolveGeminiApiKey();
     if (!key) throw new Error("GEMINI_API_KEY não configurada no .env");
 
     const genAI = new GoogleGenerativeAI(key);
@@ -120,9 +126,71 @@ export async function generateSummaryWithGemini(context) {
     Gere APENAS o texto do roteiro para o áudio.
     `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+    try {
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        return response.text();
+    } catch (error) {
+        const raw = String(error?.message || "");
+        const isInvalidKey = raw.includes("API_KEY_INVALID") || raw.includes("API key not valid");
+        if (isInvalidKey) {
+            throw new Error("API_KEY_INVALID: chave Gemini inválida. Atualize em Configurações > IA.");
+        }
+        throw error;
+    }
+}
+
+export async function generateOfferTemplateWithGemini(payload = {}) {
+    const key = resolveGeminiApiKey();
+    if (!key) throw new Error("GEMINI_API_KEY não configurada no .env");
+
+    const genAI = new GoogleGenerativeAI(key);
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+
+    const prompt = `
+Você é um copywriter de WhatsApp focado em conversão para marketing de afiliados.
+Crie UMA mensagem curta, direta e natural para envio em grupos/canais do WhatsApp.
+
+Regras:
+- Português do Brasil.
+- Não invente preço, produto ou links.
+- Use obrigatoriamente os dados abaixo.
+- No final, inclua chamada para ação e link.
+- Não use markdown de código.
+
+Dados:
+- Marketplace: ${payload.marketplace || "Shopee"}
+- Produto: ${payload.productName || "Produto"}
+- Preço: ${payload.price || "Consulte o link"}
+- Loja: ${payload.shopName || "Loja parceira"}
+- Comissão: ${payload.commission || "--"} (${payload.commissionRate || "--"})
+- Vendas: ${payload.sales || "0"}
+- Link de oferta: ${payload.offerLink || ""}
+- Link de busca afiliado: ${payload.searchLink || ""}
+- Link de convite do grupo: ${payload.inviteLink || ""}
+- Mensagem de abertura: ${payload.openingMessage || ""}
+
+Formato desejado:
+1) Título curto com emoji
+2) Produto e preço
+3) Prova (vendas/comissão)
+4) CTA com link de oferta
+5) Link de busca afiliado
+6) Convite do grupo
+`;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        return response.text();
+    } catch (error) {
+        const raw = String(error?.message || "");
+        const isInvalidKey = raw.includes("API_KEY_INVALID") || raw.includes("API key not valid");
+        if (isInvalidKey) {
+            throw new Error("API_KEY_INVALID: chave Gemini inválida. Atualize em Configurações > IA.");
+        }
+        throw error;
+    }
 }
 
 // === KOKORO (LOCAL) INTEGRATION ===
@@ -135,7 +203,17 @@ async function generateAudioWithKokoro(text, speed, voice) {
         console.log(`[Kokoro] Gerando: ${text.substring(0, 30)}... (Voz: ${voice}, Speed: ${speed})`);
 
         // Arguments: text, output_file, speed, voice
-        const process = spawn("python", [scriptPath, text, filepath, speed.toString(), voice]);
+        const spawnArgs = [scriptPath, text, filepath, speed.toString(), voice];
+        try {
+            validateCommandSecurity("python", spawnArgs);
+        } catch (error) {
+            if (error instanceof SecurityViolation) {
+                return reject(error);
+            }
+            return reject(new Error("Falha na validacao de seguranca do comando."));
+        }
+
+        const process = spawn("python", spawnArgs);
 
         let stdoutData = "";
         let stderrData = "";
@@ -159,7 +237,7 @@ async function generateAudioWithKokoro(text, speed, voice) {
 // Accepts 'voiceChoice' which maps to 'female', 'male', 'female_alt' in FE
 export async function generateAudioWithOpenAI(text, voiceChoice = 'female') {
     const openaiKey = process.env.OPENAI_API_KEY;
-    const googleKey = process.env.GEMINI_API_KEY;
+    const googleKey = resolveGeminiApiKey();
     const cleanText = cleanTextForAudio(text);
 
     // Resolve voice based on map, default to female if invalid

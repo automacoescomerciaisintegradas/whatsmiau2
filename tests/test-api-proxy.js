@@ -16,7 +16,7 @@ async function test() {
     try {
         console.log("Testando PROXY fetchInstances (com header)...");
         const res = await axios.get(`${PROXY_URL}/instance/fetchInstances`, {
-            headers: { 'apikey': '2wtLvtb20wXePp8D9uRhm55aCjINiciO' }
+            headers: { 'apikey': 'your-api-key-here' }
         });
         console.log("Sucesso (com header):", res.status, res.data);
     } catch (err) {

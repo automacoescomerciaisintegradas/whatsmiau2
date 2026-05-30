@@ -6,7 +6,8 @@ import cors from "cors";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { generateAudioWithOpenAI, generateSummaryWithGemini } from "./services/ai.js";
+import { generateAudioWithOpenAI, generateSummaryWithGemini, generateOfferTemplateWithGemini } from "./services/ai.js";
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import http from 'http';
 import { Server } from 'socket.io';
 import crypto from 'crypto';
@@ -14,15 +15,22 @@ import crypto from 'crypto';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Server Port (moved to top to fix registerWebhook bug)
+const PORT = process.env.PORT || 3002;
+
 // API URL - No Docker, use service name. Locally, use localhost
 // Docker: http://whatsmiau2:8081/v1
 // Local: http://localhost:8085/v1
 // NOTE: All endpoints require /v1 prefix
 const API_URL = (process.env.API_URL || "http://localhost:8085").replace(/\/v1$/, "");
-const API_KEY = process.env.API_KEY || "2wtLvtb20wXePp8D9uRhm55aCjINiciO";
+const API_KEY = process.env.API_KEY || "your-api-key-here";
 const DEFAULT_INSTANCE = process.env.DEFAULT_INSTANCE || "minha-instancia";
-const DEVELOPER_NUMBER = "558894227586";
+const DEVELOPER_NUMBER = "558894227586@s.whatsapp.net"; // Fixed: JID format
 const ALERT_GROUP_JID = "120363306948488101@g.us";
+const CF_D1_ACCOUNT_ID = process.env.CF_D1_ACCOUNT_ID || "";
+const CF_D1_DATABASE_ID = process.env.CF_D1_DATABASE_ID || "";
+const CF_D1_API_TOKEN = process.env.CF_D1_API_TOKEN || "";
+const CF_D1_LEADS_TABLE = process.env.CF_D1_LEADS_TABLE || "leads_prod";
 
 // Instagram Automation Config
 const INSTAGRAM_CONFIG_PATH = path.join(__dirname, "data", "instagram_automation.json");
@@ -73,6 +81,15 @@ Responda de forma curta e use emojis.
 const app = express();
 let io = null; // Socket.IO placeholder
 app.use(cors());
+
+// Proxy /v1 to Go Backend
+app.use('/v1', createProxyMiddleware({
+  target: `${API_URL}/v1`,
+  changeOrigin: true,
+  ws: true,
+  logLevel: 'debug'
+}));
+
 app.use(express.json({ limit: '200mb' }));
 app.use(express.urlencoded({ limit: '200mb', extended: true }));
 
@@ -123,8 +140,30 @@ app.get("/internal-chat", (req, res) => res.sendFile(path.join(__dirname, "publi
 app.get("/settings", (req, res) => res.sendFile(path.join(__dirname, "public", "settings.html")));
 app.get("/debug-connections", (req, res) => res.sendFile(path.join(__dirname, "public", "debug-connections.html")));
 app.get("/test-qr", (req, res) => res.sendFile(path.join(__dirname, "public", "test-qr.html")));
-app.get("/instagram", (req, res) => res.sendFile(path.join(__dirname, "public", "instagram.html")));
-app.get("/logout", (req, res) => res.redirect("/"));
+app.get("/logout", (req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.type("html").send(`<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Saindo...</title>
+</head>
+<body>
+  <script>
+    try {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('authToken');
+      sessionStorage.removeItem('user');
+    } catch (e) {}
+    window.location.replace('/home');
+  </script>
+</body>
+</html>`);
+});
 
 /* -------------------------------------------------
    Utility Functions
@@ -136,7 +175,7 @@ app.get("/logout", (req, res) => res.redirect("/"));
 async function sendAlert(message) {
   console.log(`[ALERT] Tentando enviar alerta: ${message}`);
   try {
-    // Tenta enviar para o privado do desenvolvedor
+    // Tenta enviar para o privado do desenvolvedor (DEVELOPER_NUMBER já está em formato JID)
     await axios.post(`${API_URL}/v1/message/sendText/${DEFAULT_INSTANCE}`, {
       number: DEVELOPER_NUMBER,
       textMessage: { text: `⚠️ *ALERTA WHATSMIAU2*\n\n${message}` }
@@ -166,7 +205,7 @@ async function registerWebhook() {
     const webhookUrl = `http://localhost:${PORT}/api/webhook/instance-status`;
     console.log(`[SETUP] Registrando webhook: ${webhookUrl}`);
     await axios.put(`${API_URL}/v1/instance/webhook/${DEFAULT_INSTANCE}`, {
-      url: webhookUrl
+      webhookUrl: webhookUrl
     }, {
       headers: {
         'apikey': API_KEY,
@@ -175,7 +214,7 @@ async function registerWebhook() {
     });
     console.log(`[SETUP] Webhook registrado com sucesso.`);
   } catch (err) {
-    console.error(`[SETUP ERROR] Falha ao registrar webhook:`, err.message);
+    console.error(`[SETUP ERROR] Falha ao registrar webhook`, describeAxiosError(err));
   }
 }
 
@@ -224,6 +263,31 @@ function jidToFriendly(jid) {
   return jid.replace(/@.*$/, '');
 }
 
+function describeAxiosError(err) {
+  const status = err?.response?.status;
+  const statusText = err?.response?.statusText;
+  const data = err?.response?.data;
+  const method = err?.config?.method?.toUpperCase();
+  const url = err?.config?.url;
+  const timeout = err?.config?.timeout;
+
+  let dataPreview = data;
+  if (typeof data === 'string' && data.length > 300) {
+    dataPreview = `${data.slice(0, 300)}...`;
+  }
+
+  return {
+    message: err?.message || 'Unknown error',
+    code: err?.code,
+    status,
+    statusText,
+    method,
+    url,
+    timeout,
+    data: dataPreview
+  };
+}
+
 /* -------------------------------------------------
    WhatsMiau2 API - Custom Endpoints
    ------------------------------------------------- */
@@ -260,11 +324,12 @@ app.get("/api/normalize-jid", (req, res) => {
 app.post("/api/instance/pairPhone/:instance", async (req, res) => {
   const { instance } = req.params;
   const { phoneNumber } = req.body;
+  const encodedInstance = encodeURIComponent((instance || "").trim());
 
   console.log(`[PAIRING] Requesting code for ${phoneNumber} on instance ${instance}`);
 
   try {
-    const response = await axios.post(`${API_URL}/v1/instance/pairPhone/${instance}`,
+    const response = await axios.post(`${API_URL}/v1/instance/pairPhone/${encodedInstance}`,
       { phoneNumber },
       { headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' } }
     );
@@ -276,10 +341,19 @@ app.post("/api/instance/pairPhone/:instance", async (req, res) => {
 
     res.json(response.data);
   } catch (err) {
-    console.error(`[PAIRING] Error:`, err.response?.data || err.message);
+    const diagnostic = describeAxiosError(err);
+    console.error(`[PAIRING] Error:`, diagnostic);
+    const backendMessage =
+      err.response?.data?.message ||
+      err.response?.data?.error ||
+      err.message ||
+      "Erro ao solicitar código de pareamento";
+
     res.status(err.response?.status || 500).json({
-      error: err.response?.data?.message || err.message,
-      message: 'Erro ao solicitar código de pareamento'
+      error: backendMessage,
+      message: backendMessage,
+      statusCode: err.response?.status || 500,
+      details: err.response?.data || null
     });
   }
 });
@@ -309,7 +383,8 @@ function startConnectionMonitor(instance, phoneNumber) {
     }
 
     try {
-      const response = await axios.get(`${API_URL}/v1/instance/connectionState/${instance}`, {
+      const encodedInstance = encodeURIComponent((instance || "").trim());
+      const response = await axios.get(`${API_URL}/v1/instance/connectionState/${encodedInstance}`, {
         headers: { 'apikey': API_KEY }
       });
 
@@ -352,14 +427,22 @@ async function sendConnectionAlert(instance, phoneNumber) {
     `WhatsApp → Configurações → Aparelhos conectados`;
 
   try {
-    await axios.post(`${API_URL}/v1/message/sendText/${instance}`, {
-      number: phoneNumber,
+    // Normaliza o número para JID antes de enviar
+    const jid = normalizeInputToJid(phoneNumber);
+    if (!jid) {
+      console.error(`[ALERT] ❌ Número inválido para envio de alerta: ${phoneNumber}`);
+      return;
+    }
+
+    const encodedInstance = encodeURIComponent((instance || "").trim());
+    await axios.post(`${API_URL}/v1/message/sendText/${encodedInstance}`, {
+      number: jid,
       textMessage: { text: alertMessage }
     }, {
       headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' }
     });
 
-    console.log(`[ALERT] ✅ Alerta de conexão enviado para ${phoneNumber}`);
+    console.log(`[ALERT] ✅ Alerta de conexão enviado para ${jid}`);
   } catch (err) {
     console.error(`[ALERT] ❌ Erro ao enviar alerta:`, err.response?.data || err.message);
   }
@@ -368,11 +451,12 @@ async function sendConnectionAlert(instance, phoneNumber) {
 // Logout / Clear Session
 app.delete("/api/instance/logout/:instance", async (req, res) => {
   const { instance } = req.params;
+  const encodedInstance = encodeURIComponent((instance || "").trim());
 
   console.log(`[LOGOUT] Clearing session for instance ${instance}`);
 
   try {
-    const response = await axios.delete(`${API_URL}/v1/instance/logout/${instance}`, {
+    const response = await axios.delete(`${API_URL}/v1/instance/logout/${encodedInstance}`, {
       headers: { 'apikey': API_KEY }
     });
 
@@ -388,11 +472,12 @@ app.delete("/api/instance/logout/:instance", async (req, res) => {
 // Connect / Get QR Code
 app.get("/api/instance/connect/:instance", async (req, res) => {
   const { instance } = req.params;
+  const encodedInstance = encodeURIComponent((instance || "").trim());
 
   console.log(`[CONNECT] Requesting QR for instance ${instance}`);
 
   try {
-    const response = await axios.get(`${API_URL}/v1/instance/connect/${instance}`, {
+    const response = await axios.get(`${API_URL}/v1/instance/connect/${encodedInstance}`, {
       headers: { 'apikey': API_KEY }
     });
 
@@ -408,9 +493,10 @@ app.get("/api/instance/connect/:instance", async (req, res) => {
 // Connection State
 app.get("/api/instance/connectionState/:instance", async (req, res) => {
   const { instance } = req.params;
+  const encodedInstance = encodeURIComponent((instance || "").trim());
 
   try {
-    const response = await axios.get(`${API_URL}/v1/instance/connectionState/${instance}`, {
+    const response = await axios.get(`${API_URL}/v1/instance/connectionState/${encodedInstance}`, {
       headers: { 'apikey': API_KEY }
     });
 
@@ -426,72 +512,8 @@ app.get("/api/instance/connectionState/:instance", async (req, res) => {
    Webhook Receiver - Connection Events
    ------------------------------------------------- */
 
-// Webhook para receber eventos da API Go (conexão, desconexão, etc.)
-app.post("/api/webhook/instance-status", async (req, res) => {
-  const event = req.body;
-
-  console.log(`[WEBHOOK] Evento recebido:`, JSON.stringify(event).substring(0, 200));
-
-  try {
-    // Verifica se é evento de conexão
-    if (event.event === 'connection.update' || event.event === 'CONNECTION_UPDATE') {
-      const instance = event.instance || event.instanceName;
-      const state = event.state || event.data?.state;
-
-      console.log(`[WEBHOOK] Conexão atualizada: ${instance} -> ${state}`);
-
-      // Se conectou (open), envia mensagem de alerta
-      if (state === 'open' || state === 'connected') {
-        const now = new Date();
-        const dateTime = now.toLocaleString('pt-BR', {
-          timeZone: 'America/Sao_Paulo',
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        });
-
-        // Obtém informações da instância para pegar o número
-        try {
-          const infoResponse = await axios.get(`${API_URL}/v1/instance/info/${instance}`, {
-            headers: { 'apikey': API_KEY }
-          });
-
-          const instanceInfo = infoResponse.data;
-          const ownerNumber = instanceInfo.jid?.split('@')[0] || instanceInfo.owner?.split('@')[0];
-
-          if (ownerNumber) {
-            const alertMessage = `🔐 *ALERTA DE SEGURANÇA*\n\n` +
-              `✅ Seu WhatsApp foi conectado à API WhatsMiau2\n\n` +
-              `📱 *Instância:* ${instance}\n` +
-              `📅 *Data/Hora:* ${dateTime}\n` +
-              `🆔 *ID:* ${instanceInfo.id || 'N/A'}\n\n` +
-              `⚠️ Se você NÃO realizou esta conexão, desconecte imediatamente em:\n` +
-              `WhatsApp → Configurações → Aparelhos conectados`;
-
-            await axios.post(`${API_URL}/v1/message/sendText/${instance}`, {
-              number: ownerNumber,
-              textMessage: { text: alertMessage }
-            }, {
-              headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' }
-            });
-
-            console.log(`[WEBHOOK] Alerta de conexão enviado para ${ownerNumber}`);
-          }
-        } catch (infoErr) {
-          console.error(`[WEBHOOK] Erro ao obter info/enviar alerta:`, infoErr.message);
-        }
-      }
-    }
-
-    res.json({ success: true, received: true });
-  } catch (error) {
-    console.error(`[WEBHOOK] Erro:`, error.message);
-    res.json({ success: false, error: error.message });
-  }
-});
+// REMOVED DUPLICATE: Endpoint /api/webhook/instance-status is defined later in the file (line ~2565)
+// with more complete functionality. This duplicate has been removed to fix webhook conflicts.
 
 // Webhook genérico para qualquer evento
 app.post("/api/webhook/:instance", async (req, res) => {
@@ -499,6 +521,21 @@ app.post("/api/webhook/:instance", async (req, res) => {
   const event = req.body;
 
   console.log(`[WEBHOOK/${instance}] Evento:`, event.event || 'unknown');
+
+  // N8N Forwarding (Group Events)
+  if (event.event === 'group-participants-update') {
+    const N8N_WEBHOOK_URL = "https://n8n.automacoescomerciais.com.br/webhook-test/groups";
+    console.log(`[WEBHOOK] Encaminhando evento de grupo para n8n: ${N8N_WEBHOOK_URL}`);
+    try {
+      // Don't await to avoid blocking response
+      axios.post(N8N_WEBHOOK_URL, {
+        instance,
+        body: event // N8N expects body inside structure often, or just flatten it. Sending full event.
+      }).catch(err => console.error(`[N8N ERROR] Falha ao encaminhar: ${err.message}`));
+    } catch (e) {
+      console.error(`[N8N ERROR] ${e.message}`);
+    }
+  }
 
   // Processa evento de conexão
   if (event.event === 'connection.update' && event.data?.state === 'open') {
@@ -510,17 +547,18 @@ app.post("/api/webhook/:instance", async (req, res) => {
         headers: { 'apikey': API_KEY }
       });
 
-      const ownerNumber = infoResponse.data.jid?.split('@')[0];
+      const ownerJid = infoResponse.data.jid; // Já vem no formato JID correto
 
-      if (ownerNumber) {
+      if (ownerJid) {
         await axios.post(`${API_URL}/v1/message/sendText/${instance}`, {
-          number: ownerNumber,
+          number: ownerJid, // Fixed: usar JID completo
           textMessage: {
             text: `🔐 *CONEXÃO DETECTADA*\n\n✅ Instância: ${instance}\n📅 ${now}\n\n_WhatsMiau2 API_`
           }
         }, {
           headers: { 'apikey': API_KEY }
         });
+        console.log(`[WEBHOOK] Alerta de conexão enviado para ${ownerJid}`);
       }
     } catch (err) {
       console.error(`[WEBHOOK/${instance}] Erro alerta:`, err.message);
@@ -533,20 +571,37 @@ app.post("/api/webhook/:instance", async (req, res) => {
 // WhatsMiau2 API Status
 app.get("/api/whatsmiau2/status", async (req, res) => {
   try {
+    await axios.get(`${API_URL}/health`, { timeout: 5000 });
+  } catch (err) {
+    return res.status(503).json({
+      success: false,
+      apiStatus: "offline",
+      error: "Backend API indisponivel",
+      details: err.message
+    });
+  }
+
+  try {
     const response = await axios.get(`${API_URL}/v1/instance/connectionState/${DEFAULT_INSTANCE}`, {
-      headers: { 'apikey': API_KEY }
+      headers: { 'apikey': API_KEY },
+      timeout: 5000
     });
 
-    res.json({
+    return res.json({
       success: true,
+      apiStatus: "online",
       instance: DEFAULT_INSTANCE,
+      instanceAvailable: true,
       ...response.data
     });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message,
-      details: err.response?.data
+    return res.status(200).json({
+      success: true,
+      apiStatus: "online",
+      instance: DEFAULT_INSTANCE,
+      instanceAvailable: false,
+      warning: "API online, mas status da instancia indisponivel",
+      instanceError: err.response?.data || err.message
     });
   }
 });
@@ -561,10 +616,15 @@ app.get("/api/whatsmiau2/groups", async (req, res) => {
       headers: { 'apikey': API_KEY }
     });
 
-    // Return in the format expected by frontend
+    // Return in the format expected by frontend.
+    // Some backends return {groups:[...]}, others return an array directly.
+    const groups = Array.isArray(response.data)
+      ? response.data
+      : (response.data.groups || []);
+
     res.json({
       success: true,
-      data: response.data.groups || []
+      data: groups
     });
   } catch (err) {
     const statusCode = err.response?.status || 500;
@@ -702,9 +762,11 @@ app.get("/api/whatsmiau2/newsletters", async (req, res) => {
 // Get Newsletter Info (Participants logic is different for channels, usually only viewer count, but we check metadata)
 app.get("/api/whatsmiau2/newsletters/:id", async (req, res) => {
   const { id } = req.params;
+  const { instance } = req.query;
+  const targetInstance = instance || DEFAULT_INSTANCE;
   try {
     // Backend: GET /v1/newsletter/:instance/info?jid=...
-    const response = await axios.get(`${API_URL}/v1/newsletter/${DEFAULT_INSTANCE}/info`, {
+    const response = await axios.get(`${API_URL}/v1/newsletter/${targetInstance}/info`, {
       params: { jid: id },
       headers: { 'apikey': API_KEY }
     });
@@ -719,11 +781,457 @@ app.get("/api/whatsmiau2/newsletters/:id", async (req, res) => {
   }
 });
 
+function decodeHtmlEntitiesBasic(input) {
+  if (!input) return "";
+  return String(input)
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function normalizeChannelName(input) {
+  return String(input || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function normalizeChannelLink(input) {
+  const raw = String(input || "").trim();
+  if (!raw) return null;
+
+  const codeMatch = raw.match(/(?:https?:\/\/(?:www\.)?whatsapp\.com\/channel\/|whatsapp:\/\/channel\/)([A-Za-z0-9]+)/i);
+  if (!codeMatch) return null;
+
+  const code = codeMatch[1];
+  return `https://www.whatsapp.com/channel/${code}`;
+}
+
+async function resolveChannelLinkToNewsletterJid(link, instanceName) {
+  const normalized = normalizeChannelLink(link);
+  if (!normalized) {
+    return { ok: false, reason: "Link de canal inválido" };
+  }
+
+  // 1) Read channel public page metadata title
+  const page = await axios.get(normalized, {
+    timeout: 12000,
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    }
+  });
+
+  const html = String(page.data || "");
+  const ogTitleMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
+  const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  const rawTitle = ogTitleMatch?.[1] || titleMatch?.[1] || "";
+
+  if (!rawTitle) {
+    return { ok: false, reason: "Não foi possível ler o título do canal no link público" };
+  }
+
+  const channelTitle = decodeHtmlEntitiesBasic(rawTitle).replace(/\s*-\s*WhatsApp channel\s*$/i, "").trim();
+  const targetName = normalizeChannelName(channelTitle);
+
+  // 2) Match against subscribed newsletters in instance
+  const listResponse = await axios.get(`${API_URL}/v1/newsletter/list/${instanceName}`, {
+    headers: { apikey: API_KEY },
+    timeout: 10000
+  });
+  const newsletters = Array.isArray(listResponse.data?.newsletters) ? listResponse.data.newsletters : [];
+
+  if (!newsletters.length) {
+    return {
+      ok: false,
+      reason: "Nenhum canal/newsletter encontrado na instância",
+      channelTitle
+    };
+  }
+
+  const normalizedCandidates = newsletters.map(n => ({
+    jid: n.jid,
+    name: n.name || n.subject || "",
+    key: normalizeChannelName(n.name || n.subject || "")
+  }));
+
+  let matches = normalizedCandidates.filter(n => n.key && n.key === targetName);
+  if (matches.length === 0) {
+    matches = normalizedCandidates.filter(n => n.key && (n.key.includes(targetName) || targetName.includes(n.key)));
+  }
+
+  if (matches.length === 1) {
+    return {
+      ok: true,
+      jid: matches[0].jid,
+      name: matches[0].name,
+      channelTitle
+    };
+  }
+
+  if (matches.length > 1) {
+    return {
+      ok: false,
+      reason: "Mais de um canal corresponde ao link. Faça follow manual e use o JID @newsletter",
+      channelTitle
+    };
+  }
+
+  return {
+    ok: false,
+    reason: "Canal do link não foi encontrado na lista da instância (faça follow antes)",
+    channelTitle
+  };
+}
+
+// Resolve WhatsApp channel links to @newsletter JIDs (best effort)
+app.post("/api/whatsmiau2/channels/resolve-links", async (req, res) => {
+  const { links = [], instance } = req.body || {};
+  const targetInstance = instance || DEFAULT_INSTANCE;
+
+  if (!Array.isArray(links) || links.length === 0) {
+    return res.status(400).json({ success: false, error: "links deve ser uma lista não vazia" });
+  }
+
+  const uniqueLinks = [...new Set(links.map(v => String(v || "").trim()).filter(Boolean))];
+  const resolved = [];
+  const unresolved = [];
+
+  for (const link of uniqueLinks) {
+    try {
+      const result = await resolveChannelLinkToNewsletterJid(link, targetInstance);
+      if (result.ok) {
+        resolved.push({
+          link,
+          jid: result.jid,
+          name: result.name,
+          channelTitle: result.channelTitle
+        });
+      } else {
+        unresolved.push({
+          link,
+          reason: result.reason,
+          channelTitle: result.channelTitle || null
+        });
+      }
+    } catch (err) {
+      unresolved.push({
+        link,
+        reason: err.response?.data?.message || err.message || "Erro ao resolver link"
+      });
+    }
+  }
+
+  return res.json({
+    success: true,
+    instance: targetInstance,
+    resolved,
+    unresolved
+  });
+});
+
+function normalizeExportParticipant(p) {
+  if (!p || typeof p !== "object") return null;
+  const rawJid = p.JID || p.jid || p.id || "";
+  const rawNumber = p.PhoneNumber || p.phoneNumber || p.phone || p.number || "";
+  const number = String(rawNumber || (rawJid ? rawJid.split("@")[0] : "")).replace(/\D/g, "");
+  if (!number) return null;
+  return {
+    jid: rawJid || `${number}@s.whatsapp.net`,
+    number,
+    role: p.role || (p.IsAdmin || p.isAdmin ? "admin" : "member")
+  };
+}
+
+const BR_DDD_MAP = {
+  "11": { uf: "SP", region: "São Paulo e região metropolitana" },
+  "12": { uf: "SP", region: "São José dos Campos e Vale do Paraíba" },
+  "13": { uf: "SP", region: "Santos e Baixada Santista" },
+  "14": { uf: "SP", region: "Bauru e Marília" },
+  "15": { uf: "SP", region: "Sorocaba e Itapetininga" },
+  "16": { uf: "SP", region: "Ribeirão Preto e Franca" },
+  "17": { uf: "SP", region: "São José do Rio Preto" },
+  "18": { uf: "SP", region: "Presidente Prudente e Araçatuba" },
+  "19": { uf: "SP", region: "Campinas e Piracicaba" },
+  "21": { uf: "RJ", region: "Rio de Janeiro e Grande Rio" },
+  "22": { uf: "RJ", region: "Campos dos Goytacazes e Região dos Lagos" },
+  "24": { uf: "RJ", region: "Volta Redonda, Petrópolis e Angra" },
+  "27": { uf: "ES", region: "Vitória e região central/norte" },
+  "28": { uf: "ES", region: "Cachoeiro de Itapemirim e sul do ES" },
+  "31": { uf: "MG", region: "Belo Horizonte e região metropolitana" },
+  "32": { uf: "MG", region: "Juiz de Fora e Zona da Mata" },
+  "33": { uf: "MG", region: "Governador Valadares e leste de MG" },
+  "34": { uf: "MG", region: "Uberlândia e Triângulo Mineiro" },
+  "35": { uf: "MG", region: "Poços de Caldas e sul de MG" },
+  "37": { uf: "MG", region: "Divinópolis e centro-oeste de MG" },
+  "38": { uf: "MG", region: "Montes Claros e norte de MG" },
+  "41": { uf: "PR", region: "Curitiba e região metropolitana" },
+  "42": { uf: "PR", region: "Ponta Grossa e Campos Gerais" },
+  "43": { uf: "PR", region: "Londrina e norte do PR" },
+  "44": { uf: "PR", region: "Maringá e noroeste do PR" },
+  "45": { uf: "PR", region: "Cascavel e oeste do PR" },
+  "46": { uf: "PR", region: "Francisco Beltrão e sudoeste do PR" },
+  "47": { uf: "SC", region: "Joinville, Blumenau e Itajaí" },
+  "48": { uf: "SC", region: "Florianópolis e sul de SC" },
+  "49": { uf: "SC", region: "Chapecó e oeste de SC" },
+  "51": { uf: "RS", region: "Porto Alegre e região metropolitana" },
+  "53": { uf: "RS", region: "Pelotas e Rio Grande" },
+  "54": { uf: "RS", region: "Caxias do Sul e Serra Gaúcha" },
+  "55": { uf: "RS", region: "Santa Maria e noroeste do RS" },
+  "61": { uf: "DF", region: "Brasília e entorno" },
+  "62": { uf: "GO", region: "Goiânia e região central de GO" },
+  "63": { uf: "TO", region: "Palmas e Tocantins" },
+  "64": { uf: "GO", region: "Rio Verde, Itumbiara e sul de GO" },
+  "65": { uf: "MT", region: "Cuiabá e região" },
+  "66": { uf: "MT", region: "Rondonópolis, Sinop e interior de MT" },
+  "67": { uf: "MS", region: "Campo Grande e Mato Grosso do Sul" },
+  "68": { uf: "AC", region: "Rio Branco e Acre" },
+  "69": { uf: "RO", region: "Porto Velho e Rondônia" },
+  "71": { uf: "BA", region: "Salvador e região metropolitana" },
+  "73": { uf: "BA", region: "Ilhéus, Itabuna e sul da BA" },
+  "74": { uf: "BA", region: "Juazeiro e norte da BA" },
+  "75": { uf: "BA", region: "Feira de Santana e interior da BA" },
+  "77": { uf: "BA", region: "Vitória da Conquista e oeste da BA" },
+  "79": { uf: "SE", region: "Aracaju e Sergipe" },
+  "81": { uf: "PE", region: "Recife e região metropolitana" },
+  "82": { uf: "AL", region: "Maceió e Alagoas" },
+  "83": { uf: "PB", region: "João Pessoa e Paraíba" },
+  "84": { uf: "RN", region: "Natal e Rio Grande do Norte" },
+  "85": { uf: "CE", region: "Fortaleza e região metropolitana" },
+  "86": { uf: "PI", region: "Teresina e centro-norte do PI" },
+  "87": { uf: "PE", region: "Petrolina e interior de PE" },
+  "88": { uf: "CE", region: "Sobral, Juazeiro do Norte e interior do CE" },
+  "89": { uf: "PI", region: "Picos e sul do PI" },
+  "91": { uf: "PA", region: "Belém e região metropolitana" },
+  "92": { uf: "AM", region: "Manaus e região central do AM" },
+  "93": { uf: "PA", region: "Santarém e oeste do PA" },
+  "94": { uf: "PA", region: "Marabá e sudeste do PA" },
+  "95": { uf: "RR", region: "Boa Vista e Roraima" },
+  "96": { uf: "AP", region: "Macapá e Amapá" },
+  "97": { uf: "AM", region: "Interior do Amazonas" },
+  "98": { uf: "MA", region: "São Luís e norte do MA" },
+  "99": { uf: "MA", region: "Imperatriz e sul do MA" }
+};
+
+function parseBrazilNumber(input) {
+  let digits = String(input || "").replace(/\D/g, "");
+  digits = digits.replace(/^0+/, "");
+
+  let countryCode = "";
+  let ddd = "";
+  let localNumber = "";
+
+  if (digits.startsWith("55") && digits.length >= 12) {
+    countryCode = "55";
+    ddd = digits.slice(2, 4);
+    localNumber = digits.slice(4);
+  } else if (digits.length >= 10) {
+    countryCode = "55";
+    ddd = digits.slice(0, 2);
+    localNumber = digits.slice(2);
+  } else {
+    return {
+      countryCode: "",
+      ddd: "",
+      uf: "",
+      region: "",
+      localNumber: digits,
+      numberE164: ""
+    };
+  }
+
+  const dddInfo = BR_DDD_MAP[ddd] || { uf: "", region: "DDD não mapeado" };
+  return {
+    countryCode,
+    ddd,
+    uf: dddInfo.uf,
+    region: dddInfo.region,
+    localNumber,
+    numberE164: `${countryCode}${ddd}${localNumber}`
+  };
+}
+
+function normalizeDddToken(token) {
+  let t = String(token || "").replace(/\D/g, "");
+  if (!t) return "";
+  if (t.length === 3 && t.startsWith("0")) t = t.slice(1);
+  if (t.length > 2) t = t.slice(-2);
+  return BR_DDD_MAP[t] ? t : "";
+}
+
+function resolveDddFilterSet(raw) {
+  const value = String(raw || "").trim().toUpperCase();
+  if (!value) return null;
+
+  if (/^[A-Z]{2}$/.test(value)) {
+    const ddds = Object.keys(BR_DDD_MAP).filter(ddd => BR_DDD_MAP[ddd].uf === value);
+    return ddds.length ? new Set(ddds) : null;
+  }
+
+  const tokens = value.split(/[,\s;|/]+/).map(normalizeDddToken).filter(Boolean);
+  return tokens.length ? new Set(tokens) : null;
+}
+
+function buildExportFile(contacts, format) {
+  if (format === "csv") {
+    let c = "\uFEFFOrigem;Numero;JID;Papel\n";
+    c += contacts.map(r => `"${String(r.source || "").replace(/"/g, '""')}";"${r.number}";"${r.jid}";"${r.role}"`).join("\n");
+    return c;
+  }
+  if (format === "csv-numbers") {
+    const seen = new Set();
+    const rows = [];
+
+    contacts.forEach((r) => {
+      const parsed = parseBrazilNumber(String(r?.number || r?.jid || ""));
+      if (!parsed.numberE164 || seen.has(parsed.numberE164)) return;
+      seen.add(parsed.numberE164);
+      rows.push([
+        parsed.countryCode,
+        parsed.ddd,
+        parsed.uf,
+        parsed.region,
+        parsed.localNumber,
+        parsed.numberE164
+      ]);
+    });
+
+    let csv = "\uFEFFPais;DDD;UF;Regiao;NumeroLocal;NumeroE164\n";
+    csv += rows.map(cols => cols.map(v => `"${String(v || "").replace(/"/g, '""')}"`).join(";")).join("\n");
+    return csv;
+  }
+  if (format === "numbers") {
+    const nums = [...new Set(
+      contacts
+        .map(r => parseBrazilNumber(String(r?.number || r?.jid || "")).numberE164)
+        .filter(Boolean)
+    )];
+    return nums.join("\n");
+  }
+  if (format === "json") {
+    return JSON.stringify(contacts, null, 2);
+  }
+  if (format === "vcf") {
+    return contacts.map(r =>
+      `BEGIN:VCARD\nVERSION:3.0\nFN:WA ${r.number}\nTEL;TYPE=CELL:${r.number}\nNOTE:${r.source}\nEND:VCARD`
+    ).join("\n");
+  }
+  return contacts.map(r => `${r.number} (${r.source}) [${r.role}]`).join("\n");
+}
+
+function exportMime(format) {
+  const map = {
+    csv: "text/csv; charset=utf-8",
+    "csv-numbers": "text/csv; charset=utf-8",
+    numbers: "text/plain; charset=utf-8",
+    json: "application/json; charset=utf-8",
+    vcf: "text/vcard; charset=utf-8",
+    txt: "text/plain; charset=utf-8"
+  };
+  return map[format] || "text/plain; charset=utf-8";
+}
+
+function exportExt(format) {
+  const map = { csv: "csv", "csv-numbers": "csv", numbers: "txt", json: "json", vcf: "vcf", txt: "txt" };
+  return map[format] || "txt";
+}
+
+function safeFilePart(input) {
+  return String(input || "contatos").replace(/[^\w\-]/g, "_").slice(0, 40) || "contatos";
+}
+
+// Server-side download endpoint (more reliable on Safari/Tracking Prevention)
+app.get("/api/whatsmiau2/export/contacts", async (req, res) => {
+  const { instance, jid, format = "csv", label, ddd } = req.query;
+  const targetInstance = instance || DEFAULT_INSTANCE;
+
+  if (!jid) {
+    return res.status(400).json({ success: false, error: "jid é obrigatório" });
+  }
+
+  try {
+    const isNewsletter = String(jid).endsWith("@newsletter");
+
+    let response;
+    if (isNewsletter) {
+      response = await axios.get(`${API_URL}/v1/newsletter/${targetInstance}/info`, {
+        params: { jid },
+        headers: { apikey: API_KEY }
+      });
+    } else {
+      response = await axios.get(`${API_URL}/v1/group/info/${targetInstance}`, {
+        params: { jid },
+        headers: { apikey: API_KEY }
+      });
+    }
+
+    const root = response.data || {};
+    const participants =
+      root.Participants ||
+      root.participants ||
+      root.group?.Participants ||
+      root.group?.participants ||
+      [];
+
+    if (!Array.isArray(participants) || participants.length === 0) {
+      return res.status(404).json({ success: false, error: "Nenhum participante encontrado" });
+    }
+
+    const source = label || root.Name || root.subject || root.name || String(jid);
+    const contacts = participants
+      .map(normalizeExportParticipant)
+      .filter(Boolean)
+      .map(p => ({
+        source,
+        jid: p.jid,
+        number: p.number,
+        role: p.role
+      }));
+
+    let filteredContacts = contacts;
+    if (ddd) {
+      const dddFilterSet = resolveDddFilterSet(ddd);
+      if (!dddFilterSet) {
+        return res.status(400).json({ success: false, error: "Filtro DDD inválido. Ex.: 41, 041, 41,42 ou PR." });
+      }
+      filteredContacts = contacts.filter(c => dddFilterSet.has(parseBrazilNumber(c.number).ddd));
+    }
+
+    if (!filteredContacts.length) {
+      return res.status(404).json({ success: false, error: "Nenhum contato encontrado para o DDD informado" });
+    }
+
+    const content = buildExportFile(filteredContacts, String(format));
+    const ext = exportExt(String(format));
+    const fileName = `${safeFilePart(source)}_${new Date().toISOString().slice(0, 10)}.${ext}`;
+
+    res.setHeader("Content-Type", exportMime(String(format)));
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    return res.status(200).send(content);
+  } catch (err) {
+    const statusCode = err.response?.status || 500;
+    const errorData = err.response?.data || { message: err.message };
+    console.error(`[Export Contacts Error] ${statusCode}:`, errorData);
+    return res.status(statusCode).json({
+      success: false,
+      error: err.message,
+      details: errorData
+    });
+  }
+});
+
 
 // Send Text Message (Unified & Fixed)
 app.post("/api/whatsmiau2/send-text", async (req, res) => {
   const { number, text, instance } = req.body;
-  const instanceName = instance || DEFAULT_INSTANCE;
+  const requestedInstance = (instance || "").toString().trim();
+  const defaultInstance = (DEFAULT_INSTANCE || "").toString().trim();
 
   if (!number || !text) {
     return res.status(400).json({ success: false, error: "Number and text are required" });
@@ -738,12 +1246,75 @@ app.post("/api/whatsmiau2/send-text", async (req, res) => {
       textMessage: { text: text }
     };
 
-    const response = await axios.post(`${API_URL}/v1/message/sendText/${instanceName}`, payload, {
-      headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' }
-    });
+    const candidates = [requestedInstance, defaultInstance].filter(Boolean);
+    const uniqueCandidates = [...new Set(candidates)];
+    let response = null;
+    let lastError = null;
+    let usedInstance = uniqueCandidates[0] || defaultInstance;
 
-    res.json({ success: true, ...response.data });
+    const sendUsing = async (instName) => {
+      usedInstance = instName;
+      return axios.post(`${API_URL}/v1/message/sendText/${instName}`, payload, {
+        headers: { 'apikey': API_KEY, 'Content-Type': 'application/json' }
+      });
+    };
+
+    for (const instName of uniqueCandidates) {
+      try {
+        response = await sendUsing(instName);
+        break;
+      } catch (err) {
+        lastError = err;
+        if (err?.response?.status === 404) continue;
+        throw err;
+      }
+    }
+
+    if (!response) {
+      try {
+        const discovered = await fetchNormalizedChatInstances();
+        const dynamicCandidates = discovered
+          .filter(inst => inst.name && !uniqueCandidates.includes(inst.name))
+          .sort((a, b) => (b.status === 'online' ? 1 : 0) - (a.status === 'online' ? 1 : 0))
+          .map(inst => inst.name);
+
+        for (const instName of dynamicCandidates) {
+          try {
+            response = await sendUsing(instName);
+            break;
+          } catch (err) {
+            lastError = err;
+            if (err?.response?.status === 404) continue;
+            throw err;
+          }
+        }
+      } catch (_) {
+        // noop: keep lastError and return a normalized failure below
+      }
+    }
+
+    if (!response) {
+      const detail = lastError?.response?.data?.error || lastError?.response?.data?.message || lastError?.message || "Not Found";
+      return res.status(400).json({
+        success: false,
+        error: `Nenhuma instância válida para envio foi encontrada (${uniqueCandidates.join(', ')}). Detalhe: ${detail}.`
+      });
+    }
+
+    res.json({ success: true, instance: usedInstance, ...response.data });
   } catch (err) {
+    const upstreamStatus = err.response?.status || 500;
+    const upstreamMessage = err.response?.data?.message || err.response?.data?.error || err.message || "Erro no envio";
+    const isRateLimited = /error\s*420/i.test(upstreamMessage) || upstreamStatus === 420;
+
+    if (isRateLimited) {
+      return res.status(429).json({
+        success: false,
+        error: "Envio bloqueado temporariamente pela instância/WhatsApp (erro 420). Aguarde e tente novamente com maior intervalo.",
+        details: err.response?.data
+      });
+    }
+
     res.status(500).json({ success: false, error: err.message, details: err.response?.data });
   }
 });
@@ -999,6 +1570,125 @@ app.post("/api/evolution/send-media", async (req, res) => {
 /* -------------------------------------------------
    Instagram OSINT Tool API
    ------------------------------------------------- */
+function normalizeInstagramApiData(data) {
+  if (!data) return null;
+  if (typeof data === "object") return data;
+  if (typeof data !== "string") return null;
+
+  let raw = data.trim();
+  raw = raw.replace(/^for\s*\(\s*;;\s*\)\s*;?\s*/i, "");
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch (_) {
+    // Some Instagram responses come as JS object literal (unquoted keys).
+    const jsonLike = raw.replace(/([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:/g, '$1"$2":');
+    try {
+      return JSON.parse(jsonLike);
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
+function extractInstagramUsers(data) {
+  if (Array.isArray(data?.users)) return data.users;
+  if (Array.isArray(data?.payload?.users)) return data.payload.users;
+  return [];
+}
+
+function extractInstagramProfileFromWebInfo(data) {
+  const user = data?.data?.user || data?.user || null;
+  if (!user) return null;
+  return {
+    id: user.id || user.pk || null,
+    username: user.username || null,
+    full_name: user.full_name || null,
+    is_private: !!user.is_private,
+    profile_pic_url: user.profile_pic_url || user.profile_pic_url_hd || null
+  };
+}
+
+function extractInstagramUserIdFromHtml(html) {
+  if (typeof html !== "string" || !html) return null;
+  const patterns = [
+    /"logging_page_id"\s*:\s*"profilePage_(\d+)"/i,
+    /profilePage_(\d+)/i,
+    /"profile_id"\s*:\s*"(\d+)"/i,
+    /"user_id"\s*:\s*"(\d+)"/i
+  ];
+
+  for (const regex of patterns) {
+    const m = html.match(regex);
+    if (m && m[1]) return m[1];
+  }
+  return null;
+}
+
+function normalizeInstagramTargetInput(target) {
+  if (target === null || target === undefined) return "";
+  let raw = String(target)
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/[\r\n\t]+/g, " ")
+    .trim();
+  if (!raw) return "";
+
+  raw = raw.replace(/^['"`]+|['"`]+$/g, "").trim();
+
+  // URL parser fallback (stories/profile links, with query/hash)
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const u = new URL(raw);
+      const host = (u.hostname || "").toLowerCase();
+      if (host.includes("instagram.com")) {
+        const segments = (u.pathname || "")
+          .split("/")
+          .map(s => s.trim())
+          .filter(Boolean);
+
+        if (segments.length > 0) {
+          const first = segments[0].toLowerCase();
+          if (first === "stories" && segments[1]) return segments[1];
+          if (!["p", "reel", "reels", "explore", "accounts", "direct", "tv"].includes(first)) {
+            return segments[0];
+          }
+        }
+      }
+    } catch (_) {
+      // continue with regex fallbacks
+    }
+  }
+
+  // Support stories URL: https://www.instagram.com/stories/<username>/
+  const storiesUrlMatch = raw.match(/instagram\.com\/stories\/([A-Za-z0-9._]+)(?:\/|$)/i);
+  if (storiesUrlMatch?.[1]) {
+    return storiesUrlMatch[1];
+  }
+
+  // Support direct profile URL pasted by user, ignoring reserved routes
+  const profileUrlMatch = raw.match(/instagram\.com\/([A-Za-z0-9._]+)\/?/i);
+  if (profileUrlMatch?.[1]) {
+    const firstPath = profileUrlMatch[1].toLowerCase();
+    const reserved = new Set(["stories", "p", "reel", "reels", "explore", "accounts", "direct", "tv"]);
+    if (!reserved.has(firstPath)) {
+      return profileUrlMatch[1];
+    }
+  }
+
+  // Split mixed lines like: "61707223925 rochelia_girao_moda"
+  const tokens = raw.split(/[\s,;|]+/).filter(Boolean);
+  if (tokens.length > 1) {
+    const numeric = tokens.find(t => /^\d+$/.test(t));
+    if (numeric) return numeric;
+
+    const handle = tokens.find(t => /^@?[A-Za-z0-9._]+$/.test(t));
+    if (handle) return handle;
+  }
+
+  return raw;
+}
+
 app.post("/api/instagram/investigate", async (req, res) => {
   const { target, sessionId } = req.body;
 
@@ -1028,8 +1718,15 @@ app.post("/api/instagram/investigate", async (req, res) => {
   };
 
   try {
-    let cleanTarget = target.toString().trim();
+    const markAuthState = (err, state) => {
+      const status = err?.response?.status;
+      if (status === 401 || status === 302) state.hadAuthError = true;
+      if (status === 403) state.hadAccessDenied = true;
+    };
+
+    let cleanTarget = normalizeInstagramTargetInput(target);
     if (cleanTarget.startsWith('@')) cleanTarget = cleanTarget.substring(1);
+    cleanTarget = cleanTarget.trim();
 
     const isUserId = /^\d+$/.test(cleanTarget);
     let userId = cleanTarget;
@@ -1038,6 +1735,7 @@ app.post("/api/instagram/investigate", async (req, res) => {
     if (!isUserId) {
       console.log(`[IG Investigate] Resolving username: ${cleanTarget}`);
       let resolved = false;
+      const authState = { hadAuthError: false, hadAccessDenied: false };
 
       // Strategy A: Mobile Search
       try {
@@ -1048,13 +1746,18 @@ app.post("/api/instagram/investigate", async (req, res) => {
           "X-IG-Connection-Type": "WIFI"
         };
         const searchRes = await runRequest(searchUrl, headersMobile);
-        const foundUser = searchRes.data.users?.find(u => u.username.toLowerCase() === cleanTarget.toLowerCase());
+        const searchData = normalizeInstagramApiData(searchRes.data);
+        const mobileUsers = extractInstagramUsers(searchData);
+        const foundUser = mobileUsers.find(u => u.username.toLowerCase() === cleanTarget.toLowerCase());
 
         if (foundUser) {
           userId = foundUser.pk;
           resolved = true;
         }
-      } catch (e) { console.log("Resolve Strategy A failed"); }
+      } catch (e) {
+        markAuthState(e, authState);
+        console.log("Resolve Strategy A failed");
+      }
 
       // Strategy B: Web Search (Fallback)
       if (!resolved) {
@@ -1066,17 +1769,86 @@ app.post("/api/instagram/investigate", async (req, res) => {
             "X-IG-App-ID": "936619743392459"
           };
           const webRes = await runRequest(webUrl, headersWeb);
-          const foundUser = webRes.data.users?.find(u => u.user.username.toLowerCase() === cleanTarget.toLowerCase());
+          const webData = normalizeInstagramApiData(webRes.data);
+          const webUsers = extractInstagramUsers(webData);
+          const foundUser = webUsers.find(u => u.user.username.toLowerCase() === cleanTarget.toLowerCase());
 
           if (foundUser) {
             userId = foundUser.user.pk;
             resolved = true;
           }
-        } catch (e) { console.log("Resolve Strategy B failed"); }
+        } catch (e) {
+          markAuthState(e, authState);
+          console.log("Resolve Strategy B failed");
+        }
+      }
+
+      // Strategy C: Public profile HTML parsing (fallback when search APIs are blocked)
+      if (!resolved) {
+        try {
+          const profileUrl = `https://www.instagram.com/${encodeURIComponent(cleanTarget)}/`;
+          const profileRes = await axios.get(profileUrl, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+              "Cookie": `sessionid=${cleanSessionId}; ds_user_id=${ds_user_id};`,
+              "Referer": "https://www.instagram.com/",
+              "Origin": "https://www.instagram.com"
+            },
+            responseType: "text",
+            maxRedirects: 5,
+            validateStatus: s => s < 400
+          });
+
+          const parsedId = extractInstagramUserIdFromHtml(profileRes.data);
+          if (parsedId) {
+            userId = parsedId;
+            resolved = true;
+            console.log(`[IG Investigate] Strategy C resolved @${cleanTarget} -> ${userId}`);
+          }
+        } catch (e) {
+          markAuthState(e, authState);
+          console.log("Resolve Strategy C failed");
+        }
+      }
+
+      // Strategy D: web_profile_info endpoint
+      if (!resolved) {
+        try {
+          const webInfoUrl = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(cleanTarget)}`;
+          const webInfoRes = await axios.get(webInfoUrl, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              "Cookie": `sessionid=${cleanSessionId}; ds_user_id=${ds_user_id};`,
+              "X-IG-App-ID": "936619743392459",
+              "Referer": "https://www.instagram.com/",
+              "Accept": "*/*"
+            },
+            maxRedirects: 5,
+            validateStatus: s => s < 400
+          });
+
+          const webInfoData = normalizeInstagramApiData(webInfoRes.data);
+          const profile = extractInstagramProfileFromWebInfo(webInfoData);
+          if (profile?.id) {
+            userId = profile.id;
+            resolved = true;
+            console.log(`[IG Investigate] Strategy D resolved @${cleanTarget} -> ${userId}`);
+          }
+        } catch (e) {
+          markAuthState(e, authState);
+          console.log("Resolve Strategy D failed");
+        }
       }
 
       if (!resolved) {
-        return res.json({ success: false, error: "Username not found. Try finding the numeric ID first." });
+        if (authState.hadAuthError) {
+          return res.json({ success: false, error: "Session ID Inválido/Expirado (401). Gere um novo." });
+        }
+        if (authState.hadAccessDenied) {
+          return res.json({ success: false, error: "Acesso Negado (403). Tente novamente mais tarde." });
+        }
+        return res.json({ success: false, error: `Username not found (${cleanTarget}). Try finding the numeric ID first.` });
       }
     }
 
@@ -1197,9 +1969,14 @@ app.post("/api/instagram/search", async (req, res) => {
     return res.status(400).json({ success: false, error: "Query and Session ID required" });
   }
 
+  const normalizedQuery = normalizeInstagramTargetInput(query).replace(/^@+/, "");
+  if (!normalizedQuery) {
+    return res.status(400).json({ success: false, error: "Query inválida" });
+  }
+
   // Sanitize Session ID (Decode if user pasted URL encoded value)
   let cleanSessionId = sessionId.trim();
-  if (cleanSessionId.includes('%3A')) {
+  if (cleanSessionId.includes('%3A') || cleanSessionId.includes('%3a')) {
     cleanSessionId = decodeURIComponent(cleanSessionId);
   }
 
@@ -1208,7 +1985,7 @@ app.post("/api/instagram/search", async (req, res) => {
   const match = cleanSessionId.match(/^(\d+)%3A|^(\d+):/);
   const ds_user_id = match ? (match[1] || match[2]) : "";
 
-  console.log(`[IG Search] Searching for: ${query} (DS_USER_ID: ${ds_user_id})`);
+  console.log(`[IG Search] Searching for: ${normalizedQuery} (DS_USER_ID: ${ds_user_id})`);
 
   const runRequest = async (url, headers) => {
     return axios.get(url, {
@@ -1231,10 +2008,10 @@ app.post("/api/instagram/search", async (req, res) => {
         "Host": "i.instagram.com"
       };
 
-      const mobileUrl = `https://i.instagram.com/api/v1/users/search/?q=${encodeURIComponent(query)}&timezone_offset=0&count=30`;
+      const mobileUrl = `https://i.instagram.com/api/v1/users/search/?q=${encodeURIComponent(normalizedQuery)}&timezone_offset=0&count=30`;
       const res = await runRequest(mobileUrl, mobileHeaders);
-
-      const mUsers = res.data.users || [];
+      const mobileData = normalizeInstagramApiData(res.data);
+      const mUsers = extractInstagramUsers(mobileData);
       if (mUsers.length > 0) {
         const mResults = mUsers.map(u => ({
           id: u.pk,
@@ -1262,10 +2039,10 @@ app.post("/api/instagram/search", async (req, res) => {
       "Origin": "https://www.instagram.com"
     };
 
-    const webUrl = `https://www.instagram.com/web/search/topsearch/?context=blended&query=${encodeURIComponent(query)}&include_reel=true`;
+    const webUrl = `https://www.instagram.com/web/search/topsearch/?context=blended&query=${encodeURIComponent(normalizedQuery)}&include_reel=true`;
     const webRes = await runRequest(webUrl, webHeaders);
-
-    const users = webRes.data.users || [];
+    const webData = normalizeInstagramApiData(webRes.data);
+    const users = extractInstagramUsers(webData);
     const wResults = users.map(u => ({
       id: u.user.pk,
       username: u.user.username,
@@ -1274,7 +2051,39 @@ app.post("/api/instagram/search", async (req, res) => {
       profile_pic_url: u.user.profile_pic_url || "https://via.placeholder.com/150"
     }));
 
-    res.json({ success: true, data: wResults });
+    if (wResults.length > 0) {
+      return res.json({ success: true, data: wResults });
+    }
+
+    // STRATEGY 3: web_profile_info direct lookup
+    const webInfoUrl = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(normalizedQuery)}`;
+    const webInfoRes = await axios.get(webInfoUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Cookie": `sessionid=${cleanSessionId}; ds_user_id=${ds_user_id};`,
+        "X-IG-App-ID": "936619743392459",
+        "Referer": "https://www.instagram.com/",
+        "Accept": "*/*"
+      },
+      maxRedirects: 5,
+      validateStatus: s => s < 400
+    });
+    const webInfoData = normalizeInstagramApiData(webInfoRes.data);
+    const profile = extractInstagramProfileFromWebInfo(webInfoData);
+    if (profile?.id) {
+      return res.json({
+        success: true,
+        data: [{
+          id: profile.id,
+          username: profile.username || normalizedQuery,
+          full_name: profile.full_name || "",
+          is_private: !!profile.is_private,
+          profile_pic_url: profile.profile_pic_url || "https://via.placeholder.com/150"
+        }]
+      });
+    }
+
+    res.json({ success: true, data: [] });
 
   } catch (err) {
     console.error("IG Search Critical Error:", err.message);
@@ -1466,12 +2275,39 @@ app.get("/api/group/invite-link", async (req, res) => {
       }
     );
 
-    res.json(response.data);
+    const payload = response.data || {};
+    const reportedCode = Number(payload.code || 0);
+    const reportedMessage = String(payload.message || "").trim();
+    const hasEmbeddedError = reportedCode >= 400 || /^error$/i.test(reportedMessage);
+
+    if (hasEmbeddedError) {
+      return res.status(reportedCode || 500).json({
+        code: reportedCode || 500,
+        message: payload.details?.error || payload.error || reportedMessage || "Falha ao obter link do grupo",
+        details: payload.details || payload || null,
+        hint: "Se a instância não for admin do grupo, o WhatsApp bloqueia a leitura do link de convite."
+      });
+    }
+
+    res.json(payload);
   } catch (err) {
-    res.status(err.response?.status || 500).json({
-      code: err.response?.status || 500,
-      message: err.message,
-      details: err.response?.data
+    const networkError = !err.response;
+    const statusCode = err.response?.status || (networkError ? 503 : 500);
+    const upstreamMsg = err.response?.data?.error || err.response?.data?.message;
+    const message = networkError
+      ? "Backend API indisponível ou timeout ao buscar link do grupo"
+      : (upstreamMsg || err.message || "Falha ao obter link do grupo");
+
+    res.status(statusCode).json({
+      code: statusCode,
+      message,
+      details: err.response?.data || null,
+      upstream: {
+        code: err.code || null,
+        target: `${API_URL}/v1/group/invite-link/${instanceName}`,
+        instance: instanceName,
+        group_id
+      }
     });
   }
 });
@@ -1496,12 +2332,39 @@ app.get("/group/invite-link", async (req, res) => {
       }
     );
 
-    res.json(response.data);
+    const payload = response.data || {};
+    const reportedCode = Number(payload.code || 0);
+    const reportedMessage = String(payload.message || "").trim();
+    const hasEmbeddedError = reportedCode >= 400 || /^error$/i.test(reportedMessage);
+
+    if (hasEmbeddedError) {
+      return res.status(reportedCode || 500).json({
+        code: reportedCode || 500,
+        message: payload.details?.error || payload.error || reportedMessage || "Falha ao obter link do grupo",
+        details: payload.details || payload || null,
+        hint: "Se a instância não for admin do grupo, o WhatsApp bloqueia a leitura do link de convite."
+      });
+    }
+
+    res.json(payload);
   } catch (err) {
-    res.status(err.response?.status || 500).json({
-      code: err.response?.status || 500,
-      message: err.message,
-      details: err.response?.data
+    const networkError = !err.response;
+    const statusCode = err.response?.status || (networkError ? 503 : 500);
+    const upstreamMsg = err.response?.data?.error || err.response?.data?.message;
+    const message = networkError
+      ? "Backend API indisponível ou timeout ao buscar link do grupo"
+      : (upstreamMsg || err.message || "Falha ao obter link do grupo");
+
+    res.status(statusCode).json({
+      code: statusCode,
+      message,
+      details: err.response?.data || null,
+      upstream: {
+        code: err.code || null,
+        target: `${API_URL}/v1/group/invite-link/${DEFAULT_INSTANCE}`,
+        instance: DEFAULT_INSTANCE,
+        group_id
+      }
     });
   }
 });
@@ -1890,6 +2753,7 @@ app.get("/api/health", async (req, res) => {
 // Armazenamento temporário de leads (em memória)
 // Para produção, use um banco de dados como SQLite, PostgreSQL, etc.
 let leadsDatabase = [];
+let cloudflareLeadTableInitialized = false;
 
 // Carregar leads do arquivo (persistência simples)
 const LEADS_FILE = path.join(__dirname, 'data', 'leads.json');
@@ -1907,6 +2771,171 @@ function saveLeadsToFile() {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(LEADS_FILE, JSON.stringify(leadsDatabase, null, 2));
 }
+
+function isCloudflareD1Ready() {
+  return !!(CF_D1_ACCOUNT_ID && CF_D1_DATABASE_ID && CF_D1_API_TOKEN);
+}
+
+function isProductionMode() {
+  return (process.env.NODE_ENV || "").toLowerCase() === "production";
+}
+
+function normalizeLeadPayloadForPersistence(rawLead) {
+  const lead = rawLead || {};
+  return {
+    id: lead.id || Date.now(),
+    nome: (lead.nome || lead.name || "Sem nome").toString().trim(),
+    whatsapp: (lead.whatsapp || lead.phone || "").toString().replace(/\D/g, ""),
+    email: (lead.email || "").toString().trim(),
+    localizacao: (lead.localizacao || "").toString().trim(),
+    empresa: (lead.empresa || "").toString().trim(),
+    site: (lead.site || "").toString().trim(),
+    instagram: (lead.instagram || "").toString().trim(),
+    linkedin: (lead.linkedin || "").toString().trim(),
+    valor: Number.parseFloat(lead.valor) || 0,
+    fonte: (lead.fonte || lead.source || "whatsapp").toString().trim(),
+    status: (lead.status || "novo").toString().trim(),
+    temperatura: (lead.temperatura || "quente").toString().trim(),
+    obs: (lead.obs || lead.observacoes || "").toString().trim(),
+    createdAt: lead.createdAt || new Date().toISOString()
+  };
+}
+
+async function runCloudflareD1Query(sql, params = []) {
+  if (!isCloudflareD1Ready()) {
+    throw new Error("Cloudflare D1 não configurado. Defina CF_D1_ACCOUNT_ID, CF_D1_DATABASE_ID e CF_D1_API_TOKEN.");
+  }
+
+  const endpoint = `https://api.cloudflare.com/client/v4/accounts/${CF_D1_ACCOUNT_ID}/d1/database/${CF_D1_DATABASE_ID}/query`;
+  const response = await axios.post(
+    endpoint,
+    { sql, params },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${CF_D1_API_TOKEN}`
+      },
+      timeout: 15000
+    }
+  );
+
+  if (!response.data?.success) {
+    const errorMessage = response.data?.errors?.[0]?.message || "Falha ao executar query no Cloudflare D1.";
+    throw new Error(errorMessage);
+  }
+
+  return response.data;
+}
+
+async function ensureCloudflareLeadsTable() {
+  if (cloudflareLeadTableInitialized) return;
+
+  const createTableSQL = `
+    CREATE TABLE IF NOT EXISTS ${CF_D1_LEADS_TABLE} (
+      id TEXT PRIMARY KEY,
+      nome TEXT,
+      whatsapp TEXT UNIQUE,
+      email TEXT,
+      localizacao TEXT,
+      empresa TEXT,
+      site TEXT,
+      instagram TEXT,
+      linkedin TEXT,
+      valor REAL DEFAULT 0,
+      fonte TEXT,
+      status TEXT,
+      temperatura TEXT,
+      obs TEXT,
+      created_at TEXT,
+      updated_at TEXT
+    );
+  `;
+
+  await runCloudflareD1Query(createTableSQL);
+  cloudflareLeadTableInitialized = true;
+}
+
+async function saveLeadToCloudflareD1(rawLead) {
+  const lead = normalizeLeadPayloadForPersistence(rawLead);
+
+  if (!lead.whatsapp) {
+    throw new Error("WhatsApp é obrigatório para salvar no Cloudflare D1.");
+  }
+
+  await ensureCloudflareLeadsTable();
+
+  const upsertSQL = `
+    INSERT INTO ${CF_D1_LEADS_TABLE} (
+      id, nome, whatsapp, email, localizacao, empresa, site, instagram, linkedin,
+      valor, fonte, status, temperatura, obs, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(whatsapp) DO UPDATE SET
+      nome = excluded.nome,
+      email = excluded.email,
+      localizacao = excluded.localizacao,
+      empresa = excluded.empresa,
+      site = excluded.site,
+      instagram = excluded.instagram,
+      linkedin = excluded.linkedin,
+      valor = excluded.valor,
+      fonte = excluded.fonte,
+      status = excluded.status,
+      temperatura = excluded.temperatura,
+      obs = excluded.obs,
+      updated_at = excluded.updated_at
+  `;
+
+  const nowIso = new Date().toISOString();
+  await runCloudflareD1Query(upsertSQL, [
+    String(lead.id),
+    lead.nome,
+    lead.whatsapp,
+    lead.email,
+    lead.localizacao,
+    lead.empresa,
+    lead.site,
+    lead.instagram,
+    lead.linkedin,
+    lead.valor,
+    lead.fonte,
+    lead.status,
+    lead.temperatura,
+    lead.obs,
+    lead.createdAt || nowIso,
+    nowIso
+  ]);
+
+  return { success: true, lead };
+}
+
+// Rota dedicada para persistir leads no Cloudflare D1 em produção
+app.post('/api/production/leads', async (req, res) => {
+  try {
+    if (!isProductionMode()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Rota disponível apenas em produção (NODE_ENV=production).'
+      });
+    }
+
+    if (!isCloudflareD1Ready()) {
+      return res.status(503).json({
+        success: false,
+        error: 'Cloudflare D1 não configurado. Defina CF_D1_ACCOUNT_ID, CF_D1_DATABASE_ID e CF_D1_API_TOKEN.'
+      });
+    }
+
+    const result = await saveLeadToCloudflareD1(req.body || {});
+    return res.json({
+      success: true,
+      message: 'Lead salvo no Cloudflare D1.',
+      lead: result.lead
+    });
+  } catch (error) {
+    console.error('[PRODUCTION LEADS] Erro ao salvar no Cloudflare D1:', error.message);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // Listar todos os leads
 app.get('/api/leads', (req, res) => {
@@ -2700,12 +3729,79 @@ app.post("/api2/whatsmiau2/generate-summary", async (req, res) => {
     const { context, voice = 'female' } = req.body;
     if (!context) return res.status(400).json({ error: "Contexto obrigatório" });
     const { generateSummaryWithGemini, generateAudioWithOpenAI } = await import("./services/ai.js");
-    const summary = await generateSummaryWithGemini(context);
+    let summary;
+    let warning = null;
+
+    try {
+      summary = await generateSummaryWithGemini(context);
+    } catch (summaryError) {
+      const msg = String(summaryError?.message || "");
+      const isGeminiKeyError =
+        msg.includes("API_KEY_INVALID") ||
+        msg.includes("GEMINI_API_KEY não configurada");
+
+      if (!isGeminiKeyError) {
+        throw summaryError;
+      }
+
+      // Fallback seguro: gera roteiro básico local para não travar o fluxo de áudio.
+      warning = "Gemini indisponível (chave ausente/inválida). Usando resumo local simplificado.";
+      const raw = String(context || "");
+      const cleaned = raw
+        .replace(/\{\{[^}]+\}\}/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      summary = cleaned.length > 0
+        ? `Resumo automático: ${cleaned.slice(0, 900)}`
+        : "Não há interações registradas no momento.";
+    }
+
     const audioUrl = await generateAudioWithOpenAI(summary, voice);
-    res.json({ success: true, summary, audioUrl });
+    res.json({ success: true, summary, audioUrl, warning });
   } catch (error) {
     console.error("Erro na IA:", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api2/whatsmiau2/generate-offer-template", async (req, res) => {
+  try {
+    const {
+      marketplace,
+      productName,
+      price,
+      shopName,
+      commission,
+      commissionRate,
+      sales,
+      offerLink,
+      searchLink,
+      inviteLink,
+      openingMessage
+    } = req.body || {};
+
+    if (!productName && !offerLink) {
+      return res.status(400).json({ success: false, error: "Produto ou link de oferta obrigatório." });
+    }
+
+    const generated = await generateOfferTemplateWithGemini({
+      marketplace,
+      productName,
+      price,
+      shopName,
+      commission,
+      commissionRate,
+      sales,
+      offerLink,
+      searchLink,
+      inviteLink,
+      openingMessage
+    });
+
+    res.json({ success: true, template: generated });
+  } catch (error) {
+    console.error("Erro na IA (template oferta):", error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -3043,10 +4139,20 @@ app.post('/api/chat/conversations/:id/messages', async (req, res) => {
     }
 
     const ticket = ticketsDatabase[ticketIndex];
-    const instance = ticket.instance || DEFAULT_INSTANCE;
+    const ticketInstance = (ticket.instance || "").toString().trim();
+    const defaultInstance = (DEFAULT_INSTANCE || "").toString().trim();
+    const instanceCandidates = [ticketInstance, defaultInstance].filter(Boolean);
     const remoteJid = ticket.customerPhone || ticket.contact?.number;
 
+    if (!remoteJid) {
+      return res.status(400).json({
+        success: false,
+        error: 'Conversa sem número de destino. Atualize o contato antes de enviar mensagem.'
+      });
+    }
+
     let response;
+    let usedInstance = ticketInstance || defaultInstance;
     let newMessage = {
       id: Date.now().toString(),
       type: 'outgoing',
@@ -3056,41 +4162,99 @@ app.post('/api/chat/conversations/:id/messages', async (req, res) => {
       status: 'sent'
     };
 
-    if (media && mediaType === 'audio') {
-      // ENVIAR ÁUDIO VIA EVOLUTION API
-      console.log(`[CHAT] Enviando áUDIO real para ${remoteJid} via ${instance}`);
-      response = await axios.post(`${API_URL}/v1/message/sendWhatsAppAudio/${instance}`, {
-        number: remoteJid,
-        audioMessage: { audio: media, ptt: true }
-      }, { headers: { 'apikey': API_KEY } });
+    const sendWithInstance = async (instanceName) => {
+      usedInstance = instanceName;
+      if (media && mediaType === 'audio') {
+        console.log(`[CHAT] Enviando ÁUDIO para ${remoteJid} via ${instanceName}`);
+        return axios.post(`${API_URL}/v1/message/sendWhatsAppAudio/${instanceName}`, {
+          number: remoteJid,
+          audioMessage: { audio: media, ptt: true }
+        }, { headers: { 'apikey': API_KEY } });
+      }
 
+      if (media && mediaType) {
+        console.log(`[CHAT] Enviando ${mediaType} para ${remoteJid} via ${instanceName}`);
+        return axios.post(`${API_URL}/v1/message/sendMedia/${instanceName}`, {
+          number: remoteJid,
+          mediaMessage: {
+            mediatype: mediaType,
+            media: media,
+            mimetype: mimetype || 'application/octet-stream',
+            caption: message || ''
+          }
+        }, { headers: { 'apikey': API_KEY } });
+      }
+
+      console.log(`[CHAT] Enviando TEXTO para ${remoteJid} via ${instanceName}`);
+      return axios.post(`${API_URL}/v1/message/sendText/${instanceName}`, {
+        number: remoteJid,
+        textMessage: { text: message }
+      }, { headers: { 'apikey': API_KEY } });
+    };
+
+    if (!instanceCandidates.length) {
+      return res.status(400).json({
+        success: false,
+        error: 'Nenhuma instância configurada para envio. Configure uma instância em Conexões antes de enviar.'
+      });
+    }
+
+    let lastError = null;
+    const triedInstances = [];
+
+    for (const candidate of [...new Set(instanceCandidates)]) {
+      triedInstances.push(candidate);
+      try {
+        response = await sendWithInstance(candidate);
+        break;
+      } catch (candidateErr) {
+        lastError = candidateErr;
+        if (candidateErr?.response?.status === 404) {
+          console.warn(`[CHAT] Instância "${candidate}" falhou (404). Tentando próxima candidata.`);
+          continue;
+        }
+        throw candidateErr;
+      }
+    }
+
+    if (!response) {
+      const discovered = await fetchNormalizedChatInstances();
+      const dynamicCandidates = discovered
+        .filter(inst => inst.name && !triedInstances.includes(inst.name))
+        .sort((a, b) => (b.status === 'online' ? 1 : 0) - (a.status === 'online' ? 1 : 0))
+        .map(inst => inst.name);
+
+      for (const candidate of dynamicCandidates) {
+        triedInstances.push(candidate);
+        try {
+          response = await sendWithInstance(candidate);
+          ticket.instance = candidate;
+          break;
+        } catch (dynamicErr) {
+          lastError = dynamicErr;
+          if (dynamicErr?.response?.status === 404) continue;
+          throw dynamicErr;
+        }
+      }
+    }
+
+    if (!response) {
+      const detail = lastError?.response?.data?.error || lastError?.response?.data?.message || 'Not Found';
+      return res.status(400).json({
+        success: false,
+        error: `Nenhuma instância válida para envio foi encontrada (${[...new Set(triedInstances)].join(', ')}). Detalhe: ${detail}.`
+      });
+    }
+
+    if (media && mediaType === 'audio') {
       newMessage.text = '🎤 Áudio enviado';
       newMessage.mediaType = 'audio';
-      newMessage.mediaUrl = media.startsWith('http') ? media : `data:audio/mp3;base64,${media}`; // Simplificado para exibição local imediata
+      newMessage.mediaUrl = media.startsWith('http') ? media : `data:audio/mp3;base64,${media}`;
     } else if (media && mediaType) {
-      // ENVIAR OUTRAS MÍDIAS
-      console.log(`[CHAT] Enviando ${mediaType} real para ${remoteJid} via ${instance}`);
-      response = await axios.post(`${API_URL}/v1/message/sendMedia/${instance}`, {
-        number: remoteJid,
-        mediaMessage: {
-          mediatype: mediaType,
-          media: media,
-          mimetype: mimetype || 'application/octet-stream',
-          caption: message || ''
-        }
-      }, { headers: { 'apikey': API_KEY } });
-
       newMessage.text = message || `${mediaType} enviado`;
       newMessage.mediaType = mediaType;
       newMessage.mediaUrl = media.startsWith('http') ? media : `data:${mimetype || 'image/jpeg'};base64,${media}`;
     } else {
-      // ENVIAR TEXTO SIMPLES
-      console.log(`[CHAT] Enviando mensagem de texto real para ${remoteJid} via ${instance}`);
-      response = await axios.post(`${API_URL}/v1/message/sendText/${instance}`, {
-        number: remoteJid,
-        textMessage: { text: message }
-      }, { headers: { 'apikey': API_KEY } });
-
       newMessage.text = message;
     }
 
@@ -3098,6 +4262,7 @@ app.post('/api/chat/conversations/:id/messages', async (req, res) => {
     ticket.messages.push(newMessage);
     ticket.lastMessage = newMessage.text;
     ticket.updatedAt = new Date().toISOString();
+    ticket.instance = usedInstance;
 
     saveTicketsToFile();
 
@@ -3111,47 +4276,83 @@ app.post('/api/chat/conversations/:id/messages', async (req, res) => {
 
     res.json({ success: true, message: newMessage });
   } catch (error) {
-    console.error('[CHAT SEND ERROR] Falha ao enviar:', error.response?.data || error.message);
-    res.status(500).json({ success: false, error: error.message });
+    console.error('[CHAT SEND ERROR] Falha ao enviar:', error.response?.status, error.response?.data || error.message);
+    const isBackendDown = !error.response && (error.code === 'ECONNREFUSED' || /ECONNREFUSED/i.test(error.message || ''));
+    const detail = error.response?.data?.error || error.response?.data?.message || error.message;
+    const backendDownMessage = `Backend de mensagens indisponível em ${API_URL}. Inicie a API Go e tente novamente.`;
+    const normalized =
+      isBackendDown
+        ? backendDownMessage
+        :
+      error.response?.status === 404
+        ? `Instância de envio não encontrada. Verifique a instância conectada em Conexões (detalhe: ${detail}).`
+        : (detail || 'Falha no envio de mensagem.');
+    const statusCode = isBackendDown ? 503 : 500;
+    res.status(statusCode).json({ success: false, error: normalized });
   }
 });
+
+function normalizeInstanceRecord(raw) {
+  const nested = raw?.instance && typeof raw.instance === 'object' ? raw.instance : {};
+  const source = Object.keys(nested).length ? nested : (raw || {});
+
+  const name = (source.instanceName || source.name || source.instance || '').toString().trim();
+  const owner = (source.owner || source.number || '').toString().trim();
+  const statusRaw = (source.status || source.state || '').toString().toLowerCase();
+  const isOnline = statusRaw === 'open' || statusRaw === 'connected' || statusRaw === 'online';
+
+  if (!name) return null;
+  return {
+    name,
+    owner,
+    status: isOnline ? 'online' : 'offline',
+    rawStatus: statusRaw
+  };
+}
+
+async function fetchNormalizedChatInstances() {
+  const url = `${API_URL}/v1/instance/fetchInstances`;
+  const response = await axios.get(url, { headers: { 'apikey': API_KEY } });
+  const rawInstances = Array.isArray(response.data) ? response.data : [];
+
+  const normalized = [];
+  for (const item of rawInstances) {
+    const inst = normalizeInstanceRecord(item);
+    if (inst) normalized.push(inst);
+  }
+
+  const enriched = await Promise.all(normalized.map(async (inst) => {
+    try {
+      const stateUrl = `${API_URL}/v1/instance/connectionState/${encodeURIComponent(inst.name)}`;
+      const stateRes = await axios.get(stateUrl, { headers: { 'apikey': API_KEY } });
+      const currentState = (stateRes.data?.instance?.state || stateRes.data?.state || inst.rawStatus || '').toString().toLowerCase();
+      const online = currentState === 'open' || currentState === 'connected' || currentState === 'online';
+      return { ...inst, status: online ? 'online' : 'offline' };
+    } catch (_) {
+      return inst;
+    }
+  }));
+
+  return enriched;
+}
 
 // List Connected Instances for Chat
 app.get('/api/chat/instances', async (req, res) => {
   try {
-    const url = `${API_URL}/v1/instance/fetchInstances`;
-    const response = await axios.get(url, { headers: { 'apikey': API_KEY } });
-
-    // Sessions Refresh Status Logic (Inspirado no Woofed CRM)
-    // Verifica cada instância individualmente para garantir redundância ao webhook
-    const rawInstances = response.data || [];
-    const instances = await Promise.all(rawInstances.map(async inst => {
-      try {
-        const stateUrl = `${API_URL}/v1/instance/connectionState/${inst.instanceName}`;
-        const stateRes = await axios.get(stateUrl, { headers: { 'apikey': API_KEY } });
-        const currentState = stateRes.data?.instance?.state || inst.status;
-
-        return {
-          name: inst.instanceName || inst.name,
-          status: currentState === 'open' ? 'online' : 'offline',
-          owner: inst.owner || inst.number,
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(inst.instanceName)}&background=random&color=fff`
-        };
-      } catch (e) {
-        return {
-          name: inst.instanceName || inst.name,
-          status: 'offline',
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(inst.instanceName)}&background=ccc&color=fff`
-        };
-      }
+    const instances = await fetchNormalizedChatInstances();
+    const payload = instances.map(inst => ({
+      name: inst.name,
+      status: inst.status,
+      owner: inst.owner,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(inst.name)}&background=${inst.status === 'online' ? '10b981' : '9ca3af'}&color=fff`
     }));
 
-    res.json({ success: true, instances });
+    res.json({ success: true, instances: payload });
   } catch (error) {
     console.error('[INSTANCES ERROR]', error.message);
     res.json({
       success: true,
-      instances: [{ name: DEFAULT_INSTANCE, status: 'online', avatar: `https://ui-avatars.com/api/?name=${DEFAULT_INSTANCE}&background=10b981&color=fff` }]
+      instances: [{ name: DEFAULT_INSTANCE, status: 'offline', avatar: `https://ui-avatars.com/api/?name=${DEFAULT_INSTANCE}&background=9ca3af&color=fff` }]
     });
   }
 });
@@ -3209,6 +4410,24 @@ function saveSettings(settings) {
 
 // Carregar configurações na inicialização
 let systemSettings = loadSettings();
+
+function syncAiSettingsToEnv() {
+  const provider = String(systemSettings?.openai?.provider || '').toLowerCase();
+  const key = String(systemSettings?.openai?.apiKey || '').trim();
+  if (!key) return;
+
+  if (provider === 'gemini') {
+    process.env.GEMINI_API_KEY = key;
+    if (!process.env.GOOGLE_API_KEY) process.env.GOOGLE_API_KEY = key;
+    return;
+  }
+
+  if (provider === 'openai') {
+    process.env.OPENAI_API_KEY = key;
+  }
+}
+
+syncAiSettingsToEnv();
 
 // === AI Agent Config ===
 app.get('/api/ai/agent-config', (req, res) => {
@@ -3405,6 +4624,7 @@ app.post('/api/settings/openai', (req, res) => {
   systemSettings.openai = { provider, apiKey };
 
   if (saveSettings(systemSettings)) {
+    syncAiSettingsToEnv();
     console.log('[Settings] OpenAI/IA salvo');
     res.json({ success: true });
   } else {
@@ -4084,7 +5304,7 @@ app.all(/^\/api\/.*/, async (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3002;
+// PORT is already defined at the top of the file (line 19)
 const server = http.createServer(app);
 
 // Setup Socket.IO
@@ -4208,11 +5428,20 @@ server.listen(PORT, async () => {
   startFollowUpScheduler();
   startInstagramAutomation();
   let apiWasOnline = true;
-  const EVOLUTION_API_URL = "https://evolution.automacoescomerciais.com.br";
+  let consecutiveHealthFailures = 0;
+  let consecutiveHealthSuccesses = 0;
+  const HEALTH_FAILURES_TO_MARK_OFFLINE = 2;
+  const HEALTH_SUCCESSES_TO_MARK_ONLINE = 2;
+  const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || "";
   const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || API_KEY;
 
   async function sendAlertFallback(message) {
     // Tenta enviar via Evolution API externa (fallback quando API Go está offline)
+    if (!EVOLUTION_API_URL) {
+      console.warn("[FALLBACK ALERT] EVOLUTION_API_URL não configurada. Fallback externo desativado.");
+      return;
+    }
+
     try {
       await axios.post(`${EVOLUTION_API_URL}/message/sendText/${DEFAULT_INSTANCE}`, {
         number: DEVELOPER_NUMBER,
@@ -4223,7 +5452,11 @@ server.listen(PORT, async () => {
       });
       console.log("[FALLBACK ALERT] Alerta enviado via Evolution API externa.");
     } catch (fallbackErr) {
-      console.error("[FALLBACK ALERT ERROR]", fallbackErr.message);
+      console.error("[FALLBACK ALERT ERROR]", {
+        status: fallbackErr.response?.status,
+        data: fallbackErr.response?.data,
+        message: fallbackErr.message
+      });
     }
   }
 
@@ -4402,6 +5635,86 @@ server.listen(PORT, async () => {
 
 
 
+
+
+  /* -------------------------------------------------
+     GROUP EVENTS API
+     ------------------------------------------------- */
+
+  const GROUP_EVENTS_FILE = path.join(__dirname, 'data', 'group_events.json');
+
+  function loadGroupEvents() {
+    try {
+      if (fs.existsSync(GROUP_EVENTS_FILE)) {
+        return JSON.parse(fs.readFileSync(GROUP_EVENTS_FILE, 'utf-8'));
+      }
+    } catch (e) {
+      console.error('[GROUP EVENTS] Erro ao carregar:', e.message);
+    }
+    return [];
+  }
+
+  function saveGroupEvents(data) {
+    try {
+      const dir = path.dirname(GROUP_EVENTS_FILE);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(GROUP_EVENTS_FILE, JSON.stringify(data, null, 2));
+      return true;
+    } catch (e) {
+      console.error('[GROUP EVENTS] Erro ao salvar:', e.message);
+      return false;
+    }
+  }
+
+  // POST - Save group event
+  app.post('/api/groups/events', (req, res) => {
+    const { grupo_jid, participante, acao, data } = req.body;
+
+    if (!grupo_jid || !participante || !acao) {
+      return res.status(400).json({ success: false, error: 'Dados incompletos' });
+    }
+
+    const events = loadGroupEvents();
+    const newEvent = {
+      id: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      grupo_jid,
+      participante,
+      acao,
+      data: data || new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
+
+    events.push(newEvent);
+
+    if (saveGroupEvents(events)) {
+      console.log(`[GROUP EVENTS] Evento salvo: ${acao} em ${grupo_jid}`);
+      res.json({ success: true, event: newEvent });
+    } else {
+      res.status(500).json({ success: false, error: 'Erro ao salvar evento' });
+    }
+  });
+
+  // GET - List group events
+  app.get('/api/groups/events', (req, res) => {
+    const { grupo_jid, participante, limit } = req.query;
+    let events = loadGroupEvents();
+
+    if (grupo_jid) {
+      events = events.filter(e => e.grupo_jid === grupo_jid);
+    }
+    if (participante) {
+      events = events.filter(e => e.participante === participante);
+    }
+
+    // Sort desc
+    events.sort((a, b) => new Date(b.data) - new Date(a.data));
+
+    if (limit) {
+      events = events.slice(0, parseInt(limit));
+    }
+
+    res.json({ success: true, count: events.length, events });
+  });
 
   /* -------------------------------------------------
      CREDENTIALS API
@@ -4913,18 +6226,26 @@ Como Especialista em Arquitetura de Agentes, você deve:
   setInterval(async () => {
     try {
       await axios.get(`${API_URL}/health`, { timeout: 5000 });
-      if (!apiWasOnline) {
+      consecutiveHealthFailures = 0;
+      consecutiveHealthSuccesses++;
+
+      if (!apiWasOnline && consecutiveHealthSuccesses >= HEALTH_SUCCESSES_TO_MARK_ONLINE) {
         console.log("🟢 API Go voltou a ficar online.");
         sendAlert("✅ *A API WhatsMiau2 voltou a ficar ONLINE!*");
         apiWasOnline = true;
+        consecutiveHealthSuccesses = 0;
       }
     } catch (err) {
-      if (apiWasOnline) {
-        console.error("🔴 API Go ficou OFFLINE! Erro:", err.message);
+      consecutiveHealthSuccesses = 0;
+      consecutiveHealthFailures++;
+
+      if (apiWasOnline && consecutiveHealthFailures >= HEALTH_FAILURES_TO_MARK_OFFLINE) {
+        console.error("🔴 API Go ficou OFFLINE! Erro:", describeAxiosError(err));
         const alertMessage = `🚨 *ALERTA CRÍTICO - API OFFLINE!*\n\n📌 Automações Comerciais\n🔴 A API WhatsMiau2 Go desconectou!\n⏰ ${new Date().toLocaleString('pt-BR')}\n\nVerifique o servidor imediatamente.`;
         // Tenta via Evolution API externa como fallback
         await sendAlertFallback(alertMessage);
         apiWasOnline = false;
+        consecutiveHealthFailures = 0;
       }
     }
   }, 30000); // Verifica a cada 30 segundos

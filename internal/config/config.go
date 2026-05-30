@@ -4,6 +4,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"whatsmiau2/internal/security/accesspolicy"
 
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -29,6 +30,7 @@ type Config struct {
 	APIKey            string
 	BasicAuthUsername string
 	BasicAuthPassword string
+	JWTSecret         string
 
 	// Google Cloud Storage
 	GCSEnabled bool
@@ -53,6 +55,20 @@ type Config struct {
 	SessionPhoneVersion string
 	SessionPhoneClient  string
 	SessionPhoneName    string
+
+	// Mercado Pago
+	MercadoPagoAppID       string
+	MercadoPagoSecret      string
+	MercadoPagoAccessToken string
+
+	// Evolution API
+	EvolutionAPIURL   string
+	EvolutionAPIKey   string
+	EvolutionInstance string
+
+	// Free trial abuse guard
+	TrustedAccessIPs      []string
+	FreeTrialIPBlockHours int
 }
 
 // Load reads configuration from environment variables
@@ -81,6 +97,7 @@ func Load() (*Config, error) {
 		APIKey:            getEnv("API_KEY", ""),
 		BasicAuthUsername: getEnv("BASIC_AUTH_USERNAME", ""),
 		BasicAuthPassword: getEnv("BASIC_AUTH_PASSWORD", ""),
+		JWTSecret:         getEnv("JWT_SECRET", "default_secret_key_for_development_please_change_in_production"),
 
 		// Google Cloud Storage
 		GCSEnabled: getEnvBool("GCS_ENABLED", false),
@@ -105,6 +122,20 @@ func Load() (*Config, error) {
 		SessionPhoneVersion: getEnv("CONFIG_SESSION_PHONE_VERSION", "2.3000.2.2413.51"),
 		SessionPhoneClient:  getEnv("CONFIG_SESSION_PHONE_CLIENT", "Chrome"),
 		SessionPhoneName:    getEnv("CONFIG_SESSION_PHONE_NAME", "Chrome (Windows)"),
+
+		// Mercado Pago
+		MercadoPagoAppID:       getEnv("ML_APP_ID", ""),
+		MercadoPagoSecret:      getEnv("ML_CLIENT_SECRET", ""),
+		MercadoPagoAccessToken: getEnv("ML_ACCESS_TOKEN", ""),
+
+		// Evolution API
+		EvolutionAPIURL:   getEnv("EVOLUTION_API_URL", ""),
+		EvolutionAPIKey:   getEnv("EVOLUTION_API_KEY", ""),
+		EvolutionInstance: getEnv("EVOLUTION_INSTANCE", "pagamentos"),
+
+		// Free trial abuse guard
+		TrustedAccessIPs:      accesspolicy.ParseTrustedAccessIPs(os.Getenv("TRUSTED_ACCESS_IPS")),
+		FreeTrialIPBlockHours: accesspolicy.ParseFreeTrialBlockHours(os.Getenv("FREE_TRIAL_IP_BLOCK_HOURS"), 24*365*10, 1, 24*365*10),
 	}
 
 	return cfg, nil

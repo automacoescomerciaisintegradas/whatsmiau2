@@ -5,7 +5,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node server.js",
+    "dev:all": "concurrently \"go run main.go\" \"npm run dev\"",
+    "build": "cd frontend && npm run build",
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -24,5 +27,9 @@
     "socket.io": "^4.8.3",
     "sortablejs": "^1.15.6",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "jest": "^30.4.2"
   }
 }

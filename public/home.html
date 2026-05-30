@@ -1,886 +1,805 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-
+<html lang="pt-BR" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsMiau2 - Automação WhatsApp Premium</title>
-    <meta name="description"
-        content="Sistema premium de automação para WhatsApp. Chatbots, disparos e integração completa.">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap"
-        rel="stylesheet">
+    <meta name="description" content="Sistema premium de automação para WhatsApp. Chatbots, disparos e integração completa.">
+    <meta property="og:title" content="WhatsMiau2 - Automação comercial no WhatsApp com IA">
+    <meta property="og:description" content="Atendimento automático, qualificação de leads e operação comercial em um só painel.">
+    <meta property="og:image" content="/assets/whatsmiau2-identidade-visual.png">
+    <meta property="og:type" content="website">
+    <link rel="icon" type="image/jpeg" href="/assets/logo.jpg">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#0c0a09',
+                        darker: '#111111',
+                        glass: 'rgba(255, 255, 255, 0.05)',
+                        'glass-border': 'rgba(255, 255, 255, 0.1)',
+                        brand: {
+                            green: '#25d366',
+                            gold: '#f59e0b',
+                            pink: '#ec4899',
+                            cyan: '#06b6d4'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
     <style>
-        :root {
-            /* Paleta WhatsMiau2 - Verde WhatsApp com acentos modernos */
-            --whatsapp-green: #25d366;
-            --whatsapp-dark: #128c7e;
-            --gold: #f59e0b;
-            --gold-light: #fbbf24;
-            --gold-dark: #d97706;
-            --neon-pink: #ec4899;
-            --neon-cyan: #06b6d4;
-            --neon-lime: #25d366;
-
-            /* Fundos - Estilo WhatsApp bege claro */
-            --bg-dark: #0c0a09;
-            --bg-warm: #1c1917;
-            --bg-card: rgba(28, 25, 23, 0.85);
-            --bg-whatsapp: #ece5dd;
-
-            /* Texto */
-            --text-white: #fafaf9;
-            --text-stone: #a8a29e;
-            --text-muted: #78716c;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
+        /* Custom Styles for things Tailwind makes verbose */
         body {
-            font-family: 'Outfit', sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-white);
+            background-color: #0c0a09;
+            color: #fafaf9;
             overflow-x: hidden;
         }
+        h1, h2, .cinema-title {
+            text-wrap: balance;
+        }
+        .skip-link {
+            position: absolute;
+            top: -48px;
+            left: 1rem;
+            z-index: 80;
+            background: #25d366;
+            color: #052e16;
+            padding: 0.55rem 0.9rem;
+            border-radius: 0.6rem;
+            font-weight: 700;
+            transition: top 0.2s ease;
+        }
+        .skip-link:focus {
+            top: 1rem;
+            outline: none;
+        }
+        .grain-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.08;
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(255,255,255,0.3) 0.4px, transparent 0.6px),
+                radial-gradient(circle at 80% 70%, rgba(255,255,255,0.2) 0.4px, transparent 0.7px);
+            background-size: 4px 4px, 6px 6px;
+        }
 
-        /* ===== HERO SECTION ===== */
-        .hero {
+        /* Glassmorphism utility */
+        .glass-panel {
+            background: rgba(20, 20, 20, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Animated Text Gradient */
+        .text-gradient {
+            background: linear-gradient(to right, #f59e0b, #ec4899, #06b6d4);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            background-size: 200% auto;
+            animation: textShine 4s linear infinite;
+        }
+
+        @keyframes textShine {
+            to { background-position: 200% center; }
+        }
+
+        /* Button Hover Effects */
+        .btn-glow:hover {
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+            transform: translateY(-2px);
+        }
+        a, button {
+            transition: transform 220ms ease, background-color 220ms ease, color 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+        }
+        a:active, button:active {
+            transform: scale(0.98);
+        }
+        a:focus-visible, button:focus-visible {
+            outline: 2px solid #25d366;
+            outline-offset: 2px;
+        }
+
+        /* Modal Transitions */
+        .modal-overlay {
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease-out;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-content {
+            transform: scale(0.95) translateY(20px);
+            transition: all 0.3s ease-out;
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        /* Status Dot */
+        .status-dot {
+            box-shadow: 0 0 10px #25d366;
+        }
+        .status-dot.offline {
+            background-color: #ef4444;
+            box-shadow: 0 0 10px #ef4444;
+        }
+
+        /* Hero Carousel */
+        .hero-carousel {
             position: relative;
-            min-height: 100vh;
-            width: 100%;
+            overflow: hidden;
+            isolation: isolate;
+        }
+        .carousel-track {
             display: flex;
-            align-items: center;
-            overflow: hidden;
+            transition: transform 0.55s ease;
+            will-change: transform;
         }
-
-        /* WebP Video Background */
-        .hero-bg-video {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border-radius: 0 0 40px 40px;
-            overflow: hidden;
-            z-index: 0;
+        .carousel-slide {
+            min-width: 100%;
+            position: relative;
+            aspect-ratio: 16 / 9;
         }
-
-        .hero-bg-video::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg,
-                    rgba(12, 10, 9, 0.9) 0%,
-                    rgba(12, 10, 9, 0.7) 30%,
-                    rgba(12, 10, 9, 0.5) 60%,
-                    rgba(12, 10, 9, 0.8) 100%);
-            z-index: 1;
-        }
-
-        .hero-bg-video img {
+        .carousel-slide img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            filter: saturate(1.2) brightness(0.8);
-            will-change: transform, filter;
-            transform: translateZ(0);
-            /* Force GPU */
+            display: block;
         }
-
-        /* Parallax optimization */
-        .text-block,
-        .feature-grid,
-        .social-bar,
-        .hero-gradient {
-            will-change: transform, opacity;
-            transform: translateZ(0);
-        }
-
-        /* Animated gradient overlay */
-        .hero-gradient {
+        .carousel-slide::after {
+            content: "";
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background:
-                radial-gradient(ellipse at 10% 90%, rgba(245, 158, 11, 0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 90% 10%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.7) 10%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0.05) 100%);
+        }
+        .carousel-caption {
+            position: absolute;
+            left: 1rem;
+            right: 1rem;
+            bottom: 1rem;
             z-index: 2;
-            animation: gradientShift 8s ease-in-out infinite alternate;
-        }
-
-        @keyframes gradientShift {
-            0% {
-                opacity: 0.8;
-                transform: scale(1);
-            }
-
-            100% {
-                opacity: 1;
-                transform: scale(1.05);
-            }
-        }
-
-        /* Hero Content */
-        .hero-content {
-            position: relative;
-            z-index: 10;
-            width: 100%;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 80px 40px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 60px;
-            align-items: center;
-        }
-
-        @media (max-width: 1024px) {
-            .hero-content {
-                grid-template-columns: 1fr;
-                text-align: center;
-            }
-        }
-
-        /* Text Block with glassmorphism */
-        .text-block {
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 40px;
-            position: relative;
-        }
-
-        .intro-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.85rem;
-            color: var(--gold);
-            font-weight: 500;
-            margin-bottom: 20px;
-            padding: 8px 16px;
-            background: rgba(245, 158, 11, 0.1);
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            border-radius: 30px;
-        }
-
-        .main-title {
-            font-size: clamp(2.8rem, 5vw, 4.5rem);
-            font-weight: 900;
-            line-height: 1.05;
-            margin-bottom: 24px;
-            letter-spacing: -0.02em;
-        }
-
-        .main-title .highlight {
-            background: linear-gradient(135deg, var(--gold) 0%, var(--neon-pink) 50%, var(--neon-cyan) 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-size: 200% 200%;
-            animation: gradientText 5s ease infinite;
-        }
-
-        @keyframes gradientText {
-
-            0%,
-            100% {
-                background-position: 0% 50%;
-            }
-
-            50% {
-                background-position: 100% 50%;
-            }
-        }
-
-        .subtitle {
-            font-size: 1.2rem;
-            color: var(--text-stone);
-            margin-bottom: 32px;
-            line-height: 1.7;
-            font-weight: 400;
-        }
-
-        /* CTA Buttons */
-        .cta-group {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-
-        @media (max-width: 1024px) {
-            .cta-group {
-                justify-content: center;
-            }
-        }
-
-        .btn {
-            padding: 16px 32px;
-            border-radius: 50px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-            border: none;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-gold {
-            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-            color: var(--bg-dark);
-            box-shadow: 0 4px 30px rgba(245, 158, 11, 0.4);
-        }
-
-        .btn-gold:hover {
-            transform: translateY(-4px) scale(1.02);
-            box-shadow: 0 8px 40px rgba(245, 158, 11, 0.6);
-        }
-
-        .btn-ghost {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-white);
+            background: rgba(10, 10, 10, 0.45);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
+            border-radius: 0.9rem;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 0.75rem 1rem;
         }
-
-        .btn-ghost:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-4px);
-            border-color: var(--gold);
+        .carousel-caption h3 {
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 700;
+            line-height: 1.3;
         }
-
-        /* Feature Cards */
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
+        .carousel-caption p {
+            color: #d1d5db;
+            font-size: 0.88rem;
+            margin-top: 0.25rem;
         }
-
-        .feature-card {
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
-            padding: 24px;
-            text-decoration: none;
-            color: inherit;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .feature-card::before {
-            content: '';
+        .carousel-btn {
             position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.1), transparent);
-            transition: left 0.6s;
-        }
-
-        .feature-card:hover::before {
-            left: 100%;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-8px);
-            border-color: var(--gold);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .feature-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 3;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(15, 15, 15, 0.55);
+            color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-            margin-bottom: 16px;
-            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
         }
-
-        .feature-card:nth-child(2) .feature-icon {
-            background: linear-gradient(135deg, var(--neon-pink) 0%, #be185d 100%);
+        .carousel-btn:hover {
+            background: rgba(245, 158, 11, 0.8);
+            transform: translateY(-50%) scale(1.06);
+            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.35);
         }
-
-        .feature-card:nth-child(3) .feature-icon {
-            background: linear-gradient(135deg, var(--neon-cyan) 0%, #0891b2 100%);
+        .carousel-btn:focus-visible {
+            outline: 2px solid #f59e0b;
+            outline-offset: 2px;
         }
-
-        .feature-card:nth-child(4) .feature-icon {
-            background: linear-gradient(135deg, var(--neon-lime) 0%, #65a30d 100%);
-        }
-
-        .feature-card h3 {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .feature-card p {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            line-height: 1.5;
-        }
-
-        /* Social Links */
-        .social-bar {
+        .carousel-btn.prev { left: 0.85rem; }
+        .carousel-btn.next { right: 0.85rem; }
+        .carousel-dots {
             position: absolute;
-            bottom: 40px;
             left: 50%;
+            bottom: 0.9rem;
             transform: translateX(-50%);
-            z-index: 10;
             display: flex;
-            align-items: center;
-            gap: 24px;
+            gap: 0.5rem;
+            z-index: 3;
+        }
+        .carousel-dot {
+            width: 0.6rem;
+            height: 0.6rem;
+            border-radius: 9999px;
+            border: 0;
+            background: rgba(255, 255, 255, 0.35);
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .carousel-dot.is-active {
+            background: #f59e0b;
+            transform: scale(1.15);
         }
 
-        .social-link {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            text-decoration: none;
-            transition: all 0.3s;
-            filter: grayscale(100%);
+        @media (max-width: 768px) {
+            .carousel-slide { aspect-ratio: 4 / 3; }
+            .carousel-btn {
+                width: 2.2rem;
+                height: 2.2rem;
+            }
+            .carousel-caption h3 { font-size: 1rem; }
+            .carousel-caption p { font-size: 0.8rem; }
         }
 
-        .social-link:hover {
-            background: var(--gold);
-            border-color: var(--gold);
-            transform: translateY(-5px);
-            filter: grayscale(0%);
-        }
-
-        /* ===== FEATURES SECTION ===== */
-        .features-section {
-            padding: 120px 40px;
-            background: linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-warm) 100%);
-        }
-
-        .section-header {
-            text-align: center;
-            max-width: 700px;
-            margin: 0 auto 60px;
-        }
-
-        .section-label {
-            display: inline-block;
-            font-size: 0.85rem;
-            color: var(--gold);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 16px;
-        }
-
-        .section-title {
-            font-size: clamp(2rem, 4vw, 3rem);
-            font-weight: 800;
-            margin-bottom: 20px;
-        }
-
-        .section-desc {
-            color: var(--text-stone);
-            font-size: 1.1rem;
-            line-height: 1.7;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 24px;
+        /* Cinematic Section */
+        .cinematic-wrap {
+            position: relative;
+            height: 320vh;
+            margin: 4rem auto 2rem;
             max-width: 1200px;
-            margin: 0 auto;
+            border-radius: 2rem;
         }
-
-        .big-feature-card {
-            background: var(--bg-card);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 24px;
-            padding: 36px;
-            transition: all 0.4s;
-            text-decoration: none;
-            color: inherit;
+        .cinematic-stage {
+            position: relative;
+            min-height: 100dvh;
+            border-radius: 2rem;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 40px 120px rgba(0, 0, 0, 0.65), inset 0 0 80px rgba(0, 0, 0, 0.35);
+            background: #050505;
         }
-
-        .big-feature-card:hover {
-            transform: translateY(-8px);
-            border-color: var(--gold);
-            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
+        .cinema-frame {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transform: scale(1.08);
+            background-size: cover;
+            background-position: center;
+            filter: saturate(1.02) contrast(1.06);
+            will-change: opacity, transform;
         }
-
-        .big-feature-card .icon-box {
-            width: 64px;
-            height: 64px;
-            border-radius: 18px;
+        .cinema-frame::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(4,4,4,0.22), rgba(4,4,4,0.64));
+        }
+        .cinema-ambient {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(45% 35% at 25% 20%, rgba(245, 158, 11, 0.22), transparent 70%),
+                radial-gradient(40% 40% at 78% 30%, rgba(236, 72, 153, 0.15), transparent 75%),
+                radial-gradient(35% 40% at 50% 82%, rgba(6, 182, 212, 0.14), transparent 75%);
+            mix-blend-mode: screen;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .cinema-content {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: min(860px, 92%);
+            z-index: 3;
+            padding: 2.2rem;
+            border-radius: 1.4rem;
+            background: rgba(13, 13, 13, 0.42);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
             display: flex;
+            flex-direction: column;
+            gap: 0.95rem;
+        }
+        .cinema-badge {
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            margin-bottom: 24px;
-        }
-
-        .big-feature-card.gold .icon-box {
-            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
-        }
-
-        .big-feature-card.pink .icon-box {
-            background: linear-gradient(135deg, var(--neon-pink), #be185d);
-        }
-
-        .big-feature-card.cyan .icon-box {
-            background: linear-gradient(135deg, var(--neon-cyan), #0891b2);
-        }
-
-        .big-feature-card.lime .icon-box {
-            background: linear-gradient(135deg, var(--neon-lime), #65a30d);
-        }
-
-        .big-feature-card h3 {
-            font-size: 1.4rem;
+            gap: 0.45rem;
+            padding: 0.38rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.74rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
             font-weight: 700;
-            margin-bottom: 12px;
+            color: #fbbf24;
+            background: rgba(251, 191, 36, 0.12);
+            border: 1px solid rgba(251, 191, 36, 0.26);
         }
-
-        .big-feature-card p {
-            color: var(--text-muted);
-            line-height: 1.6;
+        .cinema-title {
+            font-size: clamp(1.6rem, 4vw, 3.1rem);
+            line-height: 1.1;
+            font-weight: 800;
+            color: #fff;
         }
-
-        /* ===== QUICK ACCESS ===== */
-        .quick-section {
-            padding: 80px 40px;
-            background: var(--bg-warm);
+        .cinema-subtitle {
+            color: #fbbf24;
+            font-size: clamp(1.02rem, 2vw, 1.35rem);
+            font-weight: 700;
+            line-height: 1.35;
         }
-
-        .quick-grid {
+        .cinema-copy {
+            color: #d1d5db;
+            font-size: clamp(0.95rem, 1.6vw, 1.02rem);
+            line-height: 1.5;
+            max-width: 56ch;
+        }
+        .cinema-proof {
+            color: #f3f4f6;
+            font-size: 0.95rem;
+            font-weight: 700;
+            line-height: 1.45;
+            max-width: 56ch;
+        }
+        .cinema-actions {
             display: flex;
             flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        .cinema-actions a {
+            display: inline-flex;
+            align-items: center;
             justify-content: center;
-            gap: 16px;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .quick-btn {
-            padding: 20px 36px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 60px;
-            color: var(--text-white);
-            text-decoration: none;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: all 0.3s;
-        }
-
-        .quick-btn:hover {
-            background: var(--gold);
-            color: var(--bg-dark);
-            border-color: var(--gold);
-            transform: scale(1.05);
-        }
-
-        .quick-btn .icon {
-            font-size: 1.3rem;
-        }
-
-        /* ===== FOOTER ===== */
-        footer {
-            background: var(--bg-dark);
-            padding: 60px 40px 30px;
-            text-align: center;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .footer-brand {
-            font-size: 1.5rem;
-            font-weight: 800;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, var(--gold), var(--neon-pink));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .footer-text {
-            color: var(--text-muted);
+            padding: 0.7rem 1.2rem;
+            border-radius: 9999px;
+            color: #f5f5f5;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform .2s ease, background .2s ease, border-color .2s ease;
             font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+        }
+        .cinema-actions a:hover {
+            transform: translateY(-2px);
+            background: rgba(245, 158, 11, 0.24);
+            border-color: rgba(245, 158, 11, 0.55);
+        }
+        .cinema-actions .cta-primary {
+            background: linear-gradient(90deg, #25d366, #10b981);
+            color: #022c22;
+            border-color: rgba(16, 185, 129, 0.7);
+            box-shadow: 0 10px 24px rgba(16, 185, 129, 0.35);
+        }
+        .cinema-actions .cta-primary:hover {
+            background: linear-gradient(90deg, #34d399, #22c55e);
+            border-color: rgba(52, 211, 153, 0.95);
+        }
+        .cinema-progress {
+            width: 100%;
+            height: 6px;
+            border-radius: 9999px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .cinema-progress > span {
+            display: block;
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #f59e0b, #ec4899);
+            transition: width 0.1s linear;
         }
 
-        .footer-text a {
-            color: var(--gold);
-            text-decoration: none;
+        @media (max-width: 820px) {
+            .cinematic-wrap { height: 260vh; border-radius: 1.2rem; }
+            .cinematic-stage { border-radius: 1.2rem; }
+            .cinema-content {
+                padding: 1.25rem;
+                border-radius: 1rem;
+                gap: 0.8rem;
+            }
+            .cinema-copy, .cinema-proof { line-height: 1.45; }
         }
-
-        /* Status Badge */
-        .api-status {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 30px;
-            padding: 10px 18px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.85rem;
-            backdrop-filter: blur(10px);
-            z-index: 100;
-        }
-
-        .status-dot {
+        
+        /* Hide scrollbar for clean look */
+        ::-webkit-scrollbar {
             width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--neon-lime);
-            animation: statusPulse 2s infinite;
         }
-
-        @keyframes statusPulse {
-
-            0%,
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-
-            50% {
-                opacity: 0.5;
-                transform: scale(0.9);
-            }
+        ::-webkit-scrollbar-track {
+            background: #0c0a09; 
         }
-
-        .status-dot.offline {
-            background: #ef4444;
+        ::-webkit-scrollbar-thumb {
+            background: #333; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555; 
         }
     </style>
 </head>
+<body class="antialiased font-sans selection:bg-brand-gold selection:text-dark">
+    <a class="skip-link" href="#conteudo-principal">Pular para o conteúdo</a>
+    <div class="grain-overlay" aria-hidden="true"></div>
 
-<body>
+    <!-- Background Animated Blobs -->
+    <div class="fixed inset-0 w-full h-full pointer-events-none z-[-1] overflow-hidden">
+        <div class="absolute top-0 -left-4 w-72 h-72 bg-brand-green rounded-full mix-blend-screen filter blur-[100px] opacity-20 animate-blob"></div>
+        <div class="absolute top-0 -right-4 w-72 h-72 bg-brand-gold rounded-full mix-blend-screen filter blur-[100px] opacity-20 animate-blob animation-delay-2000"></div>
+        <div class="absolute -bottom-8 left-20 w-72 h-72 bg-brand-green rounded-full mix-blend-screen filter blur-[100px] opacity-15 animate-blob animation-delay-4000"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 transition-all duration-300 glass-panel border-b-0 border-glass-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center gap-3">
+                    <img src="/assets/logo.jpg" alt="Logo" class="h-10 w-10 rounded-xl object-cover border border-glass-border shadow-lg" onerror="this.src='https://via.placeholder.com/40'">
+                    <span class="text-2xl font-bold tracking-tight text-white">Whats<span class="text-brand-gold">Miau2</span></span>
+                </div>
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="#features" class="text-gray-300 hover:text-white transition-colors text-sm font-medium">Funcionalidades</a>
+                    <a href="/docs" class="text-gray-300 hover:text-white transition-colors text-sm font-medium">Documentação</a>
+                    <a href="/login.html" class="text-gray-300 hover:text-white transition-colors text-sm font-medium">Entrar</a>
+                    <button onclick="window.location.href='/subscription.html'" class="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-6 py-2.5 rounded-full text-sm font-semibold transition-all hover:scale-105">
+                        Ver Planos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
     <!-- Hero Section -->
-    <section class="hero">
-        <!-- WebP Background -->
-        <div class="hero-bg-video">
-            <img src="/assets/bg-whatsmiau2.jpg" alt="WhatsMiau2 Background" loading="eager">
-        </div>
-
-        <div class="hero-gradient"></div>
-
-        <div class="hero-content">
-            <!-- Text Block -->
-            <div class="text-block">
-                <div class="intro-badge">
-                    <img src="/assets/logo-whatsmiau2.jpg" alt="WhatsMiau2"
-                        style="width: 28px; height: 28px; border-radius: 6px; margin-right: 4px;">
-                    Olá, bem-vindo(a) ao WhatsMiau2
+    <main id="conteudo-principal" class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center max-w-4xl mx-auto">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border-brand-gold/30 text-brand-gold text-sm font-medium mb-8 animate-float">
+                    <span class="relative flex h-3 w-3">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-gold opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-3 w-3 bg-brand-gold"></span>
+                    </span>
+                    Operação comercial com IA em produção
                 </div>
-
-                <h1 class="main-title">
-                    Automação<br>
-                    <span class="highlight">WhatsApp</span><br>
-                    Premium
+                
+                <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-tight">
+                    Revolucione seu <br/>
+                    <span class="text-gradient">Atendimento Automático</span>
                 </h1>
-
-                <p class="subtitle">
-                    Gerencie instâncias, crie chatbots inteligentes e automatize
-                    seu atendimento com tecnologia de ponta.
+                
+                <p class="text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+                    A plataforma definitiva para criar chatbots inteligentes, enviar notificações em massa e integrar o WhatsApp aos seus sistemas via Webhooks em tempo real.
                 </p>
-
-                <div class="cta-group">
-                    <a href="pairing.html" class="btn btn-gold">
-                        🚀 Começar Agora
+                <p class="text-brand-gold text-base md:text-lg font-semibold mb-6">The AI that actually does things.</p>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                    <button onclick="window.location.href='/subscription.html'" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-brand-green to-emerald-400 text-darker font-extrabold rounded-full text-lg transition-all btn-glow flex items-center justify-center gap-2">
+                        ⚡ Ativar Teste Grátis de 3h
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                    </button>
+                    <a href="https://api.whatsapp.com/send/?phone=558894227586&text&type=phone_number&app_absent=0" target="_blank" class="w-full sm:w-auto px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-full text-lg transition-all flex items-center justify-center gap-2">
+                        📞 Falar com Especialista
                     </a>
-                    <a href="/docs" class="btn btn-ghost">
-                        📚 Documentação →
+                    <a href="/login.html" class="w-full sm:w-auto px-8 py-4 glass-panel hover:bg-white/10 text-white font-semibold rounded-full text-lg transition-all flex items-center justify-center gap-2">
+                        Acessar Painel
+                    </a>
+                </div>
+                <p class="text-sm text-gray-400 mt-4">Sem cartão de crédito. Ativação imediata.</p>
+                <p class="text-sm text-gray-300 mt-2">Sem planilha paralela, sem atendimento perdido, sem funil quebrado.</p>
+            </div>
+        </div>
+        
+        <!-- Hero Carousel -->
+        <div class="mt-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <section class="hero-carousel rounded-2xl border border-glass-border shadow-2xl" data-carousel="hero" data-autoplay-intervals="30000,50000" aria-label="Demonstração visual da plataforma">
+                <div class="carousel-track">
+                    <article class="carousel-slide">
+                        <img src="/assets/maquina-vendas-comercial.jpg" alt="Visão geral da máquina de vendas WhatsMiau2">
+                        <div class="carousel-caption">
+                            <h3>Painel central de automação</h3>
+                            <p>Conecte instâncias, controle mensagens e monitore tudo em tempo real.</p>
+                        </div>
+                    </article>
+                    <article class="carousel-slide">
+                        <img src="/assets/bg2-whatsmiau2.png" alt="Identidade visual completa da plataforma WhatsMiau2">
+                        <div class="carousel-caption">
+                            <h3>Operação comercial organizada</h3>
+                            <p>Fluxos claros para disparo, atendimento e evolução da equipe.</p>
+                        </div>
+                    </article>
+                    <article class="carousel-slide">
+                        <img src="/assets/bg3.jpg" alt="Ambiente visual da plataforma WhatsMiau2">
+                        <div class="carousel-caption">
+                            <h3>Experiência moderna e responsiva</h3>
+                            <p>Navegação fluida em desktop e mobile, com foco em velocidade.</p>
+                        </div>
+                    </article>
+                </div>
+
+                <button class="carousel-btn prev" type="button" data-action="prev" aria-label="Imagem anterior">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <button class="carousel-btn next" type="button" data-action="next" aria-label="Próxima imagem">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+                <div class="carousel-dots" data-role="dots" aria-label="Indicadores do carrossel"></div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Conversion CTA Strip -->
+    <section class="py-10 bg-gradient-to-r from-emerald-900/40 via-green-900/30 to-amber-900/30 border-y border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="glass-panel rounded-3xl p-6 md:p-8 flex flex-col lg:flex-row gap-6 items-center justify-between">
+                <div>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">Oferta de Entrada</span>
+                    <h2 class="text-2xl md:text-3xl font-extrabold mt-3 mb-2">Ganhe velocidade comercial hoje, não mês que vem.</h2>
+                    <p class="text-gray-300 max-w-2xl">Ative seu teste, conecte a primeira instância e valide sua operação em minutos.</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                    <a href="/subscription.html" class="px-7 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-extrabold text-center transition-all">
+                        🚀 Começar Teste de 3h
+                    </a>
+                    <a href="https://api.whatsapp.com/send/?phone=558894227586&text&type=phone_number&app_absent=0" target="_blank" class="px-7 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-center transition-all border border-white/20">
+                        💬 Ativar com Suporte
                     </a>
                 </div>
             </div>
-
-            <!-- Feature Cards -->
-            <div class="feature-grid">
-                <a href="automacao.html" class="feature-card">
-                    <div class="feature-icon">🤖</div>
-                    <h3>Automação</h3>
-                    <p>Chatbots e respostas automáticas</p>
-                </a>
-                <a href="disparador.html" class="feature-card">
-                    <div class="feature-icon">📤</div>
-                    <h3>Disparador</h3>
-                    <p>Envios em massa controlados</p>
-                </a>
-                <a href="webhooks.html" class="feature-card">
-                    <div class="feature-icon">🔗</div>
-                    <h3>Webhooks</h3>
-                    <p>Integração em tempo real</p>
-                </a>
-                <a href="instancias.html" class="feature-card">
-                    <div class="feature-icon">⚙️</div>
-                    <h3>Instâncias</h3>
-                    <p>Multi-conexões WhatsApp</p>
-                </a>
-                <a href="instagram.html" class="feature-card">
-                    <div class="feature-icon">📸</div>
-                    <h3>Instagram</h3>
-                    <p>Automação de Directs</p>
-                </a>
-            </div>
-        </div>
-
-        <!-- Social Bar -->
-        <div class="social-bar">
-            <a href="https://youtube.com" class="social-link" title="YouTube">📺</a>
-            <a href="https://instagram.com" class="social-link" title="Instagram">📷</a>
-            <a href="https://twitter.com" class="social-link" title="X">✖️</a>
         </div>
     </section>
 
     <!-- Features Section -->
-    <section class="features-section">
-        <div class="section-header">
-            <span class="section-label">Funcionalidades</span>
-            <h2 class="section-title">Tudo que você precisa em um só lugar</h2>
-            <p class="section-desc">
-                Ferramentas poderosas para automatizar e escalar seu atendimento via WhatsApp.
-            </p>
-        </div>
+    <section id="features" class="py-24 relative z-10 bg-black/40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-20">
+                <h2 class="text-brand-gold font-semibold tracking-wide text-sm mb-3">Ecossistema completo</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-white sm:text-4xl">
+                    Tudo para escalar sua operação
+                </p>
+            </div>
 
-        <div class="features-grid">
-            <a href="pairing.html" class="big-feature-card gold">
-                <div class="icon-box">📱</div>
-                <h3>Conexão Rápida</h3>
-                <p>Conecte seu WhatsApp em segundos usando código de pareamento ou QR Code tradicional.</p>
-            </a>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <a href="/login.html" class="glass-panel p-8 lg:p-10 rounded-3xl hover:-translate-y-1.5 transition-all duration-300 group cursor-pointer lg:col-span-7">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-green to-emerald-500 flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-105 transition-transform">
+                        <svg class="w-7 h-7 text-emerald-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-3">Atendimento IA que responde na hora</h3>
+                    <p class="text-gray-300 leading-relaxed max-w-[58ch]">Fluxos automáticos com contexto de cliente, histórico e gatilhos de follow-up para não deixar conversa esfriar.</p>
+                </a>
 
-            <a href="automacao.html" class="big-feature-card pink">
-                <div class="icon-box">🤖</div>
-                <h3>Chatbots Inteligentes</h3>
-                <p>Crie fluxos de automação para responder mensagens automaticamente 24/7.</p>
-            </a>
+                <div class="lg:col-span-5 grid grid-cols-1 gap-6">
+                    <a href="/login.html" class="glass-panel p-7 rounded-2xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-gold to-orange-600 flex items-center justify-center mb-5 shadow-lg transform group-hover:scale-105 transition-transform">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-white mb-2">Disparo com controle operacional</h3>
+                        <p class="text-gray-400">Campanhas em lote com cadência, organização e rastreio por etapa do funil.</p>
+                    </a>
 
-            <a href="disparador.html" class="big-feature-card cyan">
-                <div class="icon-box">📤</div>
-                <h3>Disparo em Massa</h3>
-                <p>Envie mensagens para múltiplos grupos e contatos com controle de velocidade.</p>
-            </a>
-
-            <a href="webhooks.html" class="big-feature-card lime">
-                <div class="icon-box">🔗</div>
-                <h3>Webhooks Real-time</h3>
-                <p>Receba eventos instantaneamente e integre com seus sistemas externos.</p>
-            </a>
+                    <a href="/login.html" class="glass-panel p-7 rounded-2xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-green to-emerald-500 flex items-center justify-center mb-5 shadow-lg transform group-hover:scale-105 transition-transform">
+                            <svg class="w-6 h-6 text-emerald-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-white mb-2">Integração direta com seu stack</h3>
+                        <p class="text-gray-400">Webhooks e API para ligar WhatsApp, CRM e processos sem retrabalho manual.</p>
+                    </a>
+                </div>
+            </div>
         </div>
     </section>
 
-    <!-- Quick Access -->
-    <section class="quick-section">
-        <div class="section-header">
-            <span class="section-label">Acesso Rápido</span>
-            <h2 class="section-title">Navegue facilmente</h2>
-        </div>
+    <!-- Cinematic Highlight Section -->
+    <section class="relative z-10 px-4 sm:px-6 lg:px-8" aria-label="Destaque cinematográfico">
+        <div class="cinematic-wrap" data-cinematic>
+            <div class="cinematic-stage">
+                <div class="cinema-frame" style="background-image: url('/assets/maquina-vendas-comercial.jpg');"></div>
+                <div class="cinema-frame" style="background-image: url('/assets/bg2-whatsmiau2.png');"></div>
+                <div class="cinema-frame" style="background-image: url('/assets/bg3.jpg');"></div>
+                <div class="cinema-frame" style="background-image: url('/assets/maquina-vendas-comercial.jpg');"></div>
 
-        <div class="quick-grid">
-            <a href="pairing.html" class="quick-btn">
-                <span class="icon">🔑</span> Pareamento
-            </a>
-            <a href="automacao.html" class="quick-btn">
-                <span class="icon">🤖</span> Automação
-            </a>
-            <a href="disparador.html" class="quick-btn">
-                <span class="icon">📤</span> Disparador
-            </a>
-            <a href="webhooks.html" class="quick-btn">
-                <span class="icon">🔗</span> Webhooks
-            </a>
-            <a href="instancias.html" class="quick-btn">
-                <span class="icon">⚙️</span> Instâncias
-            </a>
-            <a href="instagram.html" class="quick-btn">
-                <span class="icon">📸</span> Instagram
-            </a>
+                <div class="cinema-ambient"></div>
+
+                <article class="cinema-content">
+                    <span class="cinema-badge">Venda Mais Agora</span>
+                    <h2 class="cinema-title">🚀 Ative Hoje e Escale Seu Atendimento no WhatsApp</h2>
+                    <h3 class="cinema-subtitle">Máquina de Vendas Integrada com IA</h3>
+                    <p class="cinema-copy">
+                        Pare de perder lead quente por demora e desorganização. Conecte atendimento, follow-up e gestão comercial em um só fluxo.
+                    </p>
+                    <p class="cinema-proof">
+                        Menos improviso. Mais resposta rápida. Mais fechamento.
+                    </p>
+                    <nav class="cinema-actions" aria-label="Ações principais">
+                        <a class="cta-primary" href="/subscription.html">⚡ Ativar Teste de 3h</a>
+                        <a href="https://wa.me/558894227586" target="_blank" rel="noopener noreferrer">💬 Falar com Especialista</a>
+                    </nav>
+                    <div class="cinema-progress" aria-hidden="true"><span data-cinema-progress></span></div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- Support Section -->
+    <section class="py-20 border-t border-glass-border bg-dark/50">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <h2 class="text-3xl font-bold text-white mb-8">Precisa de Ajuda Técnica?</h2>
+            <div class="flex flex-col sm:flex-row gap-6 justify-center">
+                <a href="https://wa.me/558894227586" target="_blank" class="glass-panel px-8 py-6 rounded-2xl flex items-center justify-center gap-4 hover:bg-white/5 transition-all">
+                    <div class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center text-green-400">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12.01 2.005c-5.511 0-9.98 4.47-9.98 9.98 0 1.956.556 3.86 1.626 5.531L2 22l4.632-1.577c1.611 1.002 3.5 1.542 5.378 1.542 5.511 0 9.981-4.47 9.981-9.98C21.99 6.475 17.52 2.005 12.01 2.005zm0 17.971c-1.637 0-3.238-.426-4.66-1.233l-.334-.188-3.033 1.033 1.054-2.95-.21-.347A8.444 8.444 0 0 1 3.551 11.98c0-4.673 3.805-8.478 8.459-8.478 4.655 0 8.46 3.805 8.46 8.478 0 4.673-3.805 8.478-8.46 8.478z"></path></svg>
+                    </div>
+                    <div class="text-left">
+                        <div class="text-sm text-gray-400">Suporte Comercial</div>
+                        <div class="font-semibold text-white">+55 88 9422-7586</div>
+                    </div>
+                </a>
+                <a href="https://wa.me/558894227586" target="_blank" class="glass-panel px-8 py-6 rounded-2xl flex items-center justify-center gap-4 hover:bg-white/5 transition-all">
+                    <div class="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path></svg>
+                    </div>
+                    <div class="text-left">
+                        <div class="text-sm text-gray-400">Atendimento Humano</div>
+                        <div class="font-semibold text-white">+55 88 94227-586</div>
+                    </div>
+                </a>
+            </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer>
-        <img src="/assets/logo-whatsmiau2.jpg" alt="WhatsMiau2"
-            style="width: 60px; height: 60px; border-radius: 12px; margin-bottom: 16px;">
-        <div class="footer-brand">WhatsMiau2</div>
-        <p class="footer-text">
-            © 2025 <a href="mailto:contato@automacoescomerciais.com.br">Automações Comerciais Integradas</a><br>
-            Todos os direitos reservados.
-        </p>
+    <footer class="border-t border-glass-border bg-darker py-12">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <img src="/assets/logo.jpg" alt="WhatsMiau2" class="w-12 h-12 rounded-xl mx-auto mb-6 opacity-80" onerror="this.style.display='none'">
+            <p class="text-gray-500 text-sm">
+                © Automações Comerciais Integradas! 2026 ⚙️ Todos os direitos reservados.
+            </p>
+            <p class="text-gray-400 text-sm mt-2">
+                <a href="mailto:contato@automacoescomerciais.com.br" class="text-brand-gold hover:text-brand-gold/80">contato@automacoescomerciais.com.br</a>
+            </p>
+            <p class="text-gray-400 text-sm mt-1">
+                📱 WhatsApp <a href="https://wa.me/558894227586" class="text-brand-gold hover:text-brand-gold/80">https://wa.me/558894227586</a>
+            </p>
+            <p class="text-gray-500 text-xs mt-4 flex items-center justify-center gap-4">
+                <a href="/privacy.html" class="hover:text-gray-300">Política de Privacidade</a>
+                <span aria-hidden="true">•</span>
+                <a href="/terms.html" class="hover:text-gray-300">Termos de Uso</a>
+            </p>
+        </div>
     </footer>
 
-    <!-- API Status -->
-    <div class="api-status" id="apiStatus">
-        <div class="status-dot" id="statusDot"></div>
-        <span id="statusText">Verificando...</span>
+    <!-- Floating API Status -->
+    <div class="fixed bottom-6 right-6 glass-panel px-4 py-2.5 rounded-full flex items-center gap-3 z-40 backdrop-blur-md shadow-2xl">
+        <div id="statusDot" class="w-2.5 h-2.5 rounded-full bg-brand-green status-dot"></div>
+        <span id="statusText" class="text-sm font-medium text-gray-300 tracking-wide">API Online</span>
     </div>
 
+    <!-- Pricing Modal -->
+    <div id="pricingModal" class="fixed inset-0 z-[100] flex items-center justify-center modal-overlay">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="toggleModal()"></div>
+        
+        <!-- Modal Body -->
+        <div class="relative w-full max-w-6xl mx-4 glass-panel border-glass-border rounded-3xl p-8 md:p-12 shadow-2xl modal-content max-h-[90vh] overflow-y-auto">
+            <button onclick="toggleModal()" class="absolute top-6 right-6 text-gray-400 hover:text-white transition-colors">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <div class="text-center mb-10">
+                <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Escolha seu Plano</h2>
+                <p class="text-gray-400 text-lg">Escale suas vendas com a ferramenta certa</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-12">
+                <!-- Free Trial -->
+                <div class="glass-panel rounded-2xl p-6 text-center hover:bg-white/5 transition-colors cursor-pointer border border-transparent hover:border-brand-gold/30" onclick="window.location.href='/register.html?plan=trial'">
+                    <h3 class="text-gray-300 font-medium mb-4">Teste Grátis</h3>
+                    <div class="text-3xl font-bold text-white mb-2">R$ 0<span class="text-sm font-normal text-gray-500">/3h</span></div>
+                    <p class="text-sm text-gray-400 mb-6">Experimente sem compromisso</p>
+                    <button class="w-full py-2 rounded-xl bg-white/10 text-white font-medium hover:bg-white/20 transition-colors">Testar Agora</button>
+                </div>
+
+                <!-- Starter -->
+                <div class="glass-panel rounded-2xl p-6 text-center hover:bg-white/5 transition-colors cursor-pointer border border-transparent hover:border-brand-gold/30" onclick="window.location.href='/register.html?plan=starter'">
+                    <h3 class="text-gray-300 font-medium mb-4">Starter</h3>
+                    <div class="text-3xl font-bold text-white mb-2">R$ 97<span class="text-sm font-normal text-gray-500">/mês</span></div>
+                    <p class="text-sm text-gray-400 mb-6">Para pequenos negócios</p>
+                    <button class="w-full py-2 rounded-xl bg-white/10 text-white font-medium hover:bg-white/20 transition-colors">Selecionar</button>
+                </div>
+
+                <!-- Professional -->
+                <div class="relative glass-panel rounded-2xl p-6 text-center cursor-pointer border-2 border-brand-gold transform md:-translate-y-4 shadow-[0_0_30px_rgba(245,158,11,0.2)]" onclick="window.location.href='/register.html?plan=professional'">
+                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-gold text-black text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                        Recomendado
+                    </div>
+                    <h3 class="text-brand-gold font-medium mb-4">Professional</h3>
+                    <div class="text-4xl font-bold text-white mb-2">R$ 197<span class="text-sm font-normal text-gray-500">/mês</span></div>
+                    <p class="text-sm text-gray-400 mb-6">Automação completa</p>
+                    <button class="w-full py-2.5 rounded-xl bg-gradient-to-r from-brand-gold to-orange-500 text-black font-bold hover:opacity-90 transition-opacity">Selecionar</button>
+                </div>
+
+                <!-- Scale -->
+                <div class="glass-panel rounded-2xl p-6 text-center hover:bg-white/5 transition-colors cursor-pointer border border-transparent hover:border-brand-gold/30" onclick="window.location.href='/register.html?plan=scale'">
+                    <h3 class="text-gray-300 font-medium mb-4">Scale</h3>
+                    <div class="text-3xl font-bold text-white mb-2">R$ 299<span class="text-sm font-normal text-gray-500">/mês</span></div>
+                    <p class="text-sm text-gray-400 mb-6">Para agências</p>
+                    <button class="w-full py-2 rounded-xl bg-white/10 text-white font-medium hover:bg-white/20 transition-colors">Selecionar</button>
+                </div>
+
+                <!-- Enterprise -->
+                <div class="glass-panel rounded-2xl p-6 text-center hover:bg-white/5 transition-colors cursor-pointer border border-transparent hover:border-brand-gold/30" onclick="window.location.href='/register.html?plan=enterprise'">
+                    <h3 class="text-gray-300 font-medium mb-4">Enterprise</h3>
+                    <div class="text-3xl font-bold text-white mb-2">R$ 499<span class="text-sm font-normal text-gray-500">/mês</span></div>
+                    <p class="text-sm text-gray-400 mb-6">Infraestrutura VIP</p>
+                    <button class="w-full py-2 rounded-xl bg-white/10 text-white font-medium hover:bg-white/20 transition-colors">Selecionar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/ScrollTrigger.min.js"></script>
     <script>
-        // ===== SMOOTH PARALLAX EFFECT =====
-        class SmoothParallax {
-            constructor() {
-                this.heroSection = document.querySelector('.hero');
-                this.heroBg = document.querySelector('.hero-bg-video');
-                this.heroBgImg = document.querySelector('.hero-bg-video img');
-                this.heroGradient = document.querySelector('.hero-gradient');
-                this.textBlock = document.querySelector('.text-block');
-                this.featureGrid = document.querySelector('.feature-grid');
-                this.socialBar = document.querySelector('.social-bar');
-
-                // Smooth scroll values
-                this.currentScroll = 0;
-                this.targetScroll = 0;
-                this.ease = 0.08; // Lower = smoother
-
-                this.init();
-            }
-
-            init() {
-                // Use requestAnimationFrame for smooth updates
-                this.animate();
-
-                // Listen to scroll
-                window.addEventListener('scroll', () => {
-                    this.targetScroll = window.pageYOffset;
-                }, { passive: true });
-
-                // Handle resize
-                window.addEventListener('resize', () => {
-                    this.heroHeight = this.heroSection.offsetHeight;
-                }, { passive: true });
-
-                this.heroHeight = this.heroSection.offsetHeight;
-            }
-
-            lerp(start, end, factor) {
-                return start + (end - start) * factor;
-            }
-
-            animate() {
-                // Smooth interpolation
-                this.currentScroll = this.lerp(this.currentScroll, this.targetScroll, this.ease);
-
-                // Only apply effects within hero section
-                if (this.targetScroll < this.heroHeight) {
-                    const progress = this.currentScroll / this.heroHeight;
-                    const smoothProgress = Math.min(progress, 1);
-
-                    // Background parallax - moves slower than scroll (cinematic feel)
-                    if (this.heroBgImg) {
-                        const bgY = this.currentScroll * 0.4; // 40% of scroll speed
-                        const bgScale = 1 + (smoothProgress * 0.1); // Slight zoom
-                        this.heroBgImg.style.transform = `translateY(${bgY}px) scale(${bgScale})`;
-                        this.heroBgImg.style.filter = `saturate(${1.2 - smoothProgress * 0.4}) brightness(${0.8 - smoothProgress * 0.2})`;
-                    }
-
-                    // Gradient overlay parallax
-                    if (this.heroGradient) {
-                        const gradY = this.currentScroll * 0.2;
-                        this.heroGradient.style.transform = `translateY(${gradY}px) scale(${1 + smoothProgress * 0.05})`;
-                    }
-
-                    // Text block - slight upward movement + fade
-                    if (this.textBlock) {
-                        const textY = -this.currentScroll * 0.15;
-                        const textOpacity = 1 - (smoothProgress * 0.8);
-                        this.textBlock.style.transform = `translateY(${textY}px)`;
-                        this.textBlock.style.opacity = Math.max(textOpacity, 0);
-                    }
-
-                    // Feature cards - staggered parallax
-                    if (this.featureGrid) {
-                        const gridY = -this.currentScroll * 0.1;
-                        const gridOpacity = 1 - (smoothProgress * 0.6);
-                        this.featureGrid.style.transform = `translateY(${gridY}px)`;
-                        this.featureGrid.style.opacity = Math.max(gridOpacity, 0);
-                    }
-
-                    // Social bar fades out
-                    if (this.socialBar) {
-                        const socialOpacity = 1 - (smoothProgress * 2);
-                        this.socialBar.style.opacity = Math.max(socialOpacity, 0);
-                    }
-                }
-
-                requestAnimationFrame(() => this.animate());
+        // Modal logic
+        function toggleModal() {
+            const modal = document.getElementById('pricingModal');
+            if (modal.classList.contains('active')) {
+                modal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            } else {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
             }
         }
 
-        // ===== FEATURE CARDS ENTRANCE ANIMATION =====
-        class ScrollReveal {
-            constructor() {
-                this.elements = document.querySelectorAll('.big-feature-card, .quick-btn');
-                this.init();
-            }
-
-            init() {
-                // Set initial state
-                this.elements.forEach((el, i) => {
-                    el.style.opacity = '0';
-                    el.style.transform = 'translateY(40px)';
-                    el.style.transition = `all 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${i * 0.1}s`;
-                });
-
-                // Create observer
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            entry.target.style.opacity = '1';
-                            entry.target.style.transform = 'translateY(0)';
-                        }
-                    });
-                }, { threshold: 0.2 });
-
-                this.elements.forEach(el => observer.observe(el));
-            }
-        }
-
-        // ===== API STATUS CHECK =====
+        // Status Check Logic
         async function checkStatus() {
             const dot = document.getElementById('statusDot');
             const text = document.getElementById('statusText');
-
+            
             try {
-                const response = await fetch('/api/whatsmiau2/status', { timeout: 5000 });
+                const response = await fetch('/api/health');
                 if (response.ok) {
                     dot.classList.remove('offline');
                     text.textContent = 'API Online';
                 } else {
                     dot.classList.add('offline');
-                    text.textContent = 'API Parcial';
+                    text.textContent = 'API Offline';
                 }
             } catch (e) {
                 dot.classList.add('offline');
@@ -888,14 +807,237 @@
             }
         }
 
-        // ===== INITIALIZE =====
+        function initHeroCarousel() {
+            const carousel = document.querySelector('[data-carousel="hero"]');
+            if (!carousel) return;
+
+            const track = carousel.querySelector('.carousel-track');
+            const originalSlides = Array.from(track.querySelectorAll('.carousel-slide'));
+            const prevButton = carousel.querySelector('[data-action="prev"]');
+            const nextButton = carousel.querySelector('[data-action="next"]');
+            const dotsContainer = carousel.querySelector('[data-role="dots"]');
+            let currentIndex = 1;
+            let isAnimating = false;
+            let unlockTimer = null;
+            let touchStartX = 0;
+            let touchEndX = 0;
+            let autoplayTimer = null;
+            let autoplayIntervalIdx = 0;
+            const fallbackImages = [
+                '/assets/maquina-vendas-comercial.jpg',
+                '/assets/bg2-whatsmiau2.png',
+                '/assets/bg3.jpg',
+                '/assets/bg.png'
+            ];
+
+            const rawIntervals = (carousel.dataset.autoplayIntervals || '30000,50000')
+                .split(',')
+                .map(v => parseInt(v.trim(), 10))
+                .filter(v => Number.isFinite(v) && v > 0);
+            const autoplayIntervals = rawIntervals.length > 0 ? rawIntervals : [30000, 50000];
+
+            originalSlides.forEach((slide, index) => {
+                const img = slide.querySelector('img');
+                if (!img) return;
+                img.addEventListener('error', () => {
+                    const fallback = fallbackImages[index % fallbackImages.length];
+                    if (!img.dataset.fallbackApplied) {
+                        img.dataset.fallbackApplied = '1';
+                        img.src = fallback;
+                    }
+                });
+            });
+
+            if (originalSlides.length <= 1) return;
+
+            const firstClone = originalSlides[0].cloneNode(true);
+            const lastClone = originalSlides[originalSlides.length - 1].cloneNode(true);
+            firstClone.setAttribute('aria-hidden', 'true');
+            lastClone.setAttribute('aria-hidden', 'true');
+            track.appendChild(firstClone);
+            track.insertBefore(lastClone, originalSlides[0]);
+
+            originalSlides.forEach((_, index) => {
+                const dot = document.createElement('button');
+                dot.type = 'button';
+                dot.className = `carousel-dot${index === 0 ? ' is-active' : ''}`;
+                dot.setAttribute('aria-label', `Ir para slide ${index + 1}`);
+                dot.addEventListener('click', () => goToSlide(index));
+                dotsContainer.appendChild(dot);
+            });
+
+            const dots = Array.from(dotsContainer.querySelectorAll('.carousel-dot'));
+            const totalSlides = originalSlides.length;
+
+            function render(withTransition = true) {
+                track.style.transition = withTransition ? 'transform 0.55s ease' : 'none';
+                track.style.transform = `translateX(-${currentIndex * 100}%)`;
+            }
+
+            function clearUnlockTimer() {
+                if (unlockTimer) {
+                    clearTimeout(unlockTimer);
+                    unlockTimer = null;
+                }
+            }
+
+            function lockAnimation() {
+                isAnimating = true;
+                clearUnlockTimer();
+                unlockTimer = setTimeout(() => {
+                    isAnimating = false;
+                }, 700);
+            }
+
+            function unlockAnimation() {
+                isAnimating = false;
+                clearUnlockTimer();
+            }
+
+            function updateDots() {
+                const realIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+                dots.forEach((dot, index) => {
+                    dot.classList.toggle('is-active', index === realIndex);
+                });
+            }
+
+            function moveTo(targetIndex) {
+                if (isAnimating) return;
+                if (targetIndex === currentIndex) return;
+
+                lockAnimation();
+                currentIndex = targetIndex;
+                render();
+                updateDots();
+            }
+
+            function goToSlide(index) {
+                moveTo(index + 1);
+            }
+
+            function next() {
+                moveTo(currentIndex + 1);
+            }
+
+            function prev() {
+                moveTo(currentIndex - 1);
+            }
+
+            track.addEventListener('transitionend', (event) => {
+                if (event.target !== track || event.propertyName !== 'transform') return;
+
+                if (currentIndex === totalSlides + 1) {
+                    currentIndex = 1;
+                    render(false);
+                } else if (currentIndex === 0) {
+                    currentIndex = totalSlides;
+                    render(false);
+                }
+                updateDots();
+                unlockAnimation();
+            });
+
+            prevButton.addEventListener('click', prev);
+            nextButton.addEventListener('click', next);
+            
+            function clearAutoplayTimer() {
+                if (autoplayTimer) {
+                    clearTimeout(autoplayTimer);
+                    autoplayTimer = null;
+                }
+            }
+
+            function scheduleAutoplay() {
+                clearAutoplayTimer();
+                const delay = autoplayIntervals[autoplayIntervalIdx % autoplayIntervals.length];
+                autoplayIntervalIdx += 1;
+                autoplayTimer = setTimeout(() => {
+                    next();
+                    scheduleAutoplay();
+                }, delay);
+            }
+
+            function pauseAutoplay() {
+                clearAutoplayTimer();
+            }
+
+            carousel.addEventListener('touchstart', (event) => {
+                touchStartX = event.changedTouches[0].clientX;
+                pauseAutoplay();
+            }, { passive: true });
+
+            carousel.addEventListener('touchend', (event) => {
+                touchEndX = event.changedTouches[0].clientX;
+                const deltaX = touchEndX - touchStartX;
+                if (Math.abs(deltaX) >= 45) {
+                    if (deltaX < 0) next();
+                    else prev();
+                }
+                scheduleAutoplay();
+            }, { passive: true });
+
+            carousel.addEventListener('mouseenter', pauseAutoplay);
+            carousel.addEventListener('mouseleave', scheduleAutoplay);
+
+            prevButton.addEventListener('click', scheduleAutoplay);
+            nextButton.addEventListener('click', scheduleAutoplay);
+
+            dots.forEach(dot => {
+                dot.addEventListener('click', scheduleAutoplay);
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) pauseAutoplay();
+                else scheduleAutoplay();
+            });
+
+            render(false);
+            updateDots();
+            scheduleAutoplay();
+        }
+
+        function initCinematicSection() {
+            const wrapper = document.querySelector('[data-cinematic]');
+            if (!wrapper) return;
+            if (!window.gsap || !window.ScrollTrigger) return;
+
+            gsap.registerPlugin(ScrollTrigger);
+
+            const frames = gsap.utils.toArray('.cinema-frame');
+            const progressBar = document.querySelector('[data-cinema-progress]');
+
+            gsap.set(frames, { opacity: 0, scale: 1.08 });
+            gsap.set(frames[0], { opacity: 1, scale: 1.03 });
+
+            const tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: wrapper,
+                    start: 'top top',
+                    end: '+=240%',
+                    scrub: true,
+                    pin: wrapper.querySelector('.cinematic-stage'),
+                    anticipatePin: 1,
+                    onUpdate: (self) => {
+                        if (progressBar) progressBar.style.width = `${Math.round(self.progress * 100)}%`;
+                    }
+                }
+            });
+
+            frames.forEach((frame, index) => {
+                if (index === 0) return;
+                tl.to(frame, { opacity: 1, scale: 1.02, duration: 1.15 }, index * 1.05)
+                  .to(frames[index - 1], { opacity: 0, scale: 1.1, duration: 1.15 }, index * 1.05);
+            });
+
+            tl.to('.cinema-ambient', { opacity: 0.65, duration: frames.length * 0.85 }, 0);
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            new SmoothParallax();
-            new ScrollReveal();
+            initHeroCarousel();
+            initCinematicSection();
             checkStatus();
             setInterval(checkStatus, 30000);
         });
     </script>
 </body>
-
 </html>

@@ -21,6 +21,10 @@ WORKDIR /app
 
 COPY --from=builder /app/whatsmiau2 /app/whatsmiau2
 
+# Copiar arquivos estáticos
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/docs ./docs
+
 RUN mkdir /app/data && chmod 777 -R /app/data
 
 EXPOSE 8081

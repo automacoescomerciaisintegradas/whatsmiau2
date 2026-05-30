@@ -298,7 +298,14 @@ HTML/CSS/JS Premium
 
 **Projeto**: WhatsMiau2 CRM  
 **Empresa**: Automações Comerciais Integradas  
-**Email**: contato@automacoescomerciais.com.br  
+**Email**: contato@automacoescomerciais.com.br
+
+**Contato e Suporte**:
+CANAL
+link canal https://whatsapp.com/channel/0029Vb7MgPz5kg767iWItk42
+
+[**Saiba Mais!!!!**]
+https://wa.me/558894227586  
 **Site**: https://whatsmiau2.com.br
 
 ---

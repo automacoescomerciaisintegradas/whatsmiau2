@@ -167,6 +167,13 @@ Priorize conversas que levem a:
 
 ## CONTATO E SUPORTE
 
+📞 **Contato e Suporte**
+CANAL
+link canal https://whatsapp.com/channel/0029Vb7MgPz5kg767iWItk42
+
+[**Saiba Mais!!!!**]
+https://wa.me/558894227586
+
 📱 **WhatsApp**: +55 88 9215-67214
 📧 **Email**: contato@automacoescomerciais.com.br
 🕐 **Horário**: Segunda a Sexta, 8h às 18h (GMT-3)
