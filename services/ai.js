@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import axios from "axios";
 import * as googleTTS from "google-tts-api";
 import { spawn } from "child_process";
+import { SecurityViolation, validateCommandSecurity } from "./securityGuard.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -202,7 +203,17 @@ async function generateAudioWithKokoro(text, speed, voice) {
         console.log(`[Kokoro] Gerando: ${text.substring(0, 30)}... (Voz: ${voice}, Speed: ${speed})`);
 
         // Arguments: text, output_file, speed, voice
-        const process = spawn("python", [scriptPath, text, filepath, speed.toString(), voice]);
+        const spawnArgs = [scriptPath, text, filepath, speed.toString(), voice];
+        try {
+            validateCommandSecurity("python", spawnArgs);
+        } catch (error) {
+            if (error instanceof SecurityViolation) {
+                return reject(error);
+            }
+            return reject(new Error("Falha na validacao de seguranca do comando."));
+        }
+
+        const process = spawn("python", spawnArgs);
 
         let stdoutData = "";
         let stderrData = "";
