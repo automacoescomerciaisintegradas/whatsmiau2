@@ -340,7 +340,7 @@
 
             </div>
 
-            <a href="/logout" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
+            <a href="#" onclick="localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href='/login.html'; return false;" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
                 <i class="fas fa-sign-out-alt me-2"></i> Sair
             </a>
         </div>
@@ -1181,3 +1181,4 @@
 </body>
 
 </html>
+

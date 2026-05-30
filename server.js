@@ -106,40 +106,40 @@ app.use(express.static(path.join(__dirname, "public"), { etag: false, lastModifi
 console.log("Servindo arquivos estáticos de:", path.join(__dirname, "public"));
 
 // Rotas HTML estáticas
-app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "home.html")));
-app.get("/dashboard", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
-app.get("/home", (req, res) => res.sendFile(path.join(__dirname, "public", "home.html")));
-app.get("/admin", (req, res) => res.sendFile(path.join(__dirname, "public", "admin_example.html")));
-app.get("/docs", (req, res) => res.sendFile(path.join(__dirname, "public", "docs.html")));
+app.get("/", (req, res) => res.sendFile("home.html", { root: path.join(__dirname, "public") }));
+app.get("/dashboard", (req, res) => res.sendFile("index.html", { root: path.join(__dirname, "public") }));
+app.get("/home", (req, res) => res.sendFile("home.html", { root: path.join(__dirname, "public") }));
+app.get("/admin", (req, res) => res.sendFile("admin_example.html", { root: path.join(__dirname, "public") }));
+app.get("/docs", (req, res) => res.sendFile("docs.html", { root: path.join(__dirname, "public") }));
 
 // Core Features
-app.get("/connections", (req, res) => res.sendFile(path.join(__dirname, "public", "instancias.html")));
-app.get("/instancias", (req, res) => res.sendFile(path.join(__dirname, "public", "instancias.html")));
-app.get("/pairing", (req, res) => res.sendFile(path.join(__dirname, "public", "pairing.html")));
-app.get("/channels", (req, res) => res.sendFile(path.join(__dirname, "public", "channels.html")));
-app.get("/groups", (req, res) => res.sendFile(path.join(__dirname, "public", "groups.html")));
-app.get("/resumo-grupos", (req, res) => res.sendFile(path.join(__dirname, "public", "resumo-grupos.html")));
-app.get("/contacts", (req, res) => res.sendFile(path.join(__dirname, "public", "contacts.html")));
-app.get("/exportar-contatos", (req, res) => res.sendFile(path.join(__dirname, "public", "exportar-contatos.html")));
+app.get("/connections", (req, res) => res.sendFile("instancias.html", { root: path.join(__dirname, "public") }));
+app.get("/instancias", (req, res) => res.sendFile("instancias.html", { root: path.join(__dirname, "public") }));
+app.get("/pairing", (req, res) => res.sendFile("pairing.html", { root: path.join(__dirname, "public") }));
+app.get("/channels", (req, res) => res.sendFile("channels.html", { root: path.join(__dirname, "public") }));
+app.get("/groups", (req, res) => res.sendFile("groups.html", { root: path.join(__dirname, "public") }));
+app.get("/resumo-grupos", (req, res) => res.sendFile("resumo-grupos.html", { root: path.join(__dirname, "public") }));
+app.get("/contacts", (req, res) => res.sendFile("contacts.html", { root: path.join(__dirname, "public") }));
+app.get("/exportar-contatos", (req, res) => res.sendFile("exportar-contatos.html", { root: path.join(__dirname, "public") }));
 
 // Automation & AI
-app.get("/ai-agents", (req, res) => res.sendFile(path.join(__dirname, "public", "ai-agents.html")));
-app.get("/automacao", (req, res) => res.sendFile(path.join(__dirname, "public", "automacao.html")));
-app.get("/automacao-editor", (req, res) => res.sendFile(path.join(__dirname, "public", "automacao-editor.html")));
-app.get("/disparador", (req, res) => res.sendFile(path.join(__dirname, "public", "disparador.html")));
-app.get("/webhooks", (req, res) => res.sendFile(path.join(__dirname, "public", "webhooks.html")));
+app.get("/ai-agents", (req, res) => res.sendFile("ai-agents.html", { root: path.join(__dirname, "public") }));
+app.get("/automacao", (req, res) => res.sendFile("automacao.html", { root: path.join(__dirname, "public") }));
+app.get("/automacao-editor", (req, res) => res.sendFile("automacao-editor.html", { root: path.join(__dirname, "public") }));
+app.get("/disparador", (req, res) => res.sendFile("disparador.html", { root: path.join(__dirname, "public") }));
+app.get("/webhooks", (req, res) => res.sendFile("webhooks.html", { root: path.join(__dirname, "public") }));
 
 // CRM & Chat
-app.get("/crm", (req, res) => res.sendFile(path.join(__dirname, "public", "crm-new.html")));
-app.get("/crm-full", (req, res) => res.sendFile(path.join(__dirname, "public", "crm-full.html"))); // CRM Completo com PIX/Email
-app.get("/kanban", (req, res) => res.sendFile(path.join(__dirname, "public", "kanban.html")));
-app.get("/tickets", (req, res) => res.sendFile(path.join(__dirname, "public", "tickets.html")));
-app.get("/internal-chat", (req, res) => res.sendFile(path.join(__dirname, "public", "internal-chat.html")));
+app.get("/crm", (req, res) => res.sendFile("crm-new.html", { root: path.join(__dirname, "public") }));
+app.get("/crm-full", (req, res) => res.sendFile("crm-full.html", { root: path.join(__dirname, "public") })); // CRM Completo com PIX/Email
+app.get("/kanban", (req, res) => res.sendFile("kanban.html", { root: path.join(__dirname, "public") }));
+app.get("/tickets", (req, res) => res.sendFile("tickets.html", { root: path.join(__dirname, "public") }));
+app.get("/internal-chat", (req, res) => res.sendFile("internal-chat.html", { root: path.join(__dirname, "public") }));
 
 // System
-app.get("/settings", (req, res) => res.sendFile(path.join(__dirname, "public", "settings.html")));
-app.get("/debug-connections", (req, res) => res.sendFile(path.join(__dirname, "public", "debug-connections.html")));
-app.get("/test-qr", (req, res) => res.sendFile(path.join(__dirname, "public", "test-qr.html")));
+app.get("/settings", (req, res) => res.sendFile("settings.html", { root: path.join(__dirname, "public") }));
+app.get("/debug-connections", (req, res) => res.sendFile("debug-connections.html", { root: path.join(__dirname, "public") }));
+app.get("/test-qr", (req, res) => res.sendFile("test-qr.html", { root: path.join(__dirname, "public") }));
 app.get("/logout", (req, res) => {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
   res.setHeader("Pragma", "no-cache");
@@ -6250,3 +6250,4 @@ Como Especialista em Arquitetura de Agentes, você deve:
     }
   }, 30000); // Verifica a cada 30 segundos
 });
+

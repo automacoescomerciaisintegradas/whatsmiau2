@@ -72,7 +72,7 @@
 
             </div>
 
-            <a href="/logout" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
+            <a href="#" onclick="localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href='/login.html'; return false;" class="list-group-item list-group-item-action bg-transparent text-danger mt-auto">
                 <i class="fas fa-sign-out-alt me-2"></i> Sair
             </a>
         </div>
@@ -103,7 +103,7 @@
                         <li>
                             <hr class="dropdown-divider">
                         </li>
-                        <li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href='/login.html'; return false;"><i class="fas fa-sign-out-alt me-2"></i>
                                 Sair</a></li>
                     </ul>
                 </div>
@@ -492,3 +492,4 @@
 </body>
 
 </html>
+

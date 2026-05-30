@@ -430,3 +430,64 @@ body[data-theme="light"] {
 .doc-link i {
     margin-right: 5px;
 }
+
+/* Animações e Botões Pulsantes */
+@keyframes pulse-animation {
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 0 15px rgba(16, 185, 129, 0);
+        transform: scale(1.03);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+        transform: scale(1);
+    }
+}
+
+@keyframes pulse-animation-premium {
+    0% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 0 15px rgba(59, 130, 246, 0);
+        transform: scale(1.03);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+        transform: scale(1);
+    }
+}
+
+.pulse-btn {
+    transition: all 0.3s ease;
+    border: none;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.btn-pulse-free {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    color: white !important;
+    animation: pulse-animation 2s infinite;
+}
+
+.btn-pulse-free:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    transform: translateY(-2px) scale(1.05);
+}
+
+.btn-pulse-premium {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    color: white !important;
+    animation: pulse-animation-premium 2s infinite;
+}
+
+.btn-pulse-premium:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    transform: translateY(-2px) scale(1.05);
+}

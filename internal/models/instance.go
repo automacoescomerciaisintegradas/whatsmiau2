@@ -27,6 +27,13 @@ type Instance struct {
 	ProfilePic   string         `json:"profilePic" gorm:"type:text"`
 	WebhookURL   string         `json:"webhookUrl" gorm:"type:text"`
 	WebhookToken string         `json:"webhookToken" gorm:"type:varchar(255)"`
+	
+	// SIP Integration (PBX Gateway)
+	SIPConnectionID string `json:"sipConnectionId" gorm:"type:varchar(100)"`
+	SIPHost         string `json:"sipHost" gorm:"type:varchar(100)"`
+	SIPUser         string `json:"sipUser" gorm:"type:varchar(100)"`
+	SIPPassword     string `json:"sipPassword" gorm:"type:varchar(100)"`
+	
 	LastSeen     *time.Time     `json:"lastSeen"`
 	CreatedAt    time.Time      `json:"createdAt"`
 	UpdatedAt    time.Time      `json:"updatedAt"`

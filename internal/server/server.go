@@ -76,6 +76,7 @@ func (s *Server) setupRoutes() {
 	notSv := services.NewNotifierService(s.config)
 	subSv := crm.NewSubscriptionService(s.db)
 	mpSv := services.NewMercadoPagoService(s.config)
+	telnyxSv := services.NewTelnyxService(s.config)
 
 	// Initialize monitoring service
 	monitoringSv := services.NewMonitoringService(s.db.DB)
@@ -83,6 +84,9 @@ func (s *Server) setupRoutes() {
 
 	// Initialize dashboard handler
 	dashboardHandler := handlers.NewDashboardHandler(monitoringSv, s.manager)
+	
+	// Initialize SIP Handler
+	sipHandler := handlers.NewSIPHandler(telnyxSv, s.db)
 
 	// Seed Plans
 	if err := subSv.SeedPlans(); err != nil {
@@ -124,6 +128,10 @@ func (s *Server) setupRoutes() {
 			instance.GET("/webhook/:id", instanceHandler.GetWebhookConfig)
 			instance.PUT("/webhook/:id", instanceHandler.UpdateWebhookConfig)
 			instance.POST("/webhook/:id/test", instanceHandler.TestWebhook)
+
+			// SIP Gateway Integration routes
+			instance.POST("/sip/:id/setup", sipHandler.SetupSIPConnection)
+			instance.GET("/sip/:id", sipHandler.GetSIPConfig)
 
 			// Standard routes (base routes, no path prefix)
 			instance.POST("", instanceHandler.CreateInstance)

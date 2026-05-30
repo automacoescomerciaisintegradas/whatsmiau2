@@ -59,6 +59,20 @@ func (h *SubscriptionHandler) GetMySubscription(c *gin.Context) {
 	}
 	userID := userIDVal.(uint)
 
+	var user models.User
+	if err := h.db.DB.First(&user, userID).Error; err == nil && user.IsAdmin() {
+		c.JSON(http.StatusOK, gin.H{
+			"status": "active",
+			"plan": gin.H{
+				"name": "Plano Admin (Vitalício)",
+				"price": 0,
+			},
+			"next_billing_date": time.Now().AddDate(100, 0, 0).Format(time.RFC3339),
+		})
+		return
+	}
+
+
 	sub, err := h.subscriptionSv.GetUserSubscription(userID)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"status": "none", "subscription": nil})
