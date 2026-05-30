@@ -468,6 +468,17 @@
                                         </div>
                                     </div>
                                     
+                                    <div class="mb-3" id="sipDestinationBox">
+                                        <label class="form-label small fw-bold">Destino SIP (Ramal do PABX)</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="sipDestination" placeholder="sip:1000@sua-empresa.3cx.us" disabled>
+                                            <button class="btn btn-primary" type="button" id="btnSaveSIPDest" onclick="saveSIPDestination()" disabled>
+                                                <i class="fas fa-save"></i> Salvar Ramal
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Para qual ramal o WhatsMiau ligará quando receber um áudio de voz.</small>
+                                    </div>
+                                    
                                     <div id="sipCredentialsBox" class="bg-light p-3 rounded mb-3 border d-none">
                                         <div class="mb-2">
                                             <label class="small text-muted mb-1 d-block">Host / Registrar</label>
@@ -1296,6 +1307,9 @@ Após isso, quando um PIX for pago:
             const instanceId = document.getElementById('sipInstanceSelect').value;
             if (!instanceId) {
                 document.getElementById('sipCredentialsBox').classList.add('d-none');
+                document.getElementById('sipDestination').disabled = true;
+                document.getElementById('sipDestination').value = '';
+                document.getElementById('btnSaveSIPDest').disabled = true;
                 document.getElementById('sipStatus').className = 'status-badge bg-secondary text-white';
                 document.getElementById('sipStatus').innerText = 'Não Configurada';
                 document.getElementById('btnSetupSip').classList.remove('d-none');
@@ -1306,6 +1320,22 @@ Após isso, quando um PIX for pago:
                 const res = await fetch(`/v1/instance/sip/${encodeURIComponent(instanceId)}`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
                 });
+                
+                // Fetch destination as well using the generic instance config
+                const resInst = await fetch(`/v1/instance/webhook/${encodeURIComponent(instanceId)}`, {
+                     headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+                });
+
+                if (resInst.ok) {
+                    const dataInst = await resInst.json();
+                    if(dataInst.sipDestination) {
+                        document.getElementById('sipDestination').value = dataInst.sipDestination;
+                    } else {
+                        document.getElementById('sipDestination').value = '';
+                    }
+                    document.getElementById('sipDestination').disabled = false;
+                    document.getElementById('btnSaveSIPDest').disabled = false;
+                }
                 
                 if (res.ok) {
                     const data = await res.json();
@@ -1328,6 +1358,33 @@ Após isso, quando um PIX for pago:
                 }
             } catch (e) {
                 console.error(e);
+            }
+        }
+
+        async function saveSIPDestination() {
+            const instanceId = document.getElementById('sipInstanceSelect').value;
+            const dest = document.getElementById('sipDestination').value;
+            if (!instanceId) {
+                alert('Selecione uma instância primeiro!');
+                return;
+            }
+            try {
+                const res = await fetch(`/v1/instance/update/${encodeURIComponent(instanceId)}`, {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}` 
+                    },
+                    body: JSON.stringify({ sipDestination: dest })
+                });
+                if (res.ok) {
+                    alert('Destino SIP salvo com sucesso!');
+                } else {
+                    const data = await res.json();
+                    alert('Erro ao salvar: ' + (data.error || 'Falha desconhecida'));
+                }
+            } catch (e) {
+                alert('Erro na requisição: ' + e.message);
             }
         }
 

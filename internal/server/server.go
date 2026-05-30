@@ -3,6 +3,8 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"whatsmiau2/internal/config"
@@ -77,8 +79,10 @@ func (s *Server) setupRoutes() {
 	subSv := crm.NewSubscriptionService(s.db)
 	mpSv := services.NewMercadoPagoService(s.config)
 	telnyxSv := services.NewTelnyxService(s.config)
+	callMgr := services.NewCallManager()
 
-	// Initialize monitoring service
+	// Initialize handlers
+	telnyxWebhookHandler := handlers.NewTelnyxWebhookHandler(callMgr, telnyxSv)
 	monitoringSv := services.NewMonitoringService(s.db.DB)
 	monitoringSv.StartPeriodicFlush(5 * time.Minute) // Flush a cada 5 minutos
 
@@ -87,6 +91,39 @@ func (s *Server) setupRoutes() {
 	
 	// Initialize SIP Handler
 	sipHandler := handlers.NewSIPHandler(telnyxSv, s.db)
+
+	// Set the OnAudioMessage callback to handle SIP Audio routing
+	s.manager.OnAudioMessage = func(instanceID string, audioBytes []byte, mimeType string, sender string) {
+		// Get instance config
+		instance, err := s.db.GetInstance(instanceID)
+		if err != nil || instance.SIPDestination == "" {
+			return // Not configured for SIP Gateway or PBX Destination
+		}
+		
+		// 1. Save audio to public/media_cache
+		fileName := fmt.Sprintf("%s_%d.ogg", instanceID, time.Now().UnixNano())
+		filePath := filepath.Join("public", "media_cache", fileName)
+		if err := os.WriteFile(filePath, audioBytes, 0644); err != nil {
+			zap.L().Error("Failed to save audio cache", zap.Error(err))
+			return
+		}
+
+		audioURL := fmt.Sprintf("%s/media_cache/%s", s.config.PublicURL, fileName)
+		
+		// 2. Trigger Telnyx CallPBX
+		callControlID, err := telnyxSv.CallPBX(instance.SIPDestination, audioURL, instanceID)
+		if err == nil {
+			// Save the intention to play audio when PBX answers
+			callMgr.AddCall(&services.CallSession{
+				CallControlID: callControlID,
+				InstanceID:    instanceID,
+				Destination:   instance.SIPDestination,
+				Status:        "initiated",
+				AudioToPlay:   audioURL,
+				CreatedAt:     time.Now(),
+			})
+		}
+	}
 
 	// Seed Plans
 	if err := subSv.SeedPlans(); err != nil {
@@ -309,6 +346,8 @@ func (s *Server) setupRoutes() {
 		webhooks.POST("/mercadopago", paymentWebhookHandler.Handle)
 		// Legacy endpoint for compatibility
 		webhooks.POST("/payment", paymentWebhookHandler.Handle)
+		// Telnyx Call Control Webhook
+		webhooks.POST("/telnyx/events", telnyxWebhookHandler.HandleEvent)
 	}
 
 	// Authentication routes (no auth required for login/register)
@@ -348,6 +387,7 @@ func (s *Server) setupRoutes() {
 	s.router.StaticFile("/docs", "./public/docs.html")
 	s.router.StaticFile("/docs.html", "./public/docs.html")
 	s.router.Static("/docs-assets", "./docs")
+	s.router.Static("/media_cache", "./public/media_cache")
 	s.router.StaticFile("/webhooks.html", "./public/webhooks.html")
 	s.router.StaticFile("/channels.html", "./public/channels.html")
 	s.router.StaticFile("/groups.html", "./public/groups.html")

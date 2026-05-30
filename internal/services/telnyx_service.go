@@ -95,6 +95,72 @@ func (s *TelnyxService) CreateSIPCredential(instanceID string, instanceName stri
 	return result, nil
 }
 
+// AnswerCall sends an answer command to a specific Call Control ID
+func (s *TelnyxService) AnswerCall(callControlID string) error {
+	ctx := context.Background()
+	// To answer a call, we use the Call Control API 
+	// The V4 SDK structure uses CallControl or Calls.
+	// We'll create a new call object or use an action service.
+	_, err := s.client.Calls.Actions.Answer(ctx, callControlID, telnyx.CallActionAnswerParams{})
+	if err != nil {
+		zap.L().Error("Telnyx Answer Call failed", zap.Error(err), zap.String("call_control_id", callControlID))
+		return err
+	}
+	zap.L().Info("Telnyx Call answered successfully", zap.String("call_control_id", callControlID))
+	return nil
+}
+
+// CallPBX initiates a call to a SIP destination and passes custom headers or client state
+func (s *TelnyxService) CallPBX(sipDestination string, audioURL string, instanceID string) (string, error) {
+	ctx := context.Background()
+
+	// The Connection ID is needed to dial out, we'll assume the client configured their Outbound Voice Profile
+	// or we can use the default Connection ID. For SIP, the `To` must be `sip:extension@domain`
+	params := telnyx.CallCreateParams{
+		To:             sipDestination,
+		From:           "+10000000000", // Default from, could be configurable
+		ConnectionID:   "",             // Optional if From is registered or if routing by SIP
+		ClientState:    telnyx.String(audioURL), // Hack: pass the audio URL via ClientState so we know what to play
+		WebhookURL:     telnyx.String(fmt.Sprintf("%s/v1/webhooks/telnyx/events", s.config.PublicURL)),
+		WebhookURLMethod: telnyx.CallCreateParamsWebhookURLMethodPost,
+	}
+
+	call, err := s.client.Calls.New(ctx, params)
+	if err != nil {
+		zap.L().Error("Failed to initiate Telnyx Call to PBX", zap.Error(err), zap.String("destination", sipDestination))
+		return "", err
+	}
+
+	zap.L().Info("Telnyx Call initiated successfully", zap.String("call_control_id", call.Data.CallControlID), zap.String("destination", sipDestination))
+	return call.Data.CallControlID, nil
+}
+
+// PlayAudio plays a remote audio file on an active call
+func (s *TelnyxService) PlayAudio(callControlID string, audioURL string) error {
+	ctx := context.Background()
+	params := telnyx.CallActionPlaybackStartParams{
+		AudioURL: audioURL,
+	}
+	_, err := s.client.Calls.Actions.PlaybackStart(ctx, callControlID, params)
+	if err != nil {
+		zap.L().Error("Telnyx PlaybackStart failed", zap.Error(err), zap.String("call_control_id", callControlID))
+		return err
+	}
+	zap.L().Info("Telnyx Playback started successfully", zap.String("call_control_id", callControlID), zap.String("audio_url", audioURL))
+	return nil
+}
+
+// HangupCall hangs up a call
+func (s *TelnyxService) HangupCall(callControlID string) error {
+	ctx := context.Background()
+	_, err := s.client.Calls.Actions.Hangup(ctx, callControlID, telnyx.CallActionHangupParams{})
+	if err != nil {
+		zap.L().Error("Telnyx Hangup failed", zap.Error(err), zap.String("call_control_id", callControlID))
+		return err
+	}
+	return nil
+}
+
 func min(a, b int) int {
 	if a < b {
 		return a

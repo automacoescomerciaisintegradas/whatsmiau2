@@ -32,6 +32,9 @@ type Manager struct {
 	config    *config.Config
 	db        *database.Database
 	container *sqlstore.Container
+	
+	// Hook para notificar quando um áudio é recebido (usado para integração SIP)
+	OnAudioMessage func(instanceID string, audioBytes []byte, audioType string, sender string)
 }
 
 // Client represents a single WhatsApp client instance
