@@ -82,7 +82,18 @@ const app = express();
 let io = null; // Socket.IO placeholder
 app.use(cors());
 
-// Proxy /v1 to Go Backend
+// Proxy /auth to Go Backend (adds /v1 prefix)
+app.use('/auth', (req, res, next) => {
+  req.url = '/v1/auth' + req.url;
+  next();
+}, createProxyMiddleware({
+  target: API_URL,
+  changeOrigin: true,
+  ws: true,
+  logLevel: 'debug'
+}));
+
+// Proxy /v1 to Go Backend (original)
 app.use('/v1', createProxyMiddleware({
   target: `${API_URL}/v1`,
   changeOrigin: true,
@@ -4614,14 +4625,15 @@ app.get('/api/settings/openai', (req, res) => {
   res.json({
     success: true,
     provider: systemSettings.openai?.provider || 'openai',
+    baseUrl: systemSettings.openai?.baseUrl || '',
     hasApiKey: !!(systemSettings.openai?.apiKey)
   });
 });
 
 app.post('/api/settings/openai', (req, res) => {
-  const { provider, apiKey } = req.body;
+  const { provider, apiKey, baseUrl } = req.body;
 
-  systemSettings.openai = { provider, apiKey };
+  systemSettings.openai = { provider, apiKey, baseUrl };
 
   if (saveSettings(systemSettings)) {
     syncAiSettingsToEnv();
@@ -4629,6 +4641,60 @@ app.post('/api/settings/openai', (req, res) => {
     res.json({ success: true });
   } else {
     res.status(500).json({ success: false, error: 'Erro ao salvar' });
+  }
+});
+
+app.post('/api/settings/openai/test', async (req, res) => {
+  const provider = (req.body.provider || 'openai').toLowerCase();
+  const apiKey = req.body.apiKey || '';
+  const baseUrlRaw = (req.body.baseUrl || '').trim();
+
+  const normalizeBase = (value, fallback) => (value || fallback).replace(/\/+$/, '');
+
+  try {
+    if (provider === 'openai') {
+      if (!apiKey) return res.json({ success: false, error: 'API Key obrigatória para OpenAI' });
+      const baseUrl = normalizeBase(baseUrlRaw, 'https://api.openai.com/v1');
+      const response = await axios.get(`${baseUrl}/models`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        timeout: 10000
+      });
+      return res.json({ success: true, provider, baseUrl, count: Array.isArray(response.data?.data) ? response.data.data.length : 0 });
+    }
+
+    if (provider === 'anthropic') {
+      if (!apiKey) return res.json({ success: false, error: 'API Key obrigatória para Anthropic' });
+      const baseUrl = normalizeBase(baseUrlRaw, 'https://api.anthropic.com/v1');
+      const response = await axios.get(`${baseUrl}/models`, {
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        timeout: 10000
+      });
+      return res.json({ success: true, provider, baseUrl, count: Array.isArray(response.data?.data) ? response.data.data.length : 0 });
+    }
+
+    if (provider === 'gemini') {
+      if (!apiKey) return res.json({ success: false, error: 'API Key obrigatória para Gemini' });
+      const baseUrl = normalizeBase(baseUrlRaw, 'https://generativelanguage.googleapis.com/v1beta');
+      const response = await axios.get(`${baseUrl}/models?key=${encodeURIComponent(apiKey)}`, {
+        timeout: 10000
+      });
+      return res.json({ success: true, provider, baseUrl, count: Array.isArray(response.data?.models) ? response.data.models.length : 0 });
+    }
+
+    if (provider === 'ollama') {
+      const baseUrl = normalizeBase(baseUrlRaw, 'http://localhost:11434');
+      const response = await axios.get(`${baseUrl}/api/tags`, { timeout: 10000 });
+      return res.json({ success: true, provider, baseUrl, count: Array.isArray(response.data?.models) ? response.data.models.length : 0 });
+    }
+
+    return res.json({ success: false, error: `Provedor não suportado: ${provider}` });
+  } catch (e) {
+    const status = e?.response?.status;
+    const detail = e?.response?.data?.error?.message || e?.response?.data?.message || e.message;
+    return res.json({ success: false, error: `Falha na conexão (${status || 'sem status'}): ${detail}` });
   }
 });
 

@@ -15,7 +15,8 @@ RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o whatsmiau2 main.g
 
 FROM alpine:latest
 
-RUN apk update && apk add --no-cache ffmpeg mailcap ca-certificates
+RUN apk add --no-cache ffmpeg mailcap ca-certificates sqlite-libs && \
+    adduser -D -H -u 10001 cleudocode
 
 WORKDIR /app
 
@@ -25,8 +26,10 @@ COPY --from=builder /app/whatsmiau2 /app/whatsmiau2
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/docs ./docs
 
-RUN mkdir /app/data && chmod 777 -R /app/data
+RUN mkdir -p /app/data && chown -R cleudocode:cleudocode /app
 
-EXPOSE 8081
+USER cleudocode
+
+EXPOSE 8085
 
 ENTRYPOINT ["./whatsmiau2"]

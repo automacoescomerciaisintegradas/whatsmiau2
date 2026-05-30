@@ -1126,8 +1126,20 @@
                 ...grupo,
                 id,
                 jid: id,
-                subject: getGroupName(grupo)
+                subject: getGroupName(grupo),
+                _entityType: getGroupType(grupo)
             };
+        }
+
+        function getGroupType(grupo) {
+            const id = getGroupId(grupo);
+            const rawType = sanitizeEntityValue(grupo?.type || grupo?.chatType || grupo?.kind).toLowerCase();
+
+            if (rawType.includes('group')) return 'group';
+            if (rawType.includes('newsletter') || rawType.includes('channel')) return 'channel';
+            if (id.endsWith('@g.us')) return 'group';
+            if (id.endsWith('@newsletter')) return 'channel';
+            return 'group';
         }
 
         async function carregarGrupos() {
@@ -1140,15 +1152,24 @@
                 const data = await response.json();
 
                 if (data.success && data.data) {
-                    state.todosGrupos = (data.data || [])
+                    const normalized = (data.data || [])
                         .map(normalizeGroup)
                         .filter(g => g.id);
+
+                    // Alguns provedores retornam newsletters/canais junto com grupos.
+                    // Mantemos apenas grupos no card de grupos.
+                    state.todosGrupos = normalized.filter(g => g._entityType === 'group');
 
                     const allowed = new Set(state.todosGrupos.map(g => g.id));
                     state.gruposSelecionados = (state.gruposSelecionados || []).filter(g => allowed.has(getGroupId(g)));
 
                     renderizarListaGrupos();
-                    mostrarStatus('config', 'success', `✅ ${state.todosGrupos.length} grupos carregados.`);
+                    const descartadosNaoGrupo = normalized.length - state.todosGrupos.length;
+                    if (descartadosNaoGrupo > 0) {
+                        mostrarStatus('config', 'info', `✅ ${state.todosGrupos.length} grupos carregados. ${descartadosNaoGrupo} itens que não eram grupo foram removidos.`);
+                    } else {
+                        mostrarStatus('config', 'success', `✅ ${state.todosGrupos.length} grupos carregados.`);
+                    }
                 } else {
                     if (response.status === 400) {
                         throw new Error("Instância desconectada. Por favor, conecte o WhatsApp primeiro.");

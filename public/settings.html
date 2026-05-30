@@ -374,6 +374,11 @@
                                         </select>
                                     </div>
                                     <div class="mb-3">
+                                        <label class="form-label small fw-bold">URL Base (opcional)</label>
+                                        <input type="text" class="form-control" id="aiBaseUrl"
+                                            placeholder="https://api.openai.com/v1">
+                                    </div>
+                                    <div class="mb-3">
                                         <label class="form-label small fw-bold">API Key</label>
                                         <div class="input-group">
                                             <input type="password" class="form-control" id="openaiApiKey"
@@ -930,7 +935,27 @@ Automacoes Comerciais Integradas AI é uma empresa que presta consultoria de IA 
 
         // OpenAI/IA
         async function testOpenAI() {
-            alert('🧪 Para testar a IA, vá na aba "Agente de IA" e clique em "Testar Agente".');
+            try {
+                const res = await fetch('/api/settings/openai/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        provider: document.getElementById('aiProvider').value,
+                        apiKey: document.getElementById('openaiApiKey').value,
+                        baseUrl: document.getElementById('aiBaseUrl').value
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    updateCardStatus('openaiCard', 'openaiStatus', true, 'Funcionando');
+                    alert(`✅ Conexão OK (${data.provider})\nURL: ${data.baseUrl}`);
+                } else {
+                    throw new Error(data.error || 'Falha no teste');
+                }
+            } catch (e) {
+                updateCardStatus('openaiCard', 'openaiStatus', false, 'Erro');
+                alert('❌ Erro no teste: ' + e.message);
+            }
         }
 
         async function saveOpenAI() {
@@ -940,7 +965,8 @@ Automacoes Comerciais Integradas AI é uma empresa que presta consultoria de IA 
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         provider: document.getElementById('aiProvider').value,
-                        apiKey: document.getElementById('openaiApiKey').value
+                        apiKey: document.getElementById('openaiApiKey').value,
+                        baseUrl: document.getElementById('aiBaseUrl').value
                     })
                 });
                 const data = await res.json();
@@ -1222,6 +1248,7 @@ Você é Sofia, Especialista em Automação Digital da Automacoescomerciais.
                 const aiRes = await fetch('/api/settings/openai');
                 const aiData = await aiRes.json();
                 if (aiData.provider) document.getElementById('aiProvider').value = aiData.provider;
+                if (aiData.baseUrl) document.getElementById('aiBaseUrl').value = aiData.baseUrl;
                 if (aiData.hasApiKey) updateCardStatus('openaiCard', 'openaiStatus', true, 'Configurada');
 
                 // Carregar Webhook
